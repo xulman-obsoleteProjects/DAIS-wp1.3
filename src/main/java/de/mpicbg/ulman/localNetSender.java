@@ -17,6 +17,7 @@ import net.imagej.ops.OpService;
 import net.imagej.ImageJ;
 
 import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Sender")
 public class localNetSender implements Command
@@ -27,15 +28,41 @@ public class localNetSender implements Command
 	@Parameter
 	private StatusService statusService;
 
-	//@Override
-	public void initiate()
-	{
-		System.out.println("sender initiate");
-	}
-
 	@Override
 	public void run()
 	{
-		System.out.println("sender run");
+		log.info("sender started");
+
+		//init the communication side
+		ZMQ.Context zmqContext = ZMQ.context(1);
+		ZMQ.Socket writerSocket = null;
+		try {
+			//peer to send data out
+			writerSocket = zmqContext.socket(ZMQ.PUSH);
+			writerSocket.connect("tcp://localhost:5555");
+		}
+		catch (ZMQException e) {
+			log.error(e);
+
+			//clean up...
+			writerSocket.close();
+			zmqContext.term();
+
+			//indiciation of failure
+			writerSocket = null;
+		}
+
+		//stop plugin execution here if we cannot continue
+		if (writerSocket == null) return;
+		log.info("sender connected");
+
+		String dataToSend = "Helllllllo";
+		System.out.println("Sending: "+dataToSend);
+		writerSocket.send(dataToSend.getBytes(), 0); //blocking write, can be queued
+
+		//clean up...
+		writerSocket.close();
+		zmqContext.term();
+		log.info("sender finished");
 	}
 }
