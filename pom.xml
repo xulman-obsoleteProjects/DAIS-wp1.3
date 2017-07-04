@@ -1,0 +1,103 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.scijava</groupId>
+    <artifactId>pom-scijava</artifactId>
+    <version>16.2.0</version>
+    <relativePath />
+  </parent>
+
+
+  <groupId>de.mpicbg.ulman</groupId>
+  <artifactId>DAIS-wp13</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+	<organization>
+		<name>MPI-CBG</name>
+		<url>http://www.mpi-cbg.de</url>
+	</organization>
+
+  <name>DAIS plugin suite</name>
+  <description>Scijava/imglib2 images are pinged back and forth over a network...</description>
+  <url>https://github.com/xulman/DAIS-wp1.3</url>
+  <inceptionYear>2017</inceptionYear>
+
+  <packaging>jar</packaging>
+	<licenses>
+		<license>
+			<name>CC0 1.0 Universal License</name>
+			<url>http://creativecommons.org/publicdomain/zero/1.0/</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+
+	<developers>
+		<developer>
+			<id>xulman</id>
+			<name>Vladimír Ulman</name>
+			<url>http://www.fi.muni.cz/~xulman/</url>
+		</developer>
+	</developers>
+	<contributors>
+		<contributor>
+			<name>None</name>
+		</contributor>
+	</contributors>
+
+	<mailingLists>
+		<mailingList>
+			<name>ImageJ Forum</name>
+			<archive>http://forum.imagej.net/</archive>
+		</mailingList>
+	</mailingLists>
+
+
+	<scm>
+		<connection>scm:git:git://github.com/xulman/DAIS-wp1.3</connection>
+		<developerConnection>scm:git:localhost:9999</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/xulman/DAIS-wp1.3</url>
+	</scm>
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>http://github.com/xulman/DAIS-wp1.3/issues</url>
+	</issueManagement>
+	<ciManagement>
+		<system>None</system>
+	</ciManagement>
+
+	<properties>
+		<license.licenseName>cc0</license.licenseName>
+		<license.copyrightOwners>N/A</license.copyrightOwners>
+		<license.projectName>DAIS-wp1.3</license.projectName>
+	</properties>
+
+
+  <repositories>
+    <repository>
+      <id>imagej.public</id>
+      <url>http://maven.imagej.net/content/groups/public</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.scijava</groupId>
+      <artifactId>scijava-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.zeromq</groupId>
+      <artifactId>jeromq</artifactId>
+      <version>0.4.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>net.imagej</groupId>
+      <artifactId>imagej</artifactId>
+		<scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
