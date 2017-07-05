@@ -12,9 +12,6 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
-import org.scijava.ui.UIService;
-import net.imagej.ops.OpService;
-import net.imagej.ImageJ;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
@@ -56,8 +53,12 @@ public class localNetSender implements Command
 		if (writerSocket == null) return;
 		log.info("sender connected");
 
-		String dataToSend = "Helllllllo";
+		String dataToSend = "Hellllo1";
 		System.out.println("Sending: "+dataToSend);
+		writerSocket.send(dataToSend.getBytes(), ZMQ.SNDMORE); //blocking write, can be queued
+		dataToSend+="2";
+		writerSocket.send(dataToSend.getBytes(), ZMQ.SNDMORE); //blocking write, can be queued
+		dataToSend+="3";
 		writerSocket.send(dataToSend.getBytes(), 0); //blocking write, can be queued
 
 		//clean up...

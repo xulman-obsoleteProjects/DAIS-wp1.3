@@ -12,9 +12,6 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
-import org.scijava.ui.UIService;
-import net.imagej.ops.OpService;
-import net.imagej.ImageJ;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
@@ -83,6 +80,23 @@ public class localNetReceiver implements Command
 		if (incomingData != null)
 		{
 			System.out.println("Received: " + new String(incomingData));
+
+			//is there more messages comming?
+			while (listenerSocket.hasReceiveMore())
+			{
+				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
+				System.out.println("Received: " + new String(incomingData));
+			}
+
+			/*
+			String update = String.format("%05d %d %d", zipcode, temperature, relhumidity);
+			ZMQ.Socket publisher = context.socket(ZMQ.PUB);
+			publisher.send(update, 0);
+
+			import java.util.StringTokenizer;
+			StringTokenizer sscanf = new StringTokenizer(inputString, " ");
+			int zipcode = Integer.valueOf(sscanf.nextToken());
+			*/
 
 			/*
 			// Send reply back to client
