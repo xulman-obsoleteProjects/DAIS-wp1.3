@@ -10,6 +10,10 @@ package de.mpicbg.ulman;
 import net.imagej.Dataset;
 import net.imagej.ImageJ;
 import net.imagej.ImgPlus;
+import net.imglib2.Cursor;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import de.mpicbg.ulman.ImgPacker;
 
 import io.scif.config.SCIFIOConfig;
@@ -29,6 +33,7 @@ public class testPacker
 
 		try {
 			//read the input image
+/*
 			final SCIFIOConfig openingRegime = new SCIFIOConfig();
 			openingRegime.imgOpenerSetImgModes(ImgMode.ARRAY);
 			ImgOpener imgOpener = new ImgOpener();
@@ -41,12 +46,19 @@ public class testPacker
 			ImgPlus imgPlus = ds.getImgPlus();
 */
 
+			Img<UnsignedShortType> img =
+					new ArrayImgFactory<UnsignedShortType>().create(new int[] {50, 50}, new UnsignedShortType());
+			Cursor<UnsignedShortType> c = img.cursor();
+			while (c.hasNext()) c.next().set(97);
+			ImgPlus<UnsignedShortType> imgPlus = new ImgPlus<>(img);
+
 			//init the writing socket (but not bind it)
 			ZMQ.Context zmqContext = ZMQ.context(1);
 			ZMQ.Socket writerSocket = zmqContext.socket(ZMQ.PUSH);
+			writerSocket.connect("tcp://localhost:5555");
 
 			//start up the packer class
-			final ImgPacker<?> ip = new ImgPacker<>();
+			final ImgPacker<UnsignedShortType> ip = new ImgPacker<>();
 			ip.packAndSend(imgPlus, writerSocket);
 
 			//clean up
