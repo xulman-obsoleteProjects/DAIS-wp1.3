@@ -10,8 +10,13 @@ package de.mpicbg.ulman;
 import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
+
+import net.imagej.Dataset;
+import net.imagej.ImgPlus;
+import net.imglib2.type.numeric.RealType;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
@@ -25,6 +30,9 @@ public class localNetReceiver implements Command
 
 	@Parameter
 	private StatusService statusService;
+
+	@Parameter(type = ItemIO.OUTPUT)
+	private Dataset dataset;
 
 	@Override
 	public void run()
@@ -82,8 +90,9 @@ public class localNetReceiver implements Command
 		{
 			final ImgPacker<?> ip = new ImgPacker<>();
 			try {
-				//this guy returns the ImgPlus that we desire...:w
-				ip.receiveAndUnpack(new String(incomingData), listenerSocket);
+				//this guy returns the ImgPlus that we desire...
+				ImgPlus<?> imgP = ip.receiveAndUnpack(new String(incomingData), listenerSocket);
+				dataset.setImgPlus((ImgPlus<? extends RealType<?>>)imgP);
 			} catch (Exception e) {
 				System.out.println("Error: "+e.getMessage());
 				e.printStackTrace();
