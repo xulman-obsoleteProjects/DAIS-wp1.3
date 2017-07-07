@@ -68,7 +68,7 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img instanceof PlanarImg)
 		{
 			msg += " PlanarImg ";
-			throw new Exception("Cannot send PlaneImg images yet.");
+			throw new Exception("Cannot send PlanarImg images yet.");
 			//possibly add additional configuration hints to 'msg'
 			//socket.send(msg.getBytes(), ZMQ.SNDMORE);
 
@@ -210,7 +210,7 @@ public class ImgPacker<T extends NativeType<T>>
 		{
 			//read possible additional configuration hints from 'header'
 			//and fine-tune the img
-			throw new Exception("Cannot receive PlaneImg images yet.");
+			throw new Exception("Cannot receive PlanarImg images yet.");
 			//receiveAndUnpackPlanarImg((PlanarImg)img, socket);
 		}
 		else
