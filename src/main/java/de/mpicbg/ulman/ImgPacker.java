@@ -408,11 +408,10 @@ public class ImgPacker<T extends NativeType<T>>
 
 		if (lastBlockLen > 0)
 		{
-			buf.limit(TypeSize*lastBlockLen);
-			buf.rewind();
-			buf.asShortBuffer().put(data, firstBlockLen, lastBlockLen);
-			buf.rewind();
-			socket.sendByteBuffer(buf, 0);
+			final ByteBuffer buff = ByteBuffer.allocateDirect(TypeSize*lastBlockLen);
+			buff.asShortBuffer().put(data, firstBlockLen, lastBlockLen);
+			buff.rewind();
+			socket.sendByteBuffer(buff, 0);
 		}
 	}
 
@@ -438,10 +437,9 @@ public class ImgPacker<T extends NativeType<T>>
 			final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
 			final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
 
-			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
 			for (int p=0; p < (TypeSize-1); ++p)
 			{
-				//buf.rewind(); -- sendByteBuffer should not change the position as it works on a buf.duplicate()
+				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
 				buf.asFloatBuffer().put(data, p*firstBlocksLen, firstBlocksLen);
 				buf.rewind();
 				socket.sendByteBuffer(buf, (lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
@@ -449,8 +447,7 @@ public class ImgPacker<T extends NativeType<T>>
 
 			if (lastBlockLen > 0)
 			{
-				buf.limit(TypeSize*lastBlockLen);
-				buf.rewind();
+				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*lastBlockLen);
 				buf.asFloatBuffer().put(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
 				buf.rewind();
 				socket.sendByteBuffer(buf, 0);
@@ -479,10 +476,9 @@ public class ImgPacker<T extends NativeType<T>>
 			final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
 			final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
 
-			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
 			for (int p=0; p < (TypeSize-1); ++p)
 			{
-				//buf.rewind(); -- sendByteBuffer should not change the position as it works on a buf.duplicate()
+				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
 				buf.asDoubleBuffer().put(data, p*firstBlocksLen, firstBlocksLen);
 				buf.rewind();
 				socket.sendByteBuffer(buf, (lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
@@ -490,8 +486,7 @@ public class ImgPacker<T extends NativeType<T>>
 
 			if (lastBlockLen > 0)
 			{
-				buf.limit(TypeSize*lastBlockLen);
-				buf.rewind();
+				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*lastBlockLen);
 				buf.asDoubleBuffer().put(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
 				buf.rewind();
 				socket.sendByteBuffer(buf, 0);
