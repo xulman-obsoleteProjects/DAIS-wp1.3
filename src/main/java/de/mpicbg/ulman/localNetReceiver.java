@@ -15,6 +15,7 @@ import org.scijava.log.LogService;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
+import de.mpicbg.ulman.ImgPacker;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Receiver")
 public class localNetReceiver implements Command
@@ -76,33 +77,17 @@ public class localNetReceiver implements Command
 			++timeAlreadyWaited;
 		}
 
-		//process incomming data if there is some...
+		//process incoming data if there is some...
 		if (incomingData != null)
 		{
-			System.out.println("Received: " + new String(incomingData));
-
-			//is there more messages comming?
-			while (listenerSocket.hasReceiveMore())
-			{
-				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
-				System.out.println("Received: " + new String(incomingData));
+			final ImgPacker<?> ip = new ImgPacker<>();
+			try {
+				//this guy returns the ImgPlus that we desire...:w
+				ip.receiveAndUnpack(new String(incomingData), listenerSocket);
+			} catch (Exception e) {
+				System.out.println("Error: "+e.getMessage());
+				e.printStackTrace();
 			}
-
-			/*
-			String update = String.format("%05d %d %d", zipcode, temperature, relhumidity);
-			ZMQ.Socket publisher = context.socket(ZMQ.PUB);
-			publisher.send(update, 0);
-
-			import java.util.StringTokenizer;
-			StringTokenizer sscanf = new StringTokenizer(inputString, " ");
-			int zipcode = Integer.valueOf(sscanf.nextToken());
-			*/
-
-			/*
-			// Send reply back to client
-			String reply = "World";
-			listenerSocket.send(reply.getBytes(), 0);
-			*/
 		}
 
 		//clean up...

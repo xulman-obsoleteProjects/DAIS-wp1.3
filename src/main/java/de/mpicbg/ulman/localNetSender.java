@@ -15,6 +15,7 @@ import org.scijava.log.LogService;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
+import de.mpicbg.ulman.ImgPacker;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Sender")
 public class localNetSender implements Command
@@ -53,13 +54,15 @@ public class localNetSender implements Command
 		if (writerSocket == null) return;
 		log.info("sender connected");
 
-		String dataToSend = "Hellllo1";
-		System.out.println("Sending: "+dataToSend);
-		writerSocket.send(dataToSend.getBytes(), ZMQ.SNDMORE); //blocking write, can be queued
-		dataToSend+="2";
-		writerSocket.send(dataToSend.getBytes(), ZMQ.SNDMORE); //blocking write, can be queued
-		dataToSend+="3";
-		writerSocket.send(dataToSend.getBytes(), 0); //blocking write, can be queued
+		//send the image
+		final ImgPacker<?> ip = new ImgPacker<>();
+		try {
+			//this sends the ImgPlus...
+			ip.packAndSend(imgP, writerSocket);
+		} catch (Exception e) {
+			System.out.println("Error: "+e.getMessage());
+			e.printStackTrace();
+		}
 
 		//clean up...
 		writerSocket.close();
