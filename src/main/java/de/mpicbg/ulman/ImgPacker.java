@@ -62,19 +62,20 @@ public class ImgPacker<T extends NativeType<T>>
 
 			//send metadata and voxel data afterwards
 			packAndSendPlusData(imgP, socket);
-			packAndSendArrayImg((ArrayImg<T, ? extends ArrayDataAccess<?>>)img, socket);
+			packAndSendArrayImg((ArrayImg<T,? extends ArrayDataAccess<?>>)img, socket);
 		}
 		else
 		if (img instanceof PlanarImg)
 		{
-			msg += " PlanarImg ";
-			throw new Exception("Cannot send PlanarImg images yet.");
 			//possibly add additional configuration hints to 'msg'
-			//socket.send(msg.getBytes(), ZMQ.SNDMORE);
+			msg += " PlanarImg "; //+((PlanarImg<T,?>)img).numSlices()+" ";
+			//NB: The number of planes is deterministically given by the image size/dimensions.
+			//    Hence, it is not necessary to provide such hint... 
+			socket.send(msg.getBytes(), ZMQ.SNDMORE);
 
 			//send metadata and voxel data afterwards
-			//packAndSendPlusData(imgP, socket);
-			//packAndSendPlanarImg((PlanarImg<T,?>)img, socket);
+			packAndSendPlusData(imgP, socket);
+			packAndSendPlanarImg((PlanarImg<T,? extends ArrayDataAccess<?>>)img, socket);
 		}
 		else
 		if (img instanceof CellImg)
@@ -209,9 +210,9 @@ public class ImgPacker<T extends NativeType<T>>
 		if (backendStr.startsWith("PlanarImg"))
 		{
 			//read possible additional configuration hints from 'header'
+			//final int Slices = Integer.valueOf(headerST.nextToken());
 			//and fine-tune the img
-			throw new Exception("Cannot receive PlanarImg images yet.");
-			//receiveAndUnpackPlanarImg((PlanarImg)img, socket);
+			receiveAndUnpackPlanarImg((PlanarImg)img, socket);
 		}
 		else
 		if (backendStr.startsWith("CellImg"))
@@ -269,26 +270,26 @@ public class ImgPacker<T extends NativeType<T>>
 		case 2: //UnsignedByteType
 			{
 			final byte[] data = (byte[])img.update(null).getCurrentStorageArray();
-			packAndSendBytes(data, socket);
+			packAndSendBytes(data, socket, false);
 			}
 			break;
 		case 3: //ShortType
 		case 4: //UnsignedShortType
 			{
 			final short[] data = (short[])img.update(null).getCurrentStorageArray();
-			packAndSendShorts(data, socket);
+			packAndSendShorts(data, socket, false);
 			}
 			break;
 		case 5: //FloatType
 			{
 			final float[] data = (float[])img.update(null).getCurrentStorageArray();
-			packAndSendFloats(data, socket);
+			packAndSendFloats(data, socket, false);
 			}
 			break;
 		case 6: //DoubleType
 			{
 			final double[] data = (double[])img.update(null).getCurrentStorageArray();
-			packAndSendDoubles(data, socket);
+			packAndSendDoubles(data, socket, false);
 			}
 			break;
 		default:
@@ -341,10 +342,115 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img.size() == 0)
 			throw new Exception("Refusing to send an empty image...");
 
-		for (int slice = 0; slice < img.numSlices(); ++slice)
+		switch (typeToTypeID(img.firstElement()))
 		{
-			img.getPlane(slice).getCurrentStorageArray();
+		case 1: //ByteType
+		case 2: //UnsignedByteType
+			for (int slice = 0; slice < img.numSlices()-1; ++slice)
+			{
+				final byte[] data = (byte[])img.getPlane(slice).getCurrentStorageArray();
+				packAndSendBytes(data, socket, true);
+			}
+			{
+				final byte[] data = (byte[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+				packAndSendBytes(data, socket, false);
+			}
+			break;
+		case 3: //ShortType
+		case 4: //UnsignedShortType
+			for (int slice = 0; slice < img.numSlices()-1; ++slice)
+			{
+				final short[] data = (short[])img.getPlane(slice).getCurrentStorageArray();
+				packAndSendShorts(data, socket, true);
+			}
+			{
+				final short[] data = (short[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+				packAndSendShorts(data, socket, false);
+			}
+			break;
+		case 5: //FloatType
+			for (int slice = 0; slice < img.numSlices()-1; ++slice)
+			{
+				final float[] data = (float[])img.getPlane(slice).getCurrentStorageArray();
+				packAndSendFloats(data, socket, true);
+			}
+			{
+				final float[] data = (float[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+				packAndSendFloats(data, socket, false);
+			}
+			break;
+		case 6: //DoubleType
+			for (int slice = 0; slice < img.numSlices()-1; ++slice)
+			{
+				final double[] data = (double[])img.getPlane(slice).getCurrentStorageArray();
+				packAndSendDoubles(data, socket, true);
+			}
+			{
+				final double[] data = (double[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+				packAndSendDoubles(data, socket, false);
+			}
+			break;
+		default:
+			throw new Exception("Unsupported voxel type, sorry.");
+		}
+	}
 
+	private
+	void receiveAndUnpackPlanarImg(final PlanarImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket) throws Exception
+	{
+		if (img.size() == 0)
+			throw new Exception("Refusing to receive an empty image...");
+
+		switch (typeToTypeID(img.firstElement()))
+		{
+		case 1: //ByteType
+		case 2: //UnsignedByteType
+			for (int slice = 0; slice < img.numSlices()-1; ++slice)
+			{
+				final byte[] data = (byte[])img.getPlane(slice).getCurrentStorageArray();
+				receiveAndUnpackBytes(data, socket);
+			}
+			{
+				final byte[] data = (byte[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+				receiveAndUnpackBytes(data, socket);
+			}
+			break;
+		case 3: //ShortType
+		case 4: //UnsignedShortType
+			for (int slice = 0; slice < img.numSlices()-1; ++slice)
+			{
+				final short[] data = (short[])img.getPlane(slice).getCurrentStorageArray();
+				receiveAndUnpackShorts(data, socket);
+			}
+			{
+				final short[] data = (short[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+				receiveAndUnpackShorts(data, socket);
+			}
+			break;
+		case 5: //FloatType
+			for (int slice = 0; slice < img.numSlices()-1; ++slice)
+			{
+				final float[] data = (float[])img.getPlane(slice).getCurrentStorageArray();
+				receiveAndUnpackFloats(data, socket);
+			}
+			{
+				final float[] data = (float[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+				receiveAndUnpackFloats(data, socket);
+			}
+			break;
+		case 6: //DoubleType
+			for (int slice = 0; slice < img.numSlices()-1; ++slice)
+			{
+				final double[] data = (double[])img.getPlane(slice).getCurrentStorageArray();
+				receiveAndUnpackDoubles(data, socket);
+			}
+			{
+				final double[] data = (double[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+				receiveAndUnpackDoubles(data, socket);
+			}
+			break;
+		default:
+			throw new Exception("Unsupported voxel type, sorry.");
 		}
 	}
 
@@ -379,16 +485,16 @@ public class ImgPacker<T extends NativeType<T>>
 
 	// -------- basic types storage vs. ByteType un/packagers --------
 	private
-	void packAndSendBytes(final byte[] data, final ZMQ.Socket socket)
+	void packAndSendBytes(final byte[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
 		buf.put(data);
 		buf.rewind();
-		socket.sendByteBuffer(buf, 0);
+		socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
 	}
 
 	private
-	void packAndSendShorts(final short[] data, final ZMQ.Socket socket)
+	void packAndSendShorts(final short[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		//the data array might be as much as twice longer than what a byte[] array can store,
 		//we have to copy half by half (each is up to byte[] array max capacity)
@@ -404,19 +510,19 @@ public class ImgPacker<T extends NativeType<T>>
 		final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlockLen);
 		buf.asShortBuffer().put(data, 0, firstBlockLen);
 		buf.rewind();
-		socket.sendByteBuffer(buf, (lastBlockLen > 0? ZMQ.SNDMORE : 0));
+		socket.sendByteBuffer(buf, (comingMore || lastBlockLen > 0? ZMQ.SNDMORE : 0));
 
 		if (lastBlockLen > 0)
 		{
 			final ByteBuffer buff = ByteBuffer.allocateDirect(TypeSize*lastBlockLen);
 			buff.asShortBuffer().put(data, firstBlockLen, lastBlockLen);
 			buff.rewind();
-			socket.sendByteBuffer(buff, 0);
+			socket.sendByteBuffer(buff, (comingMore? ZMQ.SNDMORE : 0));
 		}
 	}
 
 	private
-	void packAndSendFloats(final float[] data, final ZMQ.Socket socket)
+	void packAndSendFloats(final float[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final int TypeSize = 4;
 
@@ -429,7 +535,7 @@ public class ImgPacker<T extends NativeType<T>>
 			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
 			buf.asFloatBuffer().put(data, 0, data.length);
 			buf.rewind();
-			socket.sendByteBuffer(buf, 0);
+			socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
 		}
 		else
 		{
@@ -442,7 +548,7 @@ public class ImgPacker<T extends NativeType<T>>
 				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
 				buf.asFloatBuffer().put(data, p*firstBlocksLen, firstBlocksLen);
 				buf.rewind();
-				socket.sendByteBuffer(buf, (lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
+				socket.sendByteBuffer(buf, (comingMore || lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
 			}
 
 			if (lastBlockLen > 0)
@@ -450,13 +556,13 @@ public class ImgPacker<T extends NativeType<T>>
 				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*lastBlockLen);
 				buf.asFloatBuffer().put(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
 				buf.rewind();
-				socket.sendByteBuffer(buf, 0);
+				socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
 			}
 		}
 	}
 
 	private
-	void packAndSendDoubles(final double[] data, final ZMQ.Socket socket)
+	void packAndSendDoubles(final double[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final int TypeSize = 8;
 
@@ -469,7 +575,7 @@ public class ImgPacker<T extends NativeType<T>>
 			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
 			buf.asDoubleBuffer().put(data, 0, data.length);
 			buf.rewind();
-			socket.sendByteBuffer(buf, 0);
+			socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
 		}
 		else
 		{
@@ -481,7 +587,7 @@ public class ImgPacker<T extends NativeType<T>>
 				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
 				buf.asDoubleBuffer().put(data, p*firstBlocksLen, firstBlocksLen);
 				buf.rewind();
-				socket.sendByteBuffer(buf, (lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
+				socket.sendByteBuffer(buf, (comingMore || lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
 			}
 
 			if (lastBlockLen > 0)
@@ -489,7 +595,7 @@ public class ImgPacker<T extends NativeType<T>>
 				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*lastBlockLen);
 				buf.asDoubleBuffer().put(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
 				buf.rewind();
-				socket.sendByteBuffer(buf, 0);
+				socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
 			}
 		}
 	}
