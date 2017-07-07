@@ -13,7 +13,6 @@ import org.scijava.plugin.Plugin;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 
-import net.imagej.Dataset;
 import net.imagej.ImgPlus;
 
 import org.zeromq.ZMQ;
@@ -30,7 +29,7 @@ public class localNetSender implements Command
 	private StatusService statusService;
 
 	@Parameter
-	private Dataset dataset;
+	private ImgPlus<?> imgP;
 
 	@Override
 	public void run()
@@ -52,7 +51,7 @@ public class localNetSender implements Command
 			writerSocket.close();
 			zmqContext.term();
 
-			//indiciation of failure
+			//indication of failure
 			writerSocket = null;
 		}
 
@@ -64,7 +63,7 @@ public class localNetSender implements Command
 		final ImgPacker<?> ip = new ImgPacker<>();
 		try {
 			//this sends the ImgPlus...
-			ip.packAndSend((ImgPlus)dataset.getImgPlus(), writerSocket);
+			ip.packAndSend((ImgPlus) imgP, writerSocket);
 		} catch (Exception e) {
 			System.out.println("Error: "+e.getMessage());
 			e.printStackTrace();
