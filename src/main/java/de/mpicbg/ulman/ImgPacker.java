@@ -13,6 +13,7 @@ import net.imglib2.img.Img;
 import net.imglib2.img.WrappedImg;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
+//import net.imglib2.img.array.ArrayImgs; -- see the hing in packAndSendArrayImg()
 import net.imglib2.img.basictypeaccess.array.ArrayDataAccess;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.img.cell.CellImgFactory;
@@ -210,7 +211,7 @@ public class ImgPacker<T extends NativeType<T>>
 			//read possible additional configuration hints from 'header'
 			//and fine-tune the img
 			throw new Exception("Cannot receive PlaneImg images yet.");
-			//receiveAndUnpackArrayImg((PlanarImg)img, socket);
+			//receiveAndUnpackPlanarImg((PlanarImg)img, socket);
 		}
 		else
 		if (backendStr.startsWith("CellImg"))
@@ -218,7 +219,7 @@ public class ImgPacker<T extends NativeType<T>>
 			//read possible additional configuration hints from 'header'
 			//and fine-tune the img
 			throw new Exception("Cannot receive CellImg images yet.");
-			//receiveAndUnpackArrayImg((CellImg)img, socket);
+			//receiveAndUnpackCellImg((CellImg)img, socket);
 		}
 		else
 			throw new Exception("Unsupported image backend type, sorry.");
@@ -249,6 +250,18 @@ public class ImgPacker<T extends NativeType<T>>
 	{
 		if (img.size() == 0)
 			throw new Exception("Refusing to send an empty image...");
+
+/*
+		//create a buffer to hold the whole image (limit: img must not have more than 2GB of voxels)
+		float[] array = new float[width * height];
+
+		//create an image on top of this buffer
+		Img<FloatType> wrappedArray = ArrayImgs.floats(array, width, height);
+
+		//copy any image (that fits to the limit) to this image
+		//and the voxel data will be available in the 'array' -- ready for transmission
+		copy(img, wrappedArray);
+*/
 
 		switch (typeToTypeID(img.firstElement()))
 		{
