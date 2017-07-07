@@ -269,124 +269,26 @@ public class ImgPacker<T extends NativeType<T>>
 		case 2: //UnsignedByteType
 			{
 			final byte[] data = (byte[])img.update(null).getCurrentStorageArray();
-
-			final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
-			buf.put(data);
-			buf.rewind();
-			socket.sendByteBuffer(buf, 0);
+			packAndSendBytes(data, socket);
 			}
 			break;
 		case 3: //ShortType
 		case 4: //UnsignedShortType
 			{
 			final short[] data = (short[])img.update(null).getCurrentStorageArray();
-			//the data array might be as much as twice longer than what a byte[] array can store,
-			//we have to copy half by half (each is up to byte[] array max capacity)
-			//
-			//but we keep addressing in the units of shorts :(
-			//while in bytes the length of the data is always perfectly divisible by two,
-			//it might not be the case in units of shorts
-			final int TypeSize = 2;
-			final int firstBlockLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
-			final int lastBlockLen = data.length - (TypeSize-1)*firstBlockLen;
-			//NB: firstBlockLen >= lastBlockLen
-
-			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlockLen);
-			buf.asShortBuffer().put(data, 0, firstBlockLen);
-			buf.rewind();
-			socket.sendByteBuffer(buf, (lastBlockLen > 0? ZMQ.SNDMORE : 0));
-
-			if (lastBlockLen > 0)
-			{
-				buf.limit(TypeSize*lastBlockLen);
-				buf.rewind();
-				buf.asShortBuffer().put(data, firstBlockLen, lastBlockLen);
-				buf.rewind();
-				socket.sendByteBuffer(buf, 0);
-			}
+			packAndSendShorts(data, socket);
 			}
 			break;
 		case 5: //FloatType
 			{
 			final float[] data = (float[])img.update(null).getCurrentStorageArray();
-			final int TypeSize = 4;
-
-			if (data.length < 1024)
-			{
-				//array that is short enough to be hosted entirely with byte[] array,
-				//will be sent in one shot
-				//NB: the else branch below cannot handle when data.length < 3,
-				//    and why to split the short arrays anyways?
-				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
-				buf.asFloatBuffer().put(data, 0, data.length);
-				buf.rewind();
-				socket.sendByteBuffer(buf, 0);
-			}
-			else
-			{
-				//float array, when seen as byte array, may exceed byte array's max length
-				final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
-				final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
-
-				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
-				for (int p=0; p < (TypeSize-1); ++p)
-				{
-					//buf.rewind(); -- sendByteBuffer should not change the position as it works on a buf.duplicate()
-					buf.asFloatBuffer().put(data, p*firstBlocksLen, firstBlocksLen);
-					buf.rewind();
-					socket.sendByteBuffer(buf, (lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
-				}
-
-				if (lastBlockLen > 0)
-				{
-					buf.limit(TypeSize*lastBlockLen);
-					buf.rewind();
-					buf.asFloatBuffer().put(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
-					buf.rewind();
-					socket.sendByteBuffer(buf, 0);
-				}
-			}
+			packAndSendFloats(data, socket);
 			}
 			break;
 		case 6: //DoubleType
 			{
 			final double[] data = (double[])img.update(null).getCurrentStorageArray();
-			final int TypeSize = 8;
-
-			if (data.length < 1024)
-			{
-				//array that is short enough to be hosted entirely with byte[] array,
-				//will be sent in one shot
-				//NB: the else branch below cannot handle when data.length < 7,
-				//    and why to split the short arrays anyways?
-				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
-				buf.asDoubleBuffer().put(data, 0, data.length);
-				buf.rewind();
-				socket.sendByteBuffer(buf, 0);
-			}
-			else
-			{
-				final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
-				final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
-
-				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
-				for (int p=0; p < (TypeSize-1); ++p)
-				{
-					//buf.rewind(); -- sendByteBuffer should not change the position as it works on a buf.duplicate()
-					buf.asDoubleBuffer().put(data, p*firstBlocksLen, firstBlocksLen);
-					buf.rewind();
-					socket.sendByteBuffer(buf, (lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
-				}
-
-				if (lastBlockLen > 0)
-				{
-					buf.limit(TypeSize*lastBlockLen);
-					buf.rewind();
-					buf.asDoubleBuffer().put(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
-					buf.rewind();
-					socket.sendByteBuffer(buf, 0);
-				}
-			}
+			packAndSendDoubles(data, socket);
 			}
 			break;
 		default:
@@ -400,146 +302,49 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img.size() == 0)
 			throw new Exception("Refusing to receive an empty image...");
 
-		//are there any further messages pending?
-		waitForVoxels(socket);
-
 		switch (typeToTypeID(img.firstElement()))
 		{
 		case 1: //ByteType
 		case 2: //UnsignedByteType
 			{
 			final byte[] data = (byte[])img.update(null).getCurrentStorageArray();
-
-			final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
-			socket.recvByteBuffer(buf, 0);
-			buf.rewind();
-			buf.get(data);
+			receiveAndUnpackBytes(data, socket);
 			}
 			break;
 		case 3: //ShortType
 		case 4: //UnsignedShortType
 			{
 			final short[] data = (short[])img.update(null).getCurrentStorageArray();
-			//the data array might be as much as twice longer than what a byte[] array can store,
-			//we have to copy half by half (each is up to byte[] array max capacity)
-			//
-			//but we keep addressing in the units of shorts :(
-			//while in bytes the length of the data is always perfectly divisible by two,
-			//it might not be the case in units of shorts
-			final int TypeSize = 2;
-			final int firstBlockLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
-			final int lastBlockLen = data.length - (TypeSize-1)*firstBlockLen;
-			//NB: firstBlockLen >= lastBlockLen
-
-			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlockLen);
-			socket.recvByteBuffer(buf, 0); //blocking read since we got over waitForVoxels()
-			buf.rewind();
-			buf.asShortBuffer().get(data, 0, firstBlockLen);
-
-			if (lastBlockLen > 0)
-			{
-				//make buffer ready for receiving the second part
-				buf.limit(TypeSize*lastBlockLen);
-				buf.rewind();
-
-				//get the data
-				waitForVoxels(socket);
-				socket.recvByteBuffer(buf, 0);
-
-				buf.rewind(); //recvByteBuffer() has changed the position!
-				buf.asShortBuffer().get(data, firstBlockLen, lastBlockLen);
-			}
+			receiveAndUnpackShorts(data, socket);
 			}
 			break;
 		case 5: //FloatType
 			{
 			final float[] data = (float[])img.update(null).getCurrentStorageArray();
-			final int TypeSize = 4;
-
-			if (data.length < 1024)
-			{
-				//array that is short enough to be hosted entirely with byte[] array,
-				//will be sent in one shot
-				//NB: the else branch below cannot handle when data.length < 3,
-				//    and why to split the short arrays anyways?
-				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
-				socket.recvByteBuffer(buf, 0);
-				buf.rewind();
-				buf.asFloatBuffer().get(data, 0, data.length);
-			}
-			else
-			{
-				//float array, when seen as byte array, may exceed byte array's max length
-				final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
-				final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
-
-				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
-				for (int p=0; p < (TypeSize-1); ++p)
-				{
-					waitForVoxels(socket);
-					socket.recvByteBuffer(buf, 0);
-					buf.rewind();
-					buf.asFloatBuffer().get(data, p*firstBlocksLen, firstBlocksLen);
-					buf.rewind();
-				}
-
-				if (lastBlockLen > 0)
-				{
-					buf.limit(TypeSize*lastBlockLen);
-					buf.rewind();
-					waitForVoxels(socket);
-					socket.recvByteBuffer(buf, 0);
-					buf.rewind();
-					buf.asFloatBuffer().get(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
-				}
-			}
+			receiveAndUnpackFloats(data, socket);
 			}
 			break;
 		case 6: //DoubleType
 			{
 			final double[] data = (double[])img.update(null).getCurrentStorageArray();
-			final int TypeSize = 8;
-
-			if (data.length < 1024)
-			{
-				//array that is short enough to be hosted entirely with byte[] array,
-				//will be sent in one shot
-				//NB: the else branch below cannot handle when data.length < 7,
-				//    and why to split the short arrays anyways?
-				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
-				socket.recvByteBuffer(buf, 0);
-				buf.rewind();
-				buf.asDoubleBuffer().get(data, 0, data.length);
-			}
-			else
-			{
-				final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
-				final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
-
-				final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
-				for (int p=0; p < (TypeSize-1); ++p)
-				{
-					waitForVoxels(socket);
-					socket.recvByteBuffer(buf, 0);
-					buf.rewind();
-					buf.asDoubleBuffer().get(data, p*firstBlocksLen, firstBlocksLen);
-					buf.rewind();
-				}
-
-				if (lastBlockLen > 0)
-				{
-					buf.limit(TypeSize*lastBlockLen);
-					buf.rewind();
-					waitForVoxels(socket);
-					socket.recvByteBuffer(buf, 0);
-					buf.rewind();
-					buf.asDoubleBuffer().get(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
-				}
-			}
+			receiveAndUnpackDoubles(data, socket);
 			}
 			break;
 		default:
 			throw new Exception("Unsupported voxel type, sorry.");
+		}
+	}
+
+	private
+	void packAndSendPlanarImg(final PlanarImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket) throws Exception
+	{
+		if (img.size() == 0)
+			throw new Exception("Refusing to send an empty image...");
+
+		for (int slice = 0; slice < img.numSlices(); ++slice)
+		{
+			img.getPlane(slice).getCurrentStorageArray();
+
 		}
 	}
 
@@ -569,6 +374,264 @@ public class ImgPacker<T extends NativeType<T>>
 
 		if (!socket.hasReceiveMore())
 			throw new Exception("Time out for incomming voxel data.");
+	}
+
+
+	// -------- basic types storage vs. ByteType un/packagers --------
+	private
+	void packAndSendBytes(final byte[] data, final ZMQ.Socket socket)
+	{
+		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
+		buf.put(data);
+		buf.rewind();
+		socket.sendByteBuffer(buf, 0);
+	}
+
+	private
+	void packAndSendShorts(final short[] data, final ZMQ.Socket socket)
+	{
+		//the data array might be as much as twice longer than what a byte[] array can store,
+		//we have to copy half by half (each is up to byte[] array max capacity)
+		//
+		//but we keep addressing in the units of shorts :(
+		//while in bytes the length of the data is always perfectly divisible by two,
+		//it might not be the case in units of shorts
+		final int TypeSize = 2;
+		final int firstBlockLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
+		final int lastBlockLen = data.length - (TypeSize-1)*firstBlockLen;
+		//NB: firstBlockLen >= lastBlockLen
+
+		final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlockLen);
+		buf.asShortBuffer().put(data, 0, firstBlockLen);
+		buf.rewind();
+		socket.sendByteBuffer(buf, (lastBlockLen > 0? ZMQ.SNDMORE : 0));
+
+		if (lastBlockLen > 0)
+		{
+			buf.limit(TypeSize*lastBlockLen);
+			buf.rewind();
+			buf.asShortBuffer().put(data, firstBlockLen, lastBlockLen);
+			buf.rewind();
+			socket.sendByteBuffer(buf, 0);
+		}
+	}
+
+	private
+	void packAndSendFloats(final float[] data, final ZMQ.Socket socket)
+	{
+		final int TypeSize = 4;
+
+		if (data.length < 1024)
+		{
+			//array that is short enough to be hosted entirely with byte[] array,
+			//will be sent in one shot
+			//NB: the else branch below cannot handle when data.length < 3,
+			//    and why to split the short arrays anyways?
+			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
+			buf.asFloatBuffer().put(data, 0, data.length);
+			buf.rewind();
+			socket.sendByteBuffer(buf, 0);
+		}
+		else
+		{
+			//float array, when seen as byte array, may exceed byte array's max length
+			final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
+			final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
+
+			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
+			for (int p=0; p < (TypeSize-1); ++p)
+			{
+				//buf.rewind(); -- sendByteBuffer should not change the position as it works on a buf.duplicate()
+				buf.asFloatBuffer().put(data, p*firstBlocksLen, firstBlocksLen);
+				buf.rewind();
+				socket.sendByteBuffer(buf, (lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
+			}
+
+			if (lastBlockLen > 0)
+			{
+				buf.limit(TypeSize*lastBlockLen);
+				buf.rewind();
+				buf.asFloatBuffer().put(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
+				buf.rewind();
+				socket.sendByteBuffer(buf, 0);
+			}
+		}
+	}
+
+	private
+	void packAndSendDoubles(final double[] data, final ZMQ.Socket socket)
+	{
+		final int TypeSize = 8;
+
+		if (data.length < 1024)
+		{
+			//array that is short enough to be hosted entirely with byte[] array,
+			//will be sent in one shot
+			//NB: the else branch below cannot handle when data.length < 7,
+			//    and why to split the short arrays anyways?
+			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
+			buf.asDoubleBuffer().put(data, 0, data.length);
+			buf.rewind();
+			socket.sendByteBuffer(buf, 0);
+		}
+		else
+		{
+			final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
+			final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
+
+			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
+			for (int p=0; p < (TypeSize-1); ++p)
+			{
+				//buf.rewind(); -- sendByteBuffer should not change the position as it works on a buf.duplicate()
+				buf.asDoubleBuffer().put(data, p*firstBlocksLen, firstBlocksLen);
+				buf.rewind();
+				socket.sendByteBuffer(buf, (lastBlockLen > 0 || p < TypeSize-2 ? ZMQ.SNDMORE : 0));
+			}
+
+			if (lastBlockLen > 0)
+			{
+				buf.limit(TypeSize*lastBlockLen);
+				buf.rewind();
+				buf.asDoubleBuffer().put(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
+				buf.rewind();
+				socket.sendByteBuffer(buf, 0);
+			}
+		}
+	}
+
+	private
+	void receiveAndUnpackBytes(final byte[] data, final ZMQ.Socket socket) throws Exception
+	{
+		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
+		//are there any further messages pending?
+		waitForVoxels(socket);
+		socket.recvByteBuffer(buf, 0);
+		buf.rewind();
+		buf.get(data);
+	}
+
+	private
+	void receiveAndUnpackShorts(final short[] data, final ZMQ.Socket socket) throws Exception
+	{
+		//the data array might be as much as twice longer than what a byte[] array can store,
+		//we have to copy half by half (each is up to byte[] array max capacity)
+		//
+		//but we keep addressing in the units of shorts :(
+		//while in bytes the length of the data is always perfectly divisible by two,
+		//it might not be the case in units of shorts
+		final int TypeSize = 2;
+		final int firstBlockLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
+		final int lastBlockLen = data.length - (TypeSize-1)*firstBlockLen;
+		//NB: firstBlockLen >= lastBlockLen
+
+		final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlockLen);
+		waitForVoxels(socket);
+		socket.recvByteBuffer(buf, 0); //blocking read since we got over waitForVoxels()
+		buf.rewind();
+		buf.asShortBuffer().get(data, 0, firstBlockLen);
+
+		if (lastBlockLen > 0)
+		{
+			//make buffer ready for receiving the second part
+			buf.limit(TypeSize*lastBlockLen);
+			buf.rewind();
+
+			//get the data
+			waitForVoxels(socket);
+			socket.recvByteBuffer(buf, 0);
+
+			buf.rewind(); //recvByteBuffer() has changed the position!
+			buf.asShortBuffer().get(data, firstBlockLen, lastBlockLen);
+		}
+	}
+
+	private
+	void receiveAndUnpackFloats(final float[] data, final ZMQ.Socket socket) throws Exception
+	{
+		final int TypeSize = 4;
+
+		if (data.length < 1024)
+		{
+			//array that is short enough to be hosted entirely with byte[] array,
+			//will be sent in one shot
+			//NB: the else branch below cannot handle when data.length < 3,
+			//    and why to split the short arrays anyways?
+			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
+			waitForVoxels(socket);
+			socket.recvByteBuffer(buf, 0);
+			buf.rewind();
+			buf.asFloatBuffer().get(data, 0, data.length);
+		}
+		else
+		{
+			//float array, when seen as byte array, may exceed byte array's max length
+			final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
+			final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
+
+			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
+			for (int p=0; p < (TypeSize-1); ++p)
+			{
+				waitForVoxels(socket);
+				socket.recvByteBuffer(buf, 0);
+				buf.rewind();
+				buf.asFloatBuffer().get(data, p*firstBlocksLen, firstBlocksLen);
+				buf.rewind();
+			}
+
+			if (lastBlockLen > 0)
+			{
+				buf.limit(TypeSize*lastBlockLen);
+				buf.rewind();
+				waitForVoxels(socket);
+				socket.recvByteBuffer(buf, 0);
+				buf.rewind();
+				buf.asFloatBuffer().get(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
+			}
+		}
+	}
+
+	private
+	void receiveAndUnpackDoubles(final double[] data, final ZMQ.Socket socket) throws Exception
+	{
+		final int TypeSize = 8;
+
+		if (data.length < 1024)
+		{
+			//array that is short enough to be hosted entirely with byte[] array,
+			//will be sent in one shot
+			//NB: the else branch below cannot handle when data.length < 7,
+			//    and why to split the short arrays anyways?
+			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
+			waitForVoxels(socket);
+			socket.recvByteBuffer(buf, 0);
+			buf.rewind();
+			buf.asDoubleBuffer().get(data, 0, data.length);
+		}
+		else
+		{
+			final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
+			final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
+
+			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
+			for (int p=0; p < (TypeSize-1); ++p)
+			{
+				waitForVoxels(socket);
+				socket.recvByteBuffer(buf, 0);
+				buf.rewind();
+				buf.asDoubleBuffer().get(data, p*firstBlocksLen, firstBlocksLen);
+				buf.rewind();
+			}
+
+			if (lastBlockLen > 0)
+			{
+				buf.limit(TypeSize*lastBlockLen);
+				buf.rewind();
+				waitForVoxels(socket);
+				socket.recvByteBuffer(buf, 0);
+				buf.rewind();
+				buf.asDoubleBuffer().get(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
+			}
+		}
 	}
 
 
