@@ -11,6 +11,7 @@ import net.imagej.Dataset;
 import net.imagej.ImageJ;
 import net.imagej.ImgPlus;
 import net.imglib2.Cursor;
+import net.imglib2.RandomAccess;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -20,6 +21,7 @@ import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
+import io.scif.img.ImgSaver;
 
 import org.zeromq.ZMQ;
 
@@ -50,7 +52,36 @@ public class testPacker
 					new ArrayImgFactory<UnsignedShortType>().create(new int[] {50, 50}, new UnsignedShortType());
 			Cursor<UnsignedShortType> c = img.cursor();
 			while (c.hasNext()) c.next().set(97);
+			RandomAccess<UnsignedShortType> r = img.randomAccess();
+			int[] pos = new int[2];
+			for (int i=0;i < 25; ++i)
+			{
+				pos[0]=i;
+				pos[1]=i;
+				r.setPosition(pos);
+				r.get().set(200);
+
+				pos[0]=49-i;
+				r.setPosition(pos);
+				r.get().set(150);
+			}
+			for (int i=25;i < 50; ++i)
+			{
+				pos[0]=i;
+				pos[1]=i;
+				r.setPosition(pos);
+				r.get().set(205);
+
+				pos[0]=49-i;
+				r.setPosition(pos);
+				r.get().set(155);
+			}
 			ImgPlus<UnsignedShortType> imgPlus = new ImgPlus<>(img);
+
+/*
+			ImgSaver is = new ImgSaver();
+			is.saveImg("/Users/ulman/DATA/removeMe.tif", imgPlus);
+*/
 
 			//init the writing socket (but not bind it)
 			ZMQ.Context zmqContext = ZMQ.context(1);
