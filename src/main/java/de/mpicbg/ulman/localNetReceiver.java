@@ -60,6 +60,9 @@ public class localNetReceiver implements Command
 			min="1")
 	private int timeoutTime = 60;
 
+	@Parameter(visibility = ItemVisibility.MESSAGE)
+	private String firewallMsg = "Make sure the firewall is not blocking incomming connections to Fiji.";
+
 	@Override
 	public void run()
 	{
