@@ -56,7 +56,7 @@ public class localNetReceiver implements Command
 	@Parameter(label = "listening timeout in seconds:",
 			description = "The maximum time in seconds during which Fiji waits"
 			+" for incomming connection. If nothing comes after this period of time,"
-			+ "the listening is stopped until this command is started again.",
+			+" the listening is stopped until this command is started again.",
 			min="1")
 	private int timeoutTime = 60;
 
@@ -71,7 +71,8 @@ public class localNetReceiver implements Command
 		try {
 			//port to listen for incomming data
 			listenerSocket = zmqContext.socket(ZMQ.PULL);
-			listenerSocket.bind("tcp://"+hostURL+":"+portNo);
+			//listenerSocket.bind("tcp://"+hostURL+":"+portNo);
+			listenerSocket.bind("tcp://*:"+portNo); //until hostURL is retrieved reliably
 		}
 		catch (ZMQException e) {
 			//log.error(e);
