@@ -10,6 +10,7 @@ package de.mpicbg.ulman;
 import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 
@@ -31,6 +32,16 @@ public class localNetSender implements Command
 	@Parameter
 	private ImgPlus<?> imgP;
 
+	@Parameter(visibility = ItemVisibility.MESSAGE, initializer="getHostURL")
+	private String hostURL = "Please, ask your receiving partner to tell you his address.";
+
+	@Parameter(label = "address:port of the receiving Fiji:",
+			description = "The address can be anything as example.net or IP address"
+			+" as 10.0.0.2 delimited with ':' followed by a port number higher than"
+			+" 1024 such as 54545. It is important not to use any spaces.",
+			columns=15)
+	private String remoteURL = "replace_me:54545";
+
 	@Override
 	public void run()
 	{
@@ -42,7 +53,7 @@ public class localNetSender implements Command
 		try {
 			//peer to send data out
 			writerSocket = zmqContext.socket(ZMQ.PUSH);
-			writerSocket.connect("tcp://localhost:5555");
+			writerSocket.connect("tcp://"+remoteURL);
 		}
 		catch (ZMQException e) {
 			log.error(e);

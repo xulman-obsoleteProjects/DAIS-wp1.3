@@ -10,7 +10,12 @@ package de.mpicbg.ulman;
 import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import org.scijava.ItemIO;
+import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 
@@ -32,6 +37,29 @@ public class localNetReceiver implements Command
 	@Parameter(type = ItemIO.OUTPUT)
 	private ImgPlus<?> imgP;
 
+	@Parameter(visibility = ItemVisibility.MESSAGE, initializer="getHostURL")
+	private String hostURLmsg = "";
+
+	private String hostURL = "";
+	void getHostURL() throws UnknownHostException
+	{
+		hostURL = InetAddress.getLocalHost().getHostAddress();
+		hostURLmsg = "Please, tell your sending partner to use this for the address: ";
+		hostURLmsg += hostURL;
+	}
+
+	@Parameter(label = "port to listen at:",
+			description = "The port number should be higher than"
+			+" 1024 such as 54545. It is important not to use any spaces.")
+	private String portNo = "54545";
+
+	@Parameter(label = "listening timeout in seconds:",
+			description = "The maximum time in seconds during which Fiji waits"
+			+" for incomming connection. If nothing comes after this period of time,"
+			+ "the listening is stopped until this command is started again.",
+			min="1")
+	private int timeoutTime = 60;
+
 	@Override
 	public void run()
 	{
@@ -43,7 +71,7 @@ public class localNetReceiver implements Command
 		try {
 			//port to listen for incomming data
 			listenerSocket = zmqContext.socket(ZMQ.PULL);
-			listenerSocket.bind("tcp://*:5555");
+			listenerSocket.bind("tcp://"+hostURL+":"+portNo);
 		}
 		catch (ZMQException e) {
 			//log.error(e);
@@ -66,7 +94,7 @@ public class localNetReceiver implements Command
 
 		//"busy wait" up to the given period of time
 		int timeAlreadyWaited=0;
-		while (timeAlreadyWaited < 20 && incomingData == null)
+		while (timeAlreadyWaited < timeoutTime && incomingData == null)
 		{
 			log.info("receiver read attempt no. "+timeAlreadyWaited);
 
