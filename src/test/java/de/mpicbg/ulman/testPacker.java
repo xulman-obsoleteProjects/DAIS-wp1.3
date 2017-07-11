@@ -86,7 +86,7 @@ public class testPacker
 			//init the writing socket (but not bind it)
 			ZMQ.Context zmqContext = ZMQ.context(1);
 			ZMQ.Socket writerSocket = zmqContext.socket(ZMQ.PUSH);
-			writerSocket.connect("tcp://localhost:5555");
+			writerSocket.connect("tcp://localhost:54545");
 
 			//start up the packer class
 			final ImgPacker<UnsignedShortType> ip = new ImgPacker<>();
