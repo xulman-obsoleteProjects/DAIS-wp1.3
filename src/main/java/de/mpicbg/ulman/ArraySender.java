@@ -6,6 +6,14 @@ import java.nio.ByteBuffer;
 
 class ArraySender {
 	// -------- basic types storage vs. ByteType un/packagers --------
+
+	static void sendArray(final Object array, final ZMQ.Socket socket, boolean comingMore) {
+		if(array instanceof byte[]) sendBytes((byte[]) array, socket, comingMore);
+		if(array instanceof short[]) sendShorts((short[]) array, socket, comingMore);
+		if(array instanceof float[]) sendFloats((float[]) array, socket, comingMore);
+		if(array instanceof double[]) sendDoubles((double[]) array, socket, comingMore);
+	}
+
 	static void sendBytes(final byte[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);

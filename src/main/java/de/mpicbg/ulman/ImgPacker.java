@@ -199,49 +199,8 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to send an empty image...");
 
-/*
-		//create a buffer to hold the whole image (limit: img must not have more than 2GB of voxels)
-		float[] array = new float[width * height];
-
-		//create an image on top of this buffer
-		Img<FloatType> wrappedArray = ArrayImgs.floats(array, width, height);
-
-		//copy any image (that fits to the limit) to this image
-		//and the voxel data will be available in the 'array' -- ready for transmission
-		copy(img, wrappedArray);
-*/
-
-		switch (TypeId.of(img.firstElement()))
-		{
-		case BYTE:
-		case UNSIGNED_BYTE:
-			{
-			final byte[] data = (byte[])img.update(null).getCurrentStorageArray();
-			ArraySender.sendBytes(data, socket, false);
-			}
-			break;
-		case SHORT:
-		case UNSIGNED_SHORT:
-			{
-			final short[] data = (short[])img.update(null).getCurrentStorageArray();
-			ArraySender.sendShorts(data, socket, false);
-			}
-			break;
-		case FLOAT:
-			{
-			final float[] data = (float[])img.update(null).getCurrentStorageArray();
-			ArraySender.sendFloats(data, socket, false);
-			}
-			break;
-		case DOUBLE:
-			{
-			final double[] data = (double[])img.update(null).getCurrentStorageArray();
-			ArraySender.sendDoubles(data, socket, false);
-			}
-			break;
-		default:
-			throw new RuntimeException("Unsupported voxel type, sorry.");
-		}
+		final Object data = img.update(null).getCurrentStorageArray();
+		ArraySender.sendArray(data, socket, false);
 	}
 
 	private
@@ -250,37 +209,8 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to receive an empty image...");
 
-		switch (TypeId.of(img.firstElement()))
-		{
-		case BYTE:
-		case UNSIGNED_BYTE:
-			{
-			final byte[] data = (byte[])img.update(null).getCurrentStorageArray();
-			ArrayReceiver.receiveBytes(data, socket);
-			}
-			break;
-		case SHORT:
-		case UNSIGNED_SHORT:
-			{
-			final short[] data = (short[])img.update(null).getCurrentStorageArray();
-			ArrayReceiver.receiveShorts(data, socket);
-			}
-			break;
-		case FLOAT:
-			{
-			final float[] data = (float[])img.update(null).getCurrentStorageArray();
-			ArrayReceiver.receiveFloats(data, socket);
-			}
-			break;
-		case DOUBLE:
-			{
-			final double[] data = (double[])img.update(null).getCurrentStorageArray();
-			ArrayReceiver.receiveDoubles(data, socket);
-			}
-			break;
-		default:
-			throw new RuntimeException("Unsupported voxel type, sorry.");
-		}
+		final Object data = img.update(null).getCurrentStorageArray();
+		ArrayReceiver.receiveArray(data, socket);
 	}
 
 	private
@@ -289,56 +219,14 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to send an empty image...");
 
-		switch (TypeId.of(img.firstElement()))
+		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
-		case BYTE:
-		case UNSIGNED_BYTE:
-			for (int slice = 0; slice < img.numSlices()-1; ++slice)
-			{
-				final byte[] data = (byte[])img.getPlane(slice).getCurrentStorageArray();
-				ArraySender.sendBytes(data, socket, true);
-			}
-			{
-				final byte[] data = (byte[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ArraySender.sendBytes(data, socket, false);
-			}
-			break;
-		case SHORT:
-		case UNSIGNED_SHORT:
-			for (int slice = 0; slice < img.numSlices()-1; ++slice)
-			{
-				final short[] data = (short[])img.getPlane(slice).getCurrentStorageArray();
-				ArraySender.sendShorts(data, socket, true);
-			}
-			{
-				final short[] data = (short[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ArraySender.sendShorts(data, socket, false);
-			}
-			break;
-		case FLOAT:
-			for (int slice = 0; slice < img.numSlices()-1; ++slice)
-			{
-				final float[] data = (float[])img.getPlane(slice).getCurrentStorageArray();
-				ArraySender.sendFloats(data, socket, true);
-			}
-			{
-				final float[] data = (float[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ArraySender.sendFloats(data, socket, false);
-			}
-			break;
-		case DOUBLE:
-			for (int slice = 0; slice < img.numSlices()-1; ++slice)
-			{
-				final double[] data = (double[])img.getPlane(slice).getCurrentStorageArray();
-				ArraySender.sendDoubles(data, socket, true);
-			}
-			{
-				final double[] data = (double[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ArraySender.sendDoubles(data, socket, false);
-			}
-			break;
-		default:
-			throw new RuntimeException("Unsupported voxel type, sorry.");
+			final Object data = img.getPlane(slice).getCurrentStorageArray();
+			ArraySender.sendArray(data, socket, true);
+		}
+		{
+			final Object data = img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+			ArraySender.sendArray(data, socket, false);
 		}
 	}
 
@@ -348,56 +236,14 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to receive an empty image...");
 
-		switch (TypeId.of(img.firstElement()))
+		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
-		case BYTE:
-		case UNSIGNED_BYTE:
-			for (int slice = 0; slice < img.numSlices()-1; ++slice)
-			{
-				final byte[] data = (byte[])img.getPlane(slice).getCurrentStorageArray();
-				ArrayReceiver.receiveBytes(data, socket);
-			}
-			{
-				final byte[] data = (byte[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ArrayReceiver.receiveBytes(data, socket);
-			}
-			break;
-		case SHORT:
-		case UNSIGNED_SHORT:
-			for (int slice = 0; slice < img.numSlices()-1; ++slice)
-			{
-				final short[] data = (short[])img.getPlane(slice).getCurrentStorageArray();
-				ArrayReceiver.receiveShorts(data, socket);
-			}
-			{
-				final short[] data = (short[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ArrayReceiver.receiveShorts(data, socket);
-			}
-			break;
-		case FLOAT:
-			for (int slice = 0; slice < img.numSlices()-1; ++slice)
-			{
-				final float[] data = (float[])img.getPlane(slice).getCurrentStorageArray();
-				ArrayReceiver.receiveFloats(data, socket);
-			}
-			{
-				final float[] data = (float[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ArrayReceiver.receiveFloats(data, socket);
-			}
-			break;
-		case DOUBLE:
-			for (int slice = 0; slice < img.numSlices()-1; ++slice)
-			{
-				final double[] data = (double[])img.getPlane(slice).getCurrentStorageArray();
-				ArrayReceiver.receiveDoubles(data, socket);
-			}
-			{
-				final double[] data = (double[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ArrayReceiver.receiveDoubles(data, socket);
-			}
-			break;
-		default:
-			throw new RuntimeException("Unsupported voxel type, sorry.");
+			final Object data = img.getPlane(slice).getCurrentStorageArray();
+			ArrayReceiver.receiveArray(data, socket);
+		}
+		{
+			final Object data = img.getPlane(img.numSlices()-1).getCurrentStorageArray();
+			ArrayReceiver.receiveArray(data, socket);
 		}
 	}
 

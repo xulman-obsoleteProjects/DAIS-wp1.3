@@ -32,6 +32,13 @@ class ArrayReceiver {
 			throw new RuntimeException("Time out for incomming voxel data.");
 	}
 
+	static void receiveArray(final Object array, final ZMQ.Socket socket) {
+		if(array instanceof byte[]) receiveBytes((byte[]) array, socket);
+		if(array instanceof short[]) receiveShorts((short[]) array, socket);
+		if(array instanceof float[]) receiveFloats((float[]) array, socket);
+		if(array instanceof double[]) receiveDoubles((double[]) array, socket);
+	}
+
 	static void receiveBytes(final byte[] data, final ZMQ.Socket socket)
 	{
 		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
