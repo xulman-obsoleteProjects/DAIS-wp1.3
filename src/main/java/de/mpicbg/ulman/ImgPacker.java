@@ -116,40 +116,7 @@ public class ImgPacker<T extends NativeType<T>>
 
 		//envelope/header message is (mostly) parsed,
 		//start creating the output image of the appropriate type
-		Img<? extends NativeType<?>> img = null;
-
-		//create appropriate type and image variables
-		if (typeStr.startsWith("ByteType"))
-		{
-			img = createImg(dims, backendStr, new ByteType());
-		}
-		else
-		if (typeStr.startsWith("UnsignedByteType"))
-		{
-			img = createImg(dims, backendStr, new UnsignedByteType());
-		}
-		else
-		if (typeStr.startsWith("ShortType"))
-		{
-			img = createImg(dims, backendStr, new ShortType());
-		}
-		else
-		if (typeStr.startsWith("UnsignedShortType"))
-		{
-			img = createImg(dims, backendStr, new UnsignedShortType());
-		}
-		else
-		if (typeStr.startsWith("FloatType"))
-		{
-			img = createImg(dims, backendStr, new FloatType());
-		}
-		else
-		if (typeStr.startsWith("DoubleType"))
-		{
-			img = createImg(dims, backendStr, new DoubleType());
-		}
-		else
-			throw new RuntimeException("Unsupported voxel type, sorry.");
+		Img<? extends NativeType<?>> img = createImg(dims, backendStr, createType(typeStr));
 
 		if (img == null)
 			throw new RuntimeException("Unsupported image backend type, sorry.");
@@ -184,6 +151,18 @@ public class ImgPacker<T extends NativeType<T>>
 			throw new RuntimeException("Unsupported image backend type, sorry.");
 
 		return imgP;
+	}
+
+	@SuppressWarnings("rawtype") // use raw type because of insufficient support of reflexive types in java
+	private NativeType createType(String typeStr) {
+		for(TypeId id : TypeId.values())
+			if(typeStr.startsWith(id.toString()))
+				try {
+					return id.aClass.newInstance();
+				} catch (InstantiationException | IllegalAccessException e) {
+					throw new RuntimeException(e);
+				}
+		throw new RuntimeException("Unsupported voxel type, sorry.");
 	}
 
 	private <T extends NativeType<T>> Img<T> createImg(int[] dims, String backendStr, T type) {
@@ -728,9 +707,9 @@ public class ImgPacker<T extends NativeType<T>>
 		FLOAT(FloatType.class),
 		DOUBLE(DoubleType.class);
 
-		private final Class<?> aClass;
+		private final Class<? extends NativeType<?>> aClass;
 
-		TypeId(Class<?> aClass) {
+		TypeId(Class<? extends NativeType<?>> aClass) {
 			this.aClass = aClass;
 		}
 
