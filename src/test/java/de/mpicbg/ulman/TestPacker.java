@@ -25,7 +25,7 @@ import io.scif.img.ImgSaver;
 
 import org.zeromq.ZMQ;
 
-public class testPacker
+public class TestPacker
 {
 	@SuppressWarnings("unchecked")
 	public static void main(final String... args)
@@ -95,10 +95,6 @@ public class testPacker
 			//clean up
 			writerSocket.close();
 			zmqContext.term();
-		}
-		catch (ImgIOException e) {
-			//ij.log().error(e.getMessage());
-			System.out.println(e.getMessage());
 		}
 		catch (Exception e) {
 			//ij.log().error(e.getMessage());

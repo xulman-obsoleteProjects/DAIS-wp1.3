@@ -9,7 +9,7 @@ package de.mpicbg.ulman;
 
 import net.imagej.ImageJ;
 
-public class openFiji
+public class OpenFiji
 {
 	public static void main(final String... args)
 	{
