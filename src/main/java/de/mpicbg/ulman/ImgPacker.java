@@ -38,7 +38,7 @@ public class ImgPacker<T extends NativeType<T>>
 	 */
 	@SuppressWarnings("unchecked")
 	public
-	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket) throws Exception
+	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
 		//"buffer" for the first and human-readable payload:
 		//protocol version
@@ -81,7 +81,7 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img instanceof CellImg)
 		{
 			msg += " CellImg ";
-			throw new Exception("Cannot send CellImg images yet.");
+			throw new RuntimeException("Cannot send CellImg images yet.");
 			//possibly add additional configuration hints to 'msg'
 			//socket.send(msg.getBytes(), ZMQ.SNDMORE);
 
@@ -90,20 +90,20 @@ public class ImgPacker<T extends NativeType<T>>
 			//packAndSendCellImg((CellImg<T,?>)img, socket);
 		}
 		else
-			throw new Exception("Cannot determine the type of image, cannot send it.");
+			throw new RuntimeException("Cannot determine the type of image, cannot send it.");
 	}
 
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public
-	ImgPlus<?> receiveAndUnpack(final String header, final ZMQ.Socket socket) throws Exception
+	ImgPlus<?> receiveAndUnpack(final String header, final ZMQ.Socket socket)
 	{
 		StringTokenizer headerST = new StringTokenizer(header, " ");
 		if (! headerST.nextToken().startsWith("v1"))
-			throw new Exception("Unknown protocol, expecting protocol v1.");
+			throw new RuntimeException("Unknown protocol, expecting protocol v1.");
 
 		if (! headerST.nextToken().startsWith("dimNumber"))
-			throw new Exception("Incorrect protocol, expecting dimNumber.");
+			throw new RuntimeException("Incorrect protocol, expecting dimNumber.");
 		final int n = Integer.valueOf(headerST.nextToken());
 
 		//fill the dimensionality data
@@ -191,10 +191,10 @@ public class ImgPacker<T extends NativeType<T>>
 				img = new CellImgFactory<DoubleType>().create(dims, new DoubleType());
 		}
 		else
-			throw new Exception("Unsupported voxel type, sorry.");
+			throw new RuntimeException("Unsupported voxel type, sorry.");
 
 		if (img == null)
-			throw new Exception("Unsupported image backend type, sorry.");
+			throw new RuntimeException("Unsupported image backend type, sorry.");
 
 		//the core Img is prepared, lets extend it with metadata and fill with voxel values afterwards
 		//create the ImgPlus from it -- there is fortunately no deep coping
@@ -219,11 +219,11 @@ public class ImgPacker<T extends NativeType<T>>
 		{
 			//read possible additional configuration hints from 'header'
 			//and fine-tune the img
-			throw new Exception("Cannot receive CellImg images yet.");
+			throw new RuntimeException("Cannot receive CellImg images yet.");
 			//receiveAndUnpackCellImg((CellImg)img, socket);
 		}
 		else
-			throw new Exception("Unsupported image backend type, sorry.");
+			throw new RuntimeException("Unsupported image backend type, sorry.");
 
 		return imgP;
 	}
@@ -247,10 +247,10 @@ public class ImgPacker<T extends NativeType<T>>
 
 	// -------- support for the transmission of the payload/voxel data --------
 	private
-	void packAndSendArrayImg(final ArrayImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket) throws Exception
+	void packAndSendArrayImg(final ArrayImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket)
 	{
 		if (img.size() == 0)
-			throw new Exception("Refusing to send an empty image...");
+			throw new RuntimeException("Refusing to send an empty image...");
 
 /*
 		//create a buffer to hold the whole image (limit: img must not have more than 2GB of voxels)
@@ -293,15 +293,15 @@ public class ImgPacker<T extends NativeType<T>>
 			}
 			break;
 		default:
-			throw new Exception("Unsupported voxel type, sorry.");
+			throw new RuntimeException("Unsupported voxel type, sorry.");
 		}
 	}
 
 	private
-	void receiveAndUnpackArrayImg(final ArrayImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket) throws Exception
+	void receiveAndUnpackArrayImg(final ArrayImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket)
 	{
 		if (img.size() == 0)
-			throw new Exception("Refusing to receive an empty image...");
+			throw new RuntimeException("Refusing to receive an empty image...");
 
 		switch (typeToTypeID(img.firstElement()))
 		{
@@ -332,15 +332,15 @@ public class ImgPacker<T extends NativeType<T>>
 			}
 			break;
 		default:
-			throw new Exception("Unsupported voxel type, sorry.");
+			throw new RuntimeException("Unsupported voxel type, sorry.");
 		}
 	}
 
 	private
-	void packAndSendPlanarImg(final PlanarImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket) throws Exception
+	void packAndSendPlanarImg(final PlanarImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket)
 	{
 		if (img.size() == 0)
-			throw new Exception("Refusing to send an empty image...");
+			throw new RuntimeException("Refusing to send an empty image...");
 
 		switch (typeToTypeID(img.firstElement()))
 		{
@@ -391,15 +391,15 @@ public class ImgPacker<T extends NativeType<T>>
 			}
 			break;
 		default:
-			throw new Exception("Unsupported voxel type, sorry.");
+			throw new RuntimeException("Unsupported voxel type, sorry.");
 		}
 	}
 
 	private
-	void receiveAndUnpackPlanarImg(final PlanarImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket) throws Exception
+	void receiveAndUnpackPlanarImg(final PlanarImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket)
 	{
 		if (img.size() == 0)
-			throw new Exception("Refusing to receive an empty image...");
+			throw new RuntimeException("Refusing to receive an empty image...");
 
 		switch (typeToTypeID(img.firstElement()))
 		{
@@ -450,7 +450,7 @@ public class ImgPacker<T extends NativeType<T>>
 			}
 			break;
 		default:
-			throw new Exception("Unsupported voxel type, sorry.");
+			throw new RuntimeException("Unsupported voxel type, sorry.");
 		}
 	}
 
@@ -461,7 +461,7 @@ public class ImgPacker<T extends NativeType<T>>
 	 * with an expection complaining about timeout.
 	 */
 	private
-	void waitForVoxels(final ZMQ.Socket socket) throws Exception
+	void waitForVoxels(final ZMQ.Socket socket)
 	{
 		final int timeOut = 20; //user param later!
 
@@ -479,7 +479,7 @@ public class ImgPacker<T extends NativeType<T>>
 		}
 
 		if (!socket.hasReceiveMore())
-			throw new Exception("Time out for incomming voxel data.");
+			throw new RuntimeException("Time out for incomming voxel data.");
 	}
 
 
@@ -601,7 +601,7 @@ public class ImgPacker<T extends NativeType<T>>
 	}
 
 	private
-	void receiveAndUnpackBytes(final byte[] data, final ZMQ.Socket socket) throws Exception
+	void receiveAndUnpackBytes(final byte[] data, final ZMQ.Socket socket)
 	{
 		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
 		//are there any further messages pending?
@@ -612,7 +612,7 @@ public class ImgPacker<T extends NativeType<T>>
 	}
 
 	private
-	void receiveAndUnpackShorts(final short[] data, final ZMQ.Socket socket) throws Exception
+	void receiveAndUnpackShorts(final short[] data, final ZMQ.Socket socket)
 	{
 		//the data array might be as much as twice longer than what a byte[] array can store,
 		//we have to copy half by half (each is up to byte[] array max capacity)
@@ -647,7 +647,7 @@ public class ImgPacker<T extends NativeType<T>>
 	}
 
 	private
-	void receiveAndUnpackFloats(final float[] data, final ZMQ.Socket socket) throws Exception
+	void receiveAndUnpackFloats(final float[] data, final ZMQ.Socket socket)
 	{
 		final int TypeSize = 4;
 
@@ -692,7 +692,7 @@ public class ImgPacker<T extends NativeType<T>>
 	}
 
 	private
-	void receiveAndUnpackDoubles(final double[] data, final ZMQ.Socket socket) throws Exception
+	void receiveAndUnpackDoubles(final double[] data, final ZMQ.Socket socket)
 	{
 		final int TypeSize = 8;
 
@@ -756,7 +756,7 @@ public class ImgPacker<T extends NativeType<T>>
 	 * Must be kept synchronized with typeToTypeID() !
 	 */
 	private
-	String typeIDToString(final int ID) throws Exception
+	String typeIDToString(final int ID)
 	{
 		switch (ID)
 		{
@@ -773,7 +773,7 @@ public class ImgPacker<T extends NativeType<T>>
 		case 6:
 			return new String("DoubleType");
 		default:
-			throw new Exception("Unsupported voxel type, sorry.");
+			throw new RuntimeException("Unsupported voxel type, sorry.");
 		}
 	}
 
@@ -781,7 +781,7 @@ public class ImgPacker<T extends NativeType<T>>
 	 * Must be kept synchronized with typeIDToString() !
 	 */
 	private
-	int typeToTypeID(final T type) throws Exception
+	int typeToTypeID(final T type)
 	{
 		if (type instanceof ByteType) return 1;
 		else
@@ -795,6 +795,6 @@ public class ImgPacker<T extends NativeType<T>>
 		else
 		if (type instanceof DoubleType) return 6;
 		else
-			throw new Exception("Unsupported voxel type, sorry.");
+			throw new RuntimeException("Unsupported voxel type, sorry.");
 	}
 }
