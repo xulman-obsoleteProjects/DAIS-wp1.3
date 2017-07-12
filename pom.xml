@@ -99,5 +99,10 @@
       <artifactId>imagej</artifactId>
 		<scope>test</scope>
     </dependency>
+	  <dependency>
+		  <groupId>net.imagej</groupId>
+		  <artifactId>imagej-common</artifactId>
+		  <version>0.24.3</version>
+	  </dependency>
   </dependencies>
 </project>
