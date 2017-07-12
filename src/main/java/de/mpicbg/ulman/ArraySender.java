@@ -4,9 +4,9 @@ import org.zeromq.ZMQ;
 
 import java.nio.ByteBuffer;
 
-class PackAndSendHelper {
+class ArraySender {
 	// -------- basic types storage vs. ByteType un/packagers --------
-	static void packAndSendBytes(final byte[] data, final ZMQ.Socket socket, boolean comingMore)
+	static void sendBytes(final byte[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
 		buf.put(data);
@@ -14,7 +14,7 @@ class PackAndSendHelper {
 		socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
 	}
 
-	static void packAndSendShorts(final short[] data, final ZMQ.Socket socket, boolean comingMore)
+	static void sendShorts(final short[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		//the data array might be as much as twice longer than what a byte[] array can store,
 		//we have to copy half by half (each is up to byte[] array max capacity)
@@ -41,7 +41,7 @@ class PackAndSendHelper {
 		}
 	}
 
-	static void packAndSendFloats(final float[] data, final ZMQ.Socket socket, boolean comingMore)
+	static void sendFloats(final float[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final int TypeSize = 4;
 
@@ -80,7 +80,7 @@ class PackAndSendHelper {
 		}
 	}
 
-	static void packAndSendDoubles(final double[] data, final ZMQ.Socket socket, boolean comingMore)
+	static void sendDoubles(final double[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final int TypeSize = 8;
 

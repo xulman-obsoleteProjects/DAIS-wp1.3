@@ -217,26 +217,26 @@ public class ImgPacker<T extends NativeType<T>>
 		case UNSIGNED_BYTE:
 			{
 			final byte[] data = (byte[])img.update(null).getCurrentStorageArray();
-			PackAndSendHelper.packAndSendBytes(data, socket, false);
+			ArraySender.sendBytes(data, socket, false);
 			}
 			break;
 		case SHORT:
 		case UNSIGNED_SHORT:
 			{
 			final short[] data = (short[])img.update(null).getCurrentStorageArray();
-			PackAndSendHelper.packAndSendShorts(data, socket, false);
+			ArraySender.sendShorts(data, socket, false);
 			}
 			break;
 		case FLOAT:
 			{
 			final float[] data = (float[])img.update(null).getCurrentStorageArray();
-			PackAndSendHelper.packAndSendFloats(data, socket, false);
+			ArraySender.sendFloats(data, socket, false);
 			}
 			break;
 		case DOUBLE:
 			{
 			final double[] data = (double[])img.update(null).getCurrentStorageArray();
-			PackAndSendHelper.packAndSendDoubles(data, socket, false);
+			ArraySender.sendDoubles(data, socket, false);
 			}
 			break;
 		default:
@@ -256,26 +256,26 @@ public class ImgPacker<T extends NativeType<T>>
 		case UNSIGNED_BYTE:
 			{
 			final byte[] data = (byte[])img.update(null).getCurrentStorageArray();
-			ReceiveAndUnpackHelper.receiveAndUnpackBytes(data, socket);
+			ArrayReceiver.receiveBytes(data, socket);
 			}
 			break;
 		case SHORT:
 		case UNSIGNED_SHORT:
 			{
 			final short[] data = (short[])img.update(null).getCurrentStorageArray();
-			ReceiveAndUnpackHelper.receiveAndUnpackShorts(data, socket);
+			ArrayReceiver.receiveShorts(data, socket);
 			}
 			break;
 		case FLOAT:
 			{
 			final float[] data = (float[])img.update(null).getCurrentStorageArray();
-			ReceiveAndUnpackHelper.receiveAndUnpackFloats(data, socket);
+			ArrayReceiver.receiveFloats(data, socket);
 			}
 			break;
 		case DOUBLE:
 			{
 			final double[] data = (double[])img.update(null).getCurrentStorageArray();
-			ReceiveAndUnpackHelper.receiveAndUnpackDoubles(data, socket);
+			ArrayReceiver.receiveDoubles(data, socket);
 			}
 			break;
 		default:
@@ -296,11 +296,11 @@ public class ImgPacker<T extends NativeType<T>>
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final byte[] data = (byte[])img.getPlane(slice).getCurrentStorageArray();
-				PackAndSendHelper.packAndSendBytes(data, socket, true);
+				ArraySender.sendBytes(data, socket, true);
 			}
 			{
 				final byte[] data = (byte[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				PackAndSendHelper.packAndSendBytes(data, socket, false);
+				ArraySender.sendBytes(data, socket, false);
 			}
 			break;
 		case SHORT:
@@ -308,33 +308,33 @@ public class ImgPacker<T extends NativeType<T>>
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final short[] data = (short[])img.getPlane(slice).getCurrentStorageArray();
-				PackAndSendHelper.packAndSendShorts(data, socket, true);
+				ArraySender.sendShorts(data, socket, true);
 			}
 			{
 				final short[] data = (short[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				PackAndSendHelper.packAndSendShorts(data, socket, false);
+				ArraySender.sendShorts(data, socket, false);
 			}
 			break;
 		case FLOAT:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final float[] data = (float[])img.getPlane(slice).getCurrentStorageArray();
-				PackAndSendHelper.packAndSendFloats(data, socket, true);
+				ArraySender.sendFloats(data, socket, true);
 			}
 			{
 				final float[] data = (float[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				PackAndSendHelper.packAndSendFloats(data, socket, false);
+				ArraySender.sendFloats(data, socket, false);
 			}
 			break;
 		case DOUBLE:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final double[] data = (double[])img.getPlane(slice).getCurrentStorageArray();
-				PackAndSendHelper.packAndSendDoubles(data, socket, true);
+				ArraySender.sendDoubles(data, socket, true);
 			}
 			{
 				final double[] data = (double[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				PackAndSendHelper.packAndSendDoubles(data, socket, false);
+				ArraySender.sendDoubles(data, socket, false);
 			}
 			break;
 		default:
@@ -355,11 +355,11 @@ public class ImgPacker<T extends NativeType<T>>
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final byte[] data = (byte[])img.getPlane(slice).getCurrentStorageArray();
-				ReceiveAndUnpackHelper.receiveAndUnpackBytes(data, socket);
+				ArrayReceiver.receiveBytes(data, socket);
 			}
 			{
 				final byte[] data = (byte[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ReceiveAndUnpackHelper.receiveAndUnpackBytes(data, socket);
+				ArrayReceiver.receiveBytes(data, socket);
 			}
 			break;
 		case SHORT:
@@ -367,33 +367,33 @@ public class ImgPacker<T extends NativeType<T>>
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final short[] data = (short[])img.getPlane(slice).getCurrentStorageArray();
-				ReceiveAndUnpackHelper.receiveAndUnpackShorts(data, socket);
+				ArrayReceiver.receiveShorts(data, socket);
 			}
 			{
 				final short[] data = (short[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ReceiveAndUnpackHelper.receiveAndUnpackShorts(data, socket);
+				ArrayReceiver.receiveShorts(data, socket);
 			}
 			break;
 		case FLOAT:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final float[] data = (float[])img.getPlane(slice).getCurrentStorageArray();
-				ReceiveAndUnpackHelper.receiveAndUnpackFloats(data, socket);
+				ArrayReceiver.receiveFloats(data, socket);
 			}
 			{
 				final float[] data = (float[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ReceiveAndUnpackHelper.receiveAndUnpackFloats(data, socket);
+				ArrayReceiver.receiveFloats(data, socket);
 			}
 			break;
 		case DOUBLE:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final double[] data = (double[])img.getPlane(slice).getCurrentStorageArray();
-				ReceiveAndUnpackHelper.receiveAndUnpackDoubles(data, socket);
+				ArrayReceiver.receiveDoubles(data, socket);
 			}
 			{
 				final double[] data = (double[])img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-				ReceiveAndUnpackHelper.receiveAndUnpackDoubles(data, socket);
+				ArrayReceiver.receiveDoubles(data, socket);
 			}
 			break;
 		default:

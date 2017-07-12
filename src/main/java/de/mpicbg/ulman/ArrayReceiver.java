@@ -4,7 +4,7 @@ import org.zeromq.ZMQ;
 
 import java.nio.ByteBuffer;
 
-class ReceiveAndUnpackHelper {
+class ArrayReceiver {
 	/**
 	 * This one checks periodically (until timeout period) if
 	 * there is some some incoming data reported on the socket.
@@ -32,7 +32,7 @@ class ReceiveAndUnpackHelper {
 			throw new RuntimeException("Time out for incomming voxel data.");
 	}
 
-	static void receiveAndUnpackBytes(final byte[] data, final ZMQ.Socket socket)
+	static void receiveBytes(final byte[] data, final ZMQ.Socket socket)
 	{
 		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
 		//are there any further messages pending?
@@ -42,7 +42,7 @@ class ReceiveAndUnpackHelper {
 		buf.get(data);
 	}
 
-	static void receiveAndUnpackShorts(final short[] data, final ZMQ.Socket socket)
+	static void receiveShorts(final short[] data, final ZMQ.Socket socket)
 	{
 		//the data array might be as much as twice longer than what a byte[] array can store,
 		//we have to copy half by half (each is up to byte[] array max capacity)
@@ -76,7 +76,7 @@ class ReceiveAndUnpackHelper {
 		}
 	}
 
-	static void receiveAndUnpackFloats(final float[] data, final ZMQ.Socket socket)
+	static void receiveFloats(final float[] data, final ZMQ.Socket socket)
 	{
 		final int TypeSize = 4;
 
@@ -120,7 +120,7 @@ class ReceiveAndUnpackHelper {
 		}
 	}
 
-	static void receiveAndUnpackDoubles(final double[] data, final ZMQ.Socket socket)
+	static void receiveDoubles(final double[] data, final ZMQ.Socket socket)
 	{
 		final int TypeSize = 8;
 
