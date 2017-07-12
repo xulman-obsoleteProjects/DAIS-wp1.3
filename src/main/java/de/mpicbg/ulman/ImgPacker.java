@@ -121,74 +121,32 @@ public class ImgPacker<T extends NativeType<T>>
 		//create appropriate type and image variables
 		if (typeStr.startsWith("ByteType"))
 		{
-			if (backendStr.startsWith("ArrayImg"))
-				img = new ArrayImgFactory<ByteType>().create(dims, new ByteType());
-			else
-			if (backendStr.startsWith("PlanarImg"))
-				img = new PlanarImgFactory<ByteType>().create(dims, new ByteType());
-			else
-			if (backendStr.startsWith("CellImg"))
-				img = new CellImgFactory<ByteType>().create(dims, new ByteType());
+			img = createImg(dims, backendStr, new ByteType());
 		}
 		else
 		if (typeStr.startsWith("UnsignedByteType"))
 		{
-			if (backendStr.startsWith("ArrayImg"))
-				img = new ArrayImgFactory<UnsignedByteType>().create(dims, new UnsignedByteType());
-			else
-			if (backendStr.startsWith("PlanarImg"))
-				img = new PlanarImgFactory<UnsignedByteType>().create(dims, new UnsignedByteType());
-			else
-			if (backendStr.startsWith("CellImg"))
-				img = new CellImgFactory<UnsignedByteType>().create(dims, new UnsignedByteType());
+			img = createImg(dims, backendStr, new UnsignedByteType());
 		}
 		else
 		if (typeStr.startsWith("ShortType"))
 		{
-			if (backendStr.startsWith("ArrayImg"))
-				img = new ArrayImgFactory<ShortType>().create(dims, new ShortType());
-			else
-			if (backendStr.startsWith("PlanarImg"))
-				img = new PlanarImgFactory<ShortType>().create(dims, new ShortType());
-			else
-			if (backendStr.startsWith("CellImg"))
-				img = new CellImgFactory<ShortType>().create(dims, new ShortType());
+			img = createImg(dims, backendStr, new ShortType());
 		}
 		else
 		if (typeStr.startsWith("UnsignedShortType"))
 		{
-			if (backendStr.startsWith("ArrayImg"))
-				img = new ArrayImgFactory<UnsignedShortType>().create(dims, new UnsignedShortType());
-			else
-			if (backendStr.startsWith("PlanarImg"))
-				img = new PlanarImgFactory<UnsignedShortType>().create(dims, new UnsignedShortType());
-			else
-			if (backendStr.startsWith("CellImg"))
-				img = new CellImgFactory<UnsignedShortType>().create(dims, new UnsignedShortType());
+			img = createImg(dims, backendStr, new UnsignedShortType());
 		}
 		else
 		if (typeStr.startsWith("FloatType"))
 		{
-			if (backendStr.startsWith("ArrayImg"))
-				img = new ArrayImgFactory<FloatType>().create(dims, new FloatType());
-			else
-			if (backendStr.startsWith("PlanarImg"))
-				img = new PlanarImgFactory<FloatType>().create(dims, new FloatType());
-			else
-			if (backendStr.startsWith("CellImg"))
-				img = new CellImgFactory<FloatType>().create(dims, new FloatType());
+			img = createImg(dims, backendStr, new FloatType());
 		}
 		else
 		if (typeStr.startsWith("DoubleType"))
 		{
-			if (backendStr.startsWith("ArrayImg"))
-				img = new ArrayImgFactory<DoubleType>().create(dims, new DoubleType());
-			else
-			if (backendStr.startsWith("PlanarImg"))
-				img = new PlanarImgFactory<DoubleType>().create(dims, new DoubleType());
-			else
-			if (backendStr.startsWith("CellImg"))
-				img = new CellImgFactory<DoubleType>().create(dims, new DoubleType());
+			img = createImg(dims, backendStr, new DoubleType());
 		}
 		else
 			throw new RuntimeException("Unsupported voxel type, sorry.");
@@ -226,6 +184,16 @@ public class ImgPacker<T extends NativeType<T>>
 			throw new RuntimeException("Unsupported image backend type, sorry.");
 
 		return imgP;
+	}
+
+	private <T extends NativeType<T>> Img<T> createImg(int[] dims, String backendStr, T type) {
+		if (backendStr.startsWith("ArrayImg"))
+			return new ArrayImgFactory<T>().create(dims, type);
+		if (backendStr.startsWith("PlanarImg"))
+			return new PlanarImgFactory<T>().create(dims, type);
+		if (backendStr.startsWith("CellImg"))
+			return new CellImgFactory<T>().create(dims, type);
+		throw new RuntimeException("Unsupported image backend type, sorry.");
 	}
 
 
