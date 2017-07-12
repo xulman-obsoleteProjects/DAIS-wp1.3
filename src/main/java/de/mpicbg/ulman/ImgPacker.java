@@ -50,7 +50,7 @@ public class ImgPacker<T extends NativeType<T>>
 			msg += " " + imgP.dimension(i);
 
 		//decipher the voxel type
-		msg += " " + typeIDToString(typeToTypeID(imgP.firstElement()));
+		msg += " " + TypeId.of(imgP.firstElement()));
 
 		//check we can handle the storage model of this image,
 		//and try to send everything (first the human readable payload, then raw voxel data)
@@ -264,29 +264,29 @@ public class ImgPacker<T extends NativeType<T>>
 		copy(img, wrappedArray);
 */
 
-		switch (typeToTypeID(img.firstElement()))
+		switch (TypeId.of(img.firstElement()))
 		{
-		case 1: //ByteType
-		case 2: //UnsignedByteType
+		case BYTE:
+		case UNSIGNED_BYTE:
 			{
 			final byte[] data = (byte[])img.update(null).getCurrentStorageArray();
 			packAndSendBytes(data, socket, false);
 			}
 			break;
-		case 3: //ShortType
-		case 4: //UnsignedShortType
+		case SHORT:
+		case UNSIGNED_SHORT:
 			{
 			final short[] data = (short[])img.update(null).getCurrentStorageArray();
 			packAndSendShorts(data, socket, false);
 			}
 			break;
-		case 5: //FloatType
+		case FLOAT:
 			{
 			final float[] data = (float[])img.update(null).getCurrentStorageArray();
 			packAndSendFloats(data, socket, false);
 			}
 			break;
-		case 6: //DoubleType
+		case DOUBLE:
 			{
 			final double[] data = (double[])img.update(null).getCurrentStorageArray();
 			packAndSendDoubles(data, socket, false);
@@ -303,29 +303,29 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to receive an empty image...");
 
-		switch (typeToTypeID(img.firstElement()))
+		switch (TypeId.of(img.firstElement()))
 		{
-		case 1: //ByteType
-		case 2: //UnsignedByteType
+		case BYTE:
+		case UNSIGNED_BYTE:
 			{
 			final byte[] data = (byte[])img.update(null).getCurrentStorageArray();
 			receiveAndUnpackBytes(data, socket);
 			}
 			break;
-		case 3: //ShortType
-		case 4: //UnsignedShortType
+		case SHORT:
+		case UNSIGNED_SHORT:
 			{
 			final short[] data = (short[])img.update(null).getCurrentStorageArray();
 			receiveAndUnpackShorts(data, socket);
 			}
 			break;
-		case 5: //FloatType
+		case FLOAT:
 			{
 			final float[] data = (float[])img.update(null).getCurrentStorageArray();
 			receiveAndUnpackFloats(data, socket);
 			}
 			break;
-		case 6: //DoubleType
+		case DOUBLE:
 			{
 			final double[] data = (double[])img.update(null).getCurrentStorageArray();
 			receiveAndUnpackDoubles(data, socket);
@@ -342,10 +342,10 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to send an empty image...");
 
-		switch (typeToTypeID(img.firstElement()))
+		switch (TypeId.of(img.firstElement()))
 		{
-		case 1: //ByteType
-		case 2: //UnsignedByteType
+		case BYTE:
+		case UNSIGNED_BYTE:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final byte[] data = (byte[])img.getPlane(slice).getCurrentStorageArray();
@@ -356,8 +356,8 @@ public class ImgPacker<T extends NativeType<T>>
 				packAndSendBytes(data, socket, false);
 			}
 			break;
-		case 3: //ShortType
-		case 4: //UnsignedShortType
+		case SHORT:
+		case UNSIGNED_SHORT:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final short[] data = (short[])img.getPlane(slice).getCurrentStorageArray();
@@ -368,7 +368,7 @@ public class ImgPacker<T extends NativeType<T>>
 				packAndSendShorts(data, socket, false);
 			}
 			break;
-		case 5: //FloatType
+		case FLOAT:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final float[] data = (float[])img.getPlane(slice).getCurrentStorageArray();
@@ -379,7 +379,7 @@ public class ImgPacker<T extends NativeType<T>>
 				packAndSendFloats(data, socket, false);
 			}
 			break;
-		case 6: //DoubleType
+		case DOUBLE:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final double[] data = (double[])img.getPlane(slice).getCurrentStorageArray();
@@ -401,10 +401,10 @@ public class ImgPacker<T extends NativeType<T>>
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to receive an empty image...");
 
-		switch (typeToTypeID(img.firstElement()))
+		switch (TypeId.of(img.firstElement()))
 		{
-		case 1: //ByteType
-		case 2: //UnsignedByteType
+		case BYTE:
+		case UNSIGNED_BYTE:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final byte[] data = (byte[])img.getPlane(slice).getCurrentStorageArray();
@@ -415,8 +415,8 @@ public class ImgPacker<T extends NativeType<T>>
 				receiveAndUnpackBytes(data, socket);
 			}
 			break;
-		case 3: //ShortType
-		case 4: //UnsignedShortType
+		case SHORT:
+		case UNSIGNED_SHORT:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final short[] data = (short[])img.getPlane(slice).getCurrentStorageArray();
@@ -427,7 +427,7 @@ public class ImgPacker<T extends NativeType<T>>
 				receiveAndUnpackShorts(data, socket);
 			}
 			break;
-		case 5: //FloatType
+		case FLOAT:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final float[] data = (float[])img.getPlane(slice).getCurrentStorageArray();
@@ -438,7 +438,7 @@ public class ImgPacker<T extends NativeType<T>>
 				receiveAndUnpackFloats(data, socket);
 			}
 			break;
-		case 6: //DoubleType
+		case DOUBLE:
 			for (int slice = 0; slice < img.numSlices()-1; ++slice)
 			{
 				final double[] data = (double[])img.getPlane(slice).getCurrentStorageArray();
@@ -752,49 +752,31 @@ public class ImgPacker<T extends NativeType<T>>
 			return img;
 	}
 
-	/*
-	 * Must be kept synchronized with typeToTypeID() !
-	 */
-	private
-	String typeIDToString(final int ID)
-	{
-		switch (ID)
-		{
-		case 1:
-			return new String("ByteType");
-		case 2:
-			return new String("UnsignedByteType");
-		case 3:
-			return new String("ShortType");
-		case 4:
-			return new String("UnsignedShortType");
-		case 5:
-			return new String("FloatType");
-		case 6:
-			return new String("DoubleType");
-		default:
-			throw new RuntimeException("Unsupported voxel type, sorry.");
-		}
-	}
+	private enum TypeId {
+		BYTE(ByteType.class),
+		UNSIGNED_BYTE(UnsignedByteType.class),
+		SHORT(ShortType.class),
+		UNSIGNED_SHORT(UnsignedShortType.class),
+		FLOAT(FloatType.class),
+		DOUBLE(DoubleType.class);
 
-	/*
-	 * Must be kept synchronized with typeIDToString() !
-	 */
-	private
-	int typeToTypeID(final T type)
-	{
-		if (type instanceof ByteType) return 1;
-		else
-		if (type instanceof UnsignedByteType) return 2;
-		else
-		if (type instanceof ShortType) return 3;
-		else
-		if (type instanceof UnsignedShortType) return 4;
-		else
-		if (type instanceof FloatType) return 5;
-		else
-		if (type instanceof DoubleType) return 6;
-		else
-			throw new RuntimeException("Unsupported voxel type, sorry.");
+		private final Class<?> aClass;
+
+		TypeId(Class<?> aClass) {
+			this.aClass = aClass;
+		}
+
+		@Override
+		public String toString() {
+			return aClass.getSimpleName();
+		}
+
+		public static TypeId of(final Object type) {
+			for(TypeId id : TypeId.values())
+				if(id.aClass.isInstance(type))
+					return id;
+			throw new IllegalArgumentException("Unsupported voxel type, sorry.");
+		}
+
 	}
 }
