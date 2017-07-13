@@ -72,11 +72,12 @@ public class LocalNetReceiver implements Command
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket listenerSocket = null;
 		try {
-			//port to listen for incomming data
 			listenerSocket = zmqContext.socket(ZMQ.PULL);
-			//listenerSocket.bind("tcp://"+hostURL+":"+portNo);
-			listenerSocket.bind("tcp://*:" + portNo); //until hostURL is retrieved reliably
+			if (listenerSocket == null)
+				throw new Exception("cannot obtain local socket");
 
+			//port to listen for incomming data
+			listenerSocket.bind("tcp://*:" + portNo);
 			log.info("receiver waiting");
 
 			//"an entry point" for the input data
@@ -84,18 +85,16 @@ public class LocalNetReceiver implements Command
 
 			//"busy wait" up to the given period of time
 			int timeAlreadyWaited = 0;
-			while (timeAlreadyWaited < timeoutTime && incomingData == null) {
-				log.info("receiver read attempt no. " + timeAlreadyWaited);
+			while (timeAlreadyWaited < timeoutTime && incomingData == null)
+			{
+				if (timeAlreadyWaited % 10 == 0)
+					log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
 
 				//check if there is some data from a sender
 				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
 
 				//if nothing found, wait a while before another checking attempt
-				try {
-					if (incomingData == null) Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+				if (incomingData == null) Thread.sleep(1000);
 
 				++timeAlreadyWaited;
 			}
@@ -103,27 +102,23 @@ public class LocalNetReceiver implements Command
 			//process incoming data if there is some...
 			if (incomingData != null) {
 				final ImgPacker<?> ip = new ImgPacker<>();
-				//this guy returns the ImgPlus that we desire...
 				imgP = ip.receiveAndUnpack(new String(incomingData), listenerSocket);
+				//NB: this guy returns the ImgPlus that we desire...
 			}
 
 			log.info("receiver closed");
 		}
 		catch (ZMQException e) {
-			//log.error(e);
+			System.out.println("ZeroMQ error: " + e.getMessage());
 			log.info("receiver crashed");
 		}
-		catch (RuntimeException e) {
-			System.out.println("Error: " + e.getMessage());
+		catch (Exception e) {
+			System.out.println("System error: " + e.getMessage());
 			e.printStackTrace();
 		}
 		finally {
-			if (listenerSocket != null)
-				listenerSocket.close();
+			if (listenerSocket != null) listenerSocket.close();
 			zmqContext.term();
 		}
-	}
-
-	private void runWithZmqContext() {
 	}
 }

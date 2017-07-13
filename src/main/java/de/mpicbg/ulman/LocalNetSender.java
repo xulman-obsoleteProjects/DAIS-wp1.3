@@ -51,38 +51,31 @@ public class LocalNetSender implements Command
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket writerSocket = null;
 		try {
-			//peer to send data out
 			writerSocket = zmqContext.socket(ZMQ.PUSH);
+			if (writerSocket == null)
+				throw new Exception("cannot obtain local socket");
+
+			//peer to send data out
 			writerSocket.connect("tcp://"+remoteURL);
+			log.info("sender connected");
+
+			//send the image
+			final ImgPacker<?> ip = new ImgPacker<>();
+			ip.packAndSend((ImgPlus) imgP, writerSocket);
+
+			log.info("sender finished");
 		}
 		catch (ZMQException e) {
-			log.error(e);
-
-			//clean up...
-			writerSocket.close();
-			zmqContext.term();
-
-			//indication of failure
-			writerSocket = null;
+			System.out.println("ZeroMQ error: " + e.getMessage());
+			log.info("sender crashed");
 		}
-
-		//stop plugin execution here if we cannot continue
-		if (writerSocket == null) return;
-		log.info("sender connected");
-
-		//send the image
-		final ImgPacker<?> ip = new ImgPacker<>();
-		try {
-			//this sends the ImgPlus...
-			ip.packAndSend((ImgPlus) imgP, writerSocket);
-		} catch (Exception e) {
-			System.out.println("Error: "+e.getMessage());
+		catch (Exception e) {
+			System.out.println("System error: " + e.getMessage());
 			e.printStackTrace();
 		}
-
-		//clean up...
-		writerSocket.close();
-		zmqContext.term();
-		log.info("sender finished");
+		finally {
+			if (writerSocket != null) writerSocket.close();
+			zmqContext.term();
+		}
 	}
 }

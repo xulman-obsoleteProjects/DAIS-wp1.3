@@ -13,7 +13,6 @@ import net.imglib2.img.Img;
 import net.imglib2.img.WrappedImg;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
-//import net.imglib2.img.array.ArrayImgs; -- see the hing in packAndSendArrayImg()
 import net.imglib2.img.basictypeaccess.array.ArrayDataAccess;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.img.cell.CellImgFactory;
@@ -38,6 +37,7 @@ public class ImgPacker<T extends NativeType<T>>
 	private static List<Class<? extends NativeType>> SUPPORTED_VOXEL_CLASSES =
 			Arrays.asList(ByteType.class, UnsignedByteType.class, ShortType.class,
 					UnsignedShortType.class, FloatType.class, DoubleType.class);
+
 	/**
 	 *
 	 */
@@ -161,28 +161,6 @@ public class ImgPacker<T extends NativeType<T>>
 		return imgP;
 	}
 
-	@SuppressWarnings("rawtype") // use raw type because of insufficient support of reflexive types in java
-	private NativeType createVoxelType(String typeStr) {
-		for(Class<? extends NativeType> aClass : SUPPORTED_VOXEL_CLASSES)
-			if(typeStr.startsWith(aClass.getSimpleName()))
-				try {
-					return aClass.newInstance();
-				} catch (InstantiationException | IllegalAccessException e) {
-					throw new RuntimeException(e);
-				}
-		throw new IllegalArgumentException("Unsupported voxel type, sorry.");
-	}
-
-	private <T extends NativeType<T>> Img<T> createImg(int[] dims, String backendStr, T type) {
-		if (backendStr.startsWith("ArrayImg"))
-			return new ArrayImgFactory<T>().create(dims, type);
-		if (backendStr.startsWith("PlanarImg"))
-			return new PlanarImgFactory<T>().create(dims, type);
-		if (backendStr.startsWith("CellImg"))
-			return new CellImgFactory<T>().create(dims, type);
-		throw new RuntimeException("Unsupported image backend type, sorry.");
-	}
-
 
 	// -------- support for the transmission of the image metadata --------
 	private
@@ -272,4 +250,25 @@ public class ImgPacker<T extends NativeType<T>>
 			return img;
 	}
 
+	@SuppressWarnings("rawtype") // use raw type because of insufficient support of reflexive types in java
+	private NativeType createVoxelType(String typeStr) {
+		for(Class<? extends NativeType> aClass : SUPPORTED_VOXEL_CLASSES)
+			if(typeStr.startsWith(aClass.getSimpleName()))
+				try {
+					return aClass.newInstance();
+				} catch (InstantiationException | IllegalAccessException e) {
+					throw new RuntimeException(e);
+				}
+		throw new IllegalArgumentException("Unsupported voxel type, sorry.");
+	}
+
+	private <T extends NativeType<T>> Img<T> createImg(int[] dims, String backendStr, T type) {
+		if (backendStr.startsWith("ArrayImg"))
+			return new ArrayImgFactory<T>().create(dims, type);
+		if (backendStr.startsWith("PlanarImg"))
+			return new PlanarImgFactory<T>().create(dims, type);
+		if (backendStr.startsWith("CellImg"))
+			return new CellImgFactory<T>().create(dims, type);
+		throw new RuntimeException("Unsupported image backend type, sorry.");
+	}
 }
