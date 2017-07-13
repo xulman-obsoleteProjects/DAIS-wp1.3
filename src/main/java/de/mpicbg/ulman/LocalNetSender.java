@@ -21,7 +21,7 @@ import org.zeromq.ZMQException;
 import de.mpicbg.ulman.ImgPacker;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Sender")
-public class localNetSender implements Command
+public class LocalNetSender implements Command
 {
 	@Parameter
 	private LogService log;

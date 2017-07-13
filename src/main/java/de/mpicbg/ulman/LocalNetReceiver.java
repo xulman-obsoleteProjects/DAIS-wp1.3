@@ -26,7 +26,7 @@ import org.zeromq.ZMQException;
 import de.mpicbg.ulman.ImgPacker;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Receiver")
-public class localNetReceiver implements Command
+public class LocalNetReceiver implements Command
 {
 	@Parameter
 	private LogService log;
@@ -75,62 +75,55 @@ public class localNetReceiver implements Command
 			//port to listen for incomming data
 			listenerSocket = zmqContext.socket(ZMQ.PULL);
 			//listenerSocket.bind("tcp://"+hostURL+":"+portNo);
-			listenerSocket.bind("tcp://*:"+portNo); //until hostURL is retrieved reliably
+			listenerSocket.bind("tcp://*:" + portNo); //until hostURL is retrieved reliably
+
+			log.info("receiver waiting");
+
+			//"an entry point" for the input data
+			byte[] incomingData = null;
+
+			//"busy wait" up to the given period of time
+			int timeAlreadyWaited = 0;
+			while (timeAlreadyWaited < timeoutTime && incomingData == null) {
+				log.info("receiver read attempt no. " + timeAlreadyWaited);
+
+				//check if there is some data from a sender
+				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
+
+				//if nothing found, wait a while before another checking attempt
+				try {
+					if (incomingData == null) Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				++timeAlreadyWaited;
+			}
+
+			//process incoming data if there is some...
+			if (incomingData != null) {
+				final ImgPacker<?> ip = new ImgPacker<>();
+				//this guy returns the ImgPlus that we desire...
+				imgP = ip.receiveAndUnpack(new String(incomingData), listenerSocket);
+			}
+
+			log.info("receiver closed");
 		}
 		catch (ZMQException e) {
 			//log.error(e);
 			log.info("receiver crashed");
-
-			//clean up...
-			listenerSocket.close();
+		}
+		catch (RuntimeException e) {
+			System.out.println("Error: " + e.getMessage());
+			e.printStackTrace();
+		}
+		finally {
+			if (listenerSocket != null)
+				listenerSocket.close();
 			zmqContext.term();
-
-			//indiciation of failure
-			listenerSocket = null;
 		}
+	}
 
-		//stop plugin execution here if we cannot continue
-		if (listenerSocket == null) return;
-		log.info("receiver waiting");
-
-		//"an entry point" for the input data
-		byte[] incomingData = null;
-
-		//"busy wait" up to the given period of time
-		int timeAlreadyWaited=0;
-		while (timeAlreadyWaited < timeoutTime && incomingData == null)
-		{
-			log.info("receiver read attempt no. "+timeAlreadyWaited);
-
-			//check if there is some data from a sender
-			incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
-
-			//if nothing found, wait a while before another checking attempt
-			try {
-				if (incomingData == null) Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
-			++timeAlreadyWaited;
-		}
-
-		//process incoming data if there is some...
-		if (incomingData != null)
-		{
-			final ImgPacker<?> ip = new ImgPacker<>();
-			try {
-				//this guy returns the ImgPlus that we desire...
-				imgP = ip.receiveAndUnpack(new String(incomingData), listenerSocket);
-			} catch (Exception e) {
-				System.out.println("Error: "+e.getMessage());
-				e.printStackTrace();
-			}
-		}
-
-		//clean up...
-		listenerSocket.close();
-		zmqContext.term();
-		log.info("receiver closed");
+	private void runWithZmqContext() {
 	}
 }
