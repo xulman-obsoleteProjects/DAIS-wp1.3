@@ -27,12 +27,17 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import org.zeromq.ZMQ;
 
 public class ImgPacker<T extends NativeType<T>>
 {
+	private static List<Class<? extends NativeType>> SUPPORTED_VOXEL_CLASSES =
+			Arrays.asList(ByteType.class, UnsignedByteType.class, ShortType.class,
+					UnsignedShortType.class, FloatType.class, DoubleType.class);
 	/**
 	 *
 	 */
@@ -40,6 +45,10 @@ public class ImgPacker<T extends NativeType<T>>
 	public
 	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
+		Class<?> voxelClass = imgP.firstElement().getClass();
+		if(!SUPPORTED_VOXEL_CLASSES.contains(voxelClass))
+			throw new IllegalArgumentException("Unsupported voxel type, sorry.");
+
 		//"buffer" for the first and human-readable payload:
 		//protocol version
 		String msg = new String("v1");
@@ -50,7 +59,7 @@ public class ImgPacker<T extends NativeType<T>>
 			msg += " " + imgP.dimension(i);
 
 		//decipher the voxel type
-		msg += " " + TypeId.of(imgP.firstElement());
+		msg += " " + voxelClass.getSimpleName();
 
 		//check we can handle the storage model of this image,
 		//and try to send everything (first the human readable payload, then raw voxel data)
@@ -93,7 +102,6 @@ public class ImgPacker<T extends NativeType<T>>
 			throw new RuntimeException("Cannot determine the type of image, cannot send it.");
 	}
 
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public
 	ImgPlus<?> receiveAndUnpack(final String header, final ZMQ.Socket socket)
@@ -116,7 +124,7 @@ public class ImgPacker<T extends NativeType<T>>
 
 		//envelope/header message is (mostly) parsed,
 		//start creating the output image of the appropriate type
-		Img<? extends NativeType<?>> img = createImg(dims, backendStr, createType(typeStr));
+		Img<? extends NativeType<?>> img = createImg(dims, backendStr, createVoxelType(typeStr));
 
 		if (img == null)
 			throw new RuntimeException("Unsupported image backend type, sorry.");
@@ -154,15 +162,15 @@ public class ImgPacker<T extends NativeType<T>>
 	}
 
 	@SuppressWarnings("rawtype") // use raw type because of insufficient support of reflexive types in java
-	private NativeType createType(String typeStr) {
-		for(TypeId id : TypeId.values())
-			if(typeStr.startsWith(id.toString()))
+	private NativeType createVoxelType(String typeStr) {
+		for(Class<? extends NativeType> aClass : SUPPORTED_VOXEL_CLASSES)
+			if(typeStr.startsWith(aClass.getSimpleName()))
 				try {
-					return id.aClass.newInstance();
+					return aClass.newInstance();
 				} catch (InstantiationException | IllegalAccessException e) {
 					throw new RuntimeException(e);
 				}
-		throw new RuntimeException("Unsupported voxel type, sorry.");
+		throw new IllegalArgumentException("Unsupported voxel type, sorry.");
 	}
 
 	private <T extends NativeType<T>> Img<T> createImg(int[] dims, String backendStr, T type) {
@@ -264,31 +272,4 @@ public class ImgPacker<T extends NativeType<T>>
 			return img;
 	}
 
-	private enum TypeId {
-		BYTE(ByteType.class),
-		UNSIGNED_BYTE(UnsignedByteType.class),
-		SHORT(ShortType.class),
-		UNSIGNED_SHORT(UnsignedShortType.class),
-		FLOAT(FloatType.class),
-		DOUBLE(DoubleType.class);
-
-		private final Class<? extends NativeType<?>> aClass;
-
-		TypeId(Class<? extends NativeType<?>> aClass) {
-			this.aClass = aClass;
-		}
-
-		@Override
-		public String toString() {
-			return aClass.getSimpleName();
-		}
-
-		public static TypeId of(final Object type) {
-			for(TypeId id : TypeId.values())
-				if(id.aClass.isInstance(type))
-					return id;
-			throw new IllegalArgumentException("Unsupported voxel type, sorry.");
-		}
-
-	}
 }
