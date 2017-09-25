@@ -16,7 +16,7 @@ import java.net.UnknownHostException;
 
 import org.scijava.ItemIO;
 import org.scijava.ItemVisibility;
-import org.scijava.app.StatusService;
+//import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 
 import net.imagej.ImgPlus;
@@ -31,8 +31,8 @@ public class LocalNetReceiver implements Command
 	@Parameter
 	private LogService log;
 
-	@Parameter
-	private StatusService statusService;
+	//@Parameter
+	//private StatusService statusService;
 
 	@Parameter(type = ItemIO.OUTPUT)
 	private ImgPlus<?> imgP;

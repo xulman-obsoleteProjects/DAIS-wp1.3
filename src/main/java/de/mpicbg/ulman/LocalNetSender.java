@@ -11,7 +11,7 @@ import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ItemVisibility;
-import org.scijava.app.StatusService;
+//import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 
 import net.imagej.ImgPlus;
@@ -26,8 +26,8 @@ public class LocalNetSender implements Command
 	@Parameter
 	private LogService log;
 
-	@Parameter
-	private StatusService statusService;
+	//@Parameter
+	//private StatusService statusService;
 
 	@Parameter
 	private ImgPlus<?> imgP;
