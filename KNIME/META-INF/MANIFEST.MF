@@ -3,13 +3,13 @@ Bundle-ManifestVersion: 2
 Bundle-Name: MyExampleNode-Node extension for KNIME Workbench
 Bundle-SymbolicName: DAIS-wp13-KNIME;singleton:=true
 Bundle-Version: 1.0.0
-Bundle-ClassPath: myexamplenode.jar
-Bundle-Activator: org.knime.example.node.MyExampleNodeNodePlugin
+Bundle-ClassPath: DAIS-wp13-KNIME.jar
+Bundle-Activator: de.mpicbg.ulman.nodeNetImgSource.ReaderNodeFactory
 Bundle-Vendor: KNIME.com
 Require-Bundle: org.eclipse.core.runtime,
  org.knime.workbench.core,
  org.knime.workbench.repository,
  org.knime.base
+Export-Package: de.mpicbg.ulman.nodeNetImgSource
 Bundle-ActivationPolicy: lazy
-Export-Package: org.knime.example.node
 

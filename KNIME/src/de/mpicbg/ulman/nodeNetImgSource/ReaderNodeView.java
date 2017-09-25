@@ -1,4 +1,4 @@
-package org.knime.example.node;
+package de.mpicbg.ulman.nodeNetImgSource;
 
 import org.knime.core.node.NodeView;
 
