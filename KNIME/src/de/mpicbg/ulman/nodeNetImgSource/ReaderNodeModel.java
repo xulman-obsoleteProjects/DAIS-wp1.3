@@ -25,6 +25,11 @@ import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 
+import net.imagej.ImgPlus;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
+import de.mpicbg.ulman.ImgPacker;
+
 
 /**
  * This is the model implementation of MyExampleNode.
@@ -72,9 +77,71 @@ public class ReaderNodeModel extends NodeModel {
             final ExecutionContext exec) throws Exception {
 
         // TODO do something here
-        logger.info("Node Model VLADO Stub... this is not yet implemented !");
+        logger.error("Node Model VLADO Stub... this is not yet implemented !");
 
-        
+		//-----------------------------------
+
+		logger.error("receiver started");
+		final String portNo = "54545";
+		final int timeoutTime = 60;
+		ImgPlus<?> imgP = null;
+
+		//init the communication side
+		ZMQ.Context zmqContext = ZMQ.context(1);
+		ZMQ.Socket listenerSocket = null;
+		try {
+			listenerSocket = zmqContext.socket(ZMQ.PULL);
+			if (listenerSocket == null)
+				throw new Exception("cannot obtain local socket");
+
+			//port to listen for incomming data
+			listenerSocket.bind("tcp://*:" + portNo);
+			logger.error("receiver waiting");
+
+			//"an entry point" for the input data
+			byte[] incomingData = null;
+
+			//"busy wait" up to the given period of time
+			int timeAlreadyWaited = 0;
+			while (timeAlreadyWaited < timeoutTime && incomingData == null)
+			{
+				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
+					logger.error("receiver waiting already " + timeAlreadyWaited + " seconds");
+
+				//check if there is some data from a sender
+				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
+
+				//if nothing found, wait a while before another checking attempt
+				if (incomingData == null) Thread.sleep(1000);
+
+				++timeAlreadyWaited;
+			}
+
+			//process incoming data if there is some...
+			if (incomingData != null) {
+				final ImgPacker<?> ip = new ImgPacker<>();
+				imgP = ip.receiveAndUnpack(new String(incomingData), listenerSocket);
+				//NB: this guy returns the ImgPlus that we desire...
+				logger.error("received (hopefully) some image: "+imgP.dimension(0)+"x"+imgP.dimension(1));
+			}
+
+			logger.error("receiver closed");
+		}
+		catch (ZMQException e) {
+			System.out.println("ZeroMQ error: " + e.getMessage());
+			logger.error("receiver crashed");
+		}
+		catch (Exception e) {
+			System.out.println("System error: " + e.getMessage());
+			e.printStackTrace();
+		}
+		finally {
+			if (listenerSocket != null) listenerSocket.close();
+			zmqContext.term();
+		}
+
+		//-----------------------------------
+
         // the data table spec of the single output table, 
         // the table will have three columns:
         DataColumnSpec[] allColSpecs = new DataColumnSpec[3];
