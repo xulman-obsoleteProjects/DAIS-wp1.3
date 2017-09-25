@@ -87,7 +87,7 @@ public class LocalNetReceiver implements Command
 			int timeAlreadyWaited = 0;
 			while (timeAlreadyWaited < timeoutTime && incomingData == null)
 			{
-				if (timeAlreadyWaited % 10 == 0)
+				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
 					log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
 
 				//check if there is some data from a sender
