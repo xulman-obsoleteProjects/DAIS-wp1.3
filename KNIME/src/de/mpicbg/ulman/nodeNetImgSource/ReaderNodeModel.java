@@ -60,8 +60,8 @@ public class ReaderNodeModel extends NodeModel {
      */
     protected ReaderNodeModel() {
     
-        // TODO one incoming port and one outgoing port is assumed
-        super(1, 1);
+        // no incoming port and one outgoing port
+        super(0, 1);
     }
 
     /**
@@ -72,7 +72,7 @@ public class ReaderNodeModel extends NodeModel {
             final ExecutionContext exec) throws Exception {
 
         // TODO do something here
-        logger.info("Node Model Stub... this is not yet implemented !");
+        logger.info("Node Model VLADO Stub... this is not yet implemented !");
 
         
         // the data table spec of the single output table, 
