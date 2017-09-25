@@ -10,15 +10,15 @@ import org.knime.core.node.NodeView;
  *
  * @author KNIME.com
  */
-public class ReaderNodeNodeFactory 
-        extends NodeFactory<ReaderNodeNodeModel> {
+public class ReaderNodeFactory 
+        extends NodeFactory<ReaderNodeModel> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ReaderNodeNodeModel createNodeModel() {
-        return new ReaderNodeNodeModel();
+    public ReaderNodeModel createNodeModel() {
+        return new ReaderNodeModel();
     }
 
     /**
@@ -33,9 +33,9 @@ public class ReaderNodeNodeFactory
      * {@inheritDoc}
      */
     @Override
-    public NodeView<ReaderNodeNodeModel> createNodeView(final int viewIndex,
-            final ReaderNodeNodeModel nodeModel) {
-        return new ReaderNodeNodeView(nodeModel);
+    public NodeView<ReaderNodeModel> createNodeView(final int viewIndex,
+            final ReaderNodeModel nodeModel) {
+        return new ReaderNodeView(nodeModel);
     }
 
     /**
@@ -51,7 +51,7 @@ public class ReaderNodeNodeFactory
      */
     @Override
     public NodeDialogPane createNodeDialogPane() {
-        return new ReaderNodeNodeDialog();
+        return new ReaderNodeDialog();
     }
 
 }

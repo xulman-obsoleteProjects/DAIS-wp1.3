@@ -8,14 +8,14 @@ import org.knime.core.node.NodeView;
  *
  * @author KNIME.com
  */
-public class ReaderNodeNodeView extends NodeView<ReaderNodeNodeModel> {
+public class ReaderNodeView extends NodeView<ReaderNodeModel> {
 
     /**
      * Creates a new view.
      * 
-     * @param nodeModel The model (class: {@link ReaderNodeNodeModel})
+     * @param nodeModel The model (class: {@link ReaderNodeModel})
      */
-    protected ReaderNodeNodeView(final ReaderNodeNodeModel nodeModel) {
+    protected ReaderNodeView(final ReaderNodeModel nodeModel) {
         super(nodeModel);
 
         // TODO instantiate the components of the view here.
@@ -30,8 +30,8 @@ public class ReaderNodeNodeView extends NodeView<ReaderNodeNodeModel> {
 
         // TODO retrieve the new model from your nodemodel and 
         // update the view.
-        ReaderNodeNodeModel nodeModel = 
-            (ReaderNodeNodeModel)getNodeModel();
+        ReaderNodeModel nodeModel = 
+            (ReaderNodeModel)getNodeModel();
         assert nodeModel != null;
         
         // be aware of a possibly not executed nodeModel! The data you retrieve

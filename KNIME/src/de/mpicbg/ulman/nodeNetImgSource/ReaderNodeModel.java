@@ -32,11 +32,11 @@ import org.knime.core.node.NodeSettingsWO;
  *
  * @author KNIME.com
  */
-public class ReaderNodeNodeModel extends NodeModel {
+public class ReaderNodeModel extends NodeModel {
     
     // the logger instance
     private static final NodeLogger logger = NodeLogger
-            .getLogger(ReaderNodeNodeModel.class);
+            .getLogger(ReaderNodeModel.class);
         
     /** the settings key which is used to retrieve and 
         store the settings (from the dialog or from a settings file)    
@@ -50,15 +50,15 @@ public class ReaderNodeNodeModel extends NodeModel {
     // and used in the models execution method. The default components of the
     // dialog work with "SettingsModels".
     private final SettingsModelIntegerBounded m_count =
-        new SettingsModelIntegerBounded(ReaderNodeNodeModel.CFGKEY_COUNT,
-                    ReaderNodeNodeModel.DEFAULT_COUNT,
+        new SettingsModelIntegerBounded(ReaderNodeModel.CFGKEY_COUNT,
+                    ReaderNodeModel.DEFAULT_COUNT,
                     Integer.MIN_VALUE, Integer.MAX_VALUE);
     
 
     /**
      * Constructor for the node model.
      */
-    protected ReaderNodeNodeModel() {
+    protected ReaderNodeModel() {
     
         // TODO one incoming port and one outgoing port is assumed
         super(1, 1);

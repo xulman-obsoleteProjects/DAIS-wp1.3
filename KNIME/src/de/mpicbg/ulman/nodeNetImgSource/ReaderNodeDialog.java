@@ -15,20 +15,20 @@ import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
  * 
  * @author KNIME.com
  */
-public class ReaderNodeNodeDialog extends DefaultNodeSettingsPane {
+public class ReaderNodeDialog extends DefaultNodeSettingsPane {
 
     /**
      * New pane for configuring MyExampleNode node dialog.
      * This is just a suggestion to demonstrate possible default dialog
      * components.
      */
-    protected ReaderNodeNodeDialog() {
+    protected ReaderNodeDialog() {
         super();
         
         addDialogComponent(new DialogComponentNumber(
                 new SettingsModelIntegerBounded(
-                    ReaderNodeNodeModel.CFGKEY_COUNT,
-                    ReaderNodeNodeModel.DEFAULT_COUNT,
+                    ReaderNodeModel.CFGKEY_COUNT,
+                    ReaderNodeModel.DEFAULT_COUNT,
                     Integer.MIN_VALUE, Integer.MAX_VALUE),
                     "Counter:", /*step*/ 1, /*componentwidth*/ 5));
                     

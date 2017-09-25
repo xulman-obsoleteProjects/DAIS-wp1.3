@@ -16,14 +16,14 @@ import org.osgi.framework.BundleContext;
  *
  * @author KNIME.com
  */
-public class ReaderNodeNodePlugin extends Plugin {
+public class ReaderNodePlugin extends Plugin {
     // The shared instance.
-    private static ReaderNodeNodePlugin plugin;
+    private static ReaderNodePlugin plugin;
 
     /**
      * The constructor.
      */
-    public ReaderNodeNodePlugin() {
+    public ReaderNodePlugin() {
         super();
         plugin = this;
     }
@@ -57,7 +57,7 @@ public class ReaderNodeNodePlugin extends Plugin {
      * 
      * @return Singleton instance of the Plugin
      */
-    public static ReaderNodeNodePlugin getDefault() {
+    public static ReaderNodePlugin getDefault() {
         return plugin;
     }
 
