@@ -1,5 +1,6 @@
 # Compiled class file
 *.class
+KNIME/bin
 
 # Log file
 *.log
