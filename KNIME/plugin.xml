@@ -13,13 +13,22 @@
             path="/"/>
    </extension>
    -->
-   
+
+   <extension
+         point="org.knime.workbench.repository.categories">
+      <category
+            level-id="vlado"
+            name="Vlado-testing"
+            path="/community/knip">
+      </category>
+   </extension>
    <extension
          point="org.knime.workbench.repository.nodes">
       <node
-            category-path="/"
-            factory-class="org.knime.example.node.MyExampleNodeNodeFactory"
-            id="org.knime.example.node.MyExampleNodeNodeFactory"/>
+            category-path="/community/knip/vlado/"
+            deprecated="false"
+            factory-class="de.mpicbg.ulman.nodeNetImgSource.ReaderNodeFactory">
+      </node>
    </extension>
-   
+
 </plugin>

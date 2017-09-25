@@ -2,7 +2,7 @@
  * $Revision$ $Date$ $Author$
  *
  */
-package org.knime.example.node;
+package de.mpicbg.ulman.nodeNetImgSource;
 
 import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;
@@ -16,14 +16,14 @@ import org.osgi.framework.BundleContext;
  *
  * @author KNIME.com
  */
-public class MyExampleNodeNodePlugin extends Plugin {
+public class ReaderNodeNodePlugin extends Plugin {
     // The shared instance.
-    private static MyExampleNodeNodePlugin plugin;
+    private static ReaderNodeNodePlugin plugin;
 
     /**
      * The constructor.
      */
-    public MyExampleNodeNodePlugin() {
+    public ReaderNodeNodePlugin() {
         super();
         plugin = this;
     }
@@ -57,7 +57,7 @@ public class MyExampleNodeNodePlugin extends Plugin {
      * 
      * @return Singleton instance of the Plugin
      */
-    public static MyExampleNodeNodePlugin getDefault() {
+    public static ReaderNodeNodePlugin getDefault() {
         return plugin;
     }
 

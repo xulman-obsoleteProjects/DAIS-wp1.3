@@ -1,4 +1,4 @@
-package org.knime.example.node;
+package de.mpicbg.ulman.nodeNetImgSource;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
@@ -10,15 +10,15 @@ import org.knime.core.node.NodeView;
  *
  * @author KNIME.com
  */
-public class MyExampleNodeNodeFactory 
-        extends NodeFactory<MyExampleNodeNodeModel> {
+public class ReaderNodeNodeFactory 
+        extends NodeFactory<ReaderNodeNodeModel> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public MyExampleNodeNodeModel createNodeModel() {
-        return new MyExampleNodeNodeModel();
+    public ReaderNodeNodeModel createNodeModel() {
+        return new ReaderNodeNodeModel();
     }
 
     /**
@@ -33,9 +33,9 @@ public class MyExampleNodeNodeFactory
      * {@inheritDoc}
      */
     @Override
-    public NodeView<MyExampleNodeNodeModel> createNodeView(final int viewIndex,
-            final MyExampleNodeNodeModel nodeModel) {
-        return new MyExampleNodeNodeView(nodeModel);
+    public NodeView<ReaderNodeNodeModel> createNodeView(final int viewIndex,
+            final ReaderNodeNodeModel nodeModel) {
+        return new ReaderNodeNodeView(nodeModel);
     }
 
     /**
@@ -51,7 +51,7 @@ public class MyExampleNodeNodeFactory
      */
     @Override
     public NodeDialogPane createNodeDialogPane() {
-        return new MyExampleNodeNodeDialog();
+        return new ReaderNodeNodeDialog();
     }
 
 }

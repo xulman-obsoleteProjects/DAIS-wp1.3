@@ -1,4 +1,4 @@
-package org.knime.example.node;
+package de.mpicbg.ulman.nodeNetImgSource;
 
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
@@ -15,20 +15,20 @@ import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
  * 
  * @author KNIME.com
  */
-public class MyExampleNodeNodeDialog extends DefaultNodeSettingsPane {
+public class ReaderNodeNodeDialog extends DefaultNodeSettingsPane {
 
     /**
      * New pane for configuring MyExampleNode node dialog.
      * This is just a suggestion to demonstrate possible default dialog
      * components.
      */
-    protected MyExampleNodeNodeDialog() {
+    protected ReaderNodeNodeDialog() {
         super();
         
         addDialogComponent(new DialogComponentNumber(
                 new SettingsModelIntegerBounded(
-                    MyExampleNodeNodeModel.CFGKEY_COUNT,
-                    MyExampleNodeNodeModel.DEFAULT_COUNT,
+                    ReaderNodeNodeModel.CFGKEY_COUNT,
+                    ReaderNodeNodeModel.DEFAULT_COUNT,
                     Integer.MIN_VALUE, Integer.MAX_VALUE),
                     "Counter:", /*step*/ 1, /*componentwidth*/ 5));
                     
