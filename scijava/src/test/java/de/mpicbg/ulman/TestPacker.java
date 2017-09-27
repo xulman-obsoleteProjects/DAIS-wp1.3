@@ -15,7 +15,7 @@ import net.imglib2.RandomAccess;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import de.mpicbg.ulman.ImgPacker;
+import de.mpicbg.ulman.imgtransfer.ImgPacker;
 
 import io.scif.config.SCIFIOConfig;
 import io.scif.config.SCIFIOConfig.ImgMode;

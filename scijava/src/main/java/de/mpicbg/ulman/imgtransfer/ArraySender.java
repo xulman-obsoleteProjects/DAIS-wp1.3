@@ -1,4 +1,4 @@
-package de.mpicbg.ulman;
+package de.mpicbg.ulman.imgtransfer;
 
 import org.zeromq.ZMQ;
 

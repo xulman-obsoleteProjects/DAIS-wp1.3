@@ -23,7 +23,7 @@ import net.imagej.ImgPlus;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
-import de.mpicbg.ulman.ImgPacker;
+import de.mpicbg.ulman.imgtransfer.ImgPacker;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Receiver")
 public class LocalNetReceiver implements Command

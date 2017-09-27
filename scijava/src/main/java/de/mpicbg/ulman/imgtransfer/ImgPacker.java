@@ -5,7 +5,7 @@
  * See the CC0 1.0 Universal license for details:
  *     http://creativecommons.org/publicdomain/zero/1.0/
  */
-package de.mpicbg.ulman;
+package de.mpicbg.ulman.imgtransfer;
 
 import net.imagej.Dataset;
 import net.imagej.ImgPlus;
@@ -34,6 +34,7 @@ import org.zeromq.ZMQ;
 
 public class ImgPacker<T extends NativeType<T>>
 {
+	///list of supported voxel types: so far only scalar images are supported
 	private static List<Class<? extends NativeType>> SUPPORTED_VOXEL_CLASSES =
 			Arrays.asList(ByteType.class, UnsignedByteType.class, ShortType.class,
 					UnsignedShortType.class, FloatType.class, DoubleType.class);
