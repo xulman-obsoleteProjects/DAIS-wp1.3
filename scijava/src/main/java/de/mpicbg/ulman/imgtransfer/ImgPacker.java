@@ -35,6 +35,7 @@ import org.zeromq.ZMQ;
 public class ImgPacker<T extends NativeType<T>>
 {
 	///list of supported voxel types: so far only scalar images are supported
+	@SuppressWarnings("rawtypes")
 	private static List<Class<? extends NativeType>> SUPPORTED_VOXEL_CLASSES =
 			Arrays.asList(ByteType.class, UnsignedByteType.class, ShortType.class,
 					UnsignedShortType.class, FloatType.class, DoubleType.class);
@@ -251,8 +252,9 @@ public class ImgPacker<T extends NativeType<T>>
 			return img;
 	}
 
-	@SuppressWarnings("rawtype") // use raw type because of insufficient support of reflexive types in java
-	private NativeType createVoxelType(String typeStr) {
+	@SuppressWarnings("rawtypes") // use raw type because of insufficient support of reflexive types in java
+	private NativeType createVoxelType(String typeStr)
+	{
 		for(Class<? extends NativeType> aClass : SUPPORTED_VOXEL_CLASSES)
 			if(typeStr.startsWith(aClass.getSimpleName()))
 				try {
@@ -263,7 +265,9 @@ public class ImgPacker<T extends NativeType<T>>
 		throw new IllegalArgumentException("Unsupported voxel type, sorry.");
 	}
 
-	private <T extends NativeType<T>> Img<T> createImg(int[] dims, String backendStr, T type) {
+	@SuppressWarnings("hiding")
+	private <T extends NativeType<T>> Img<T> createImg(int[] dims, String backendStr, T type)
+	{
 		if (backendStr.startsWith("ArrayImg"))
 			return new ArrayImgFactory<T>().create(dims, type);
 		if (backendStr.startsWith("PlanarImg"))

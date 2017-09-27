@@ -6,15 +6,39 @@ import java.nio.ByteBuffer;
 
 class ArrayReceiver {
 	/**
+	 * A timeout interval used while waiting for next (not the first one)
+	 * "packet/message/chunk of data". That is, a waiting time applied only once
+	 * connection got established. Can be considered as a timeout before
+	 * connection is declared to be broken.
+	 *
+	 * Shouldn't be negative. Default is 30 seconds.
+	 */
+	private static int timeOut = 30;
+
+	/// sets this.timeOut
+	public static
+	void setConnectionBrokenTimeout(final int seconds)
+	{
+		timeOut = seconds < 0 ? 30 : seconds;
+	}
+
+	/// reads current this.timeOut
+	public static
+	int getConnectionBrokenTimeout()
+	{
+		return timeOut;
+	}
+
+
+	/**
 	 * This one checks periodically (until timeout period) if
 	 * there is some some incoming data reported on the socket.
 	 * It finishes "nicely" if there is some, or finishes
 	 * with an expection complaining about timeout.
 	 */
-	private static void waitForVoxels(final ZMQ.Socket socket)
+	private static
+	void waitForVoxels(final ZMQ.Socket socket)
 	{
-		final int timeOut = 20; //user param later!
-
 		int timeWaited = 0;
 		while (timeWaited < timeOut && !socket.hasReceiveMore())
 		{
@@ -32,14 +56,16 @@ class ArrayReceiver {
 			throw new RuntimeException("Time out for incomming voxel data.");
 	}
 
-	static void receiveArray(final Object array, final ZMQ.Socket socket) {
+	static
+	void receiveArray(final Object array, final ZMQ.Socket socket) {
 		if(array instanceof byte[]) receiveBytes((byte[]) array, socket);
 		if(array instanceof short[]) receiveShorts((short[]) array, socket);
 		if(array instanceof float[]) receiveFloats((float[]) array, socket);
 		if(array instanceof double[]) receiveDoubles((double[]) array, socket);
 	}
 
-	static void receiveBytes(final byte[] data, final ZMQ.Socket socket)
+	static
+	void receiveBytes(final byte[] data, final ZMQ.Socket socket)
 	{
 		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
 		//are there any further messages pending?
@@ -49,7 +75,8 @@ class ArrayReceiver {
 		buf.get(data);
 	}
 
-	static void receiveShorts(final short[] data, final ZMQ.Socket socket)
+	static
+	void receiveShorts(final short[] data, final ZMQ.Socket socket)
 	{
 		//the data array might be as much as twice longer than what a byte[] array can store,
 		//we have to copy half by half (each is up to byte[] array max capacity)
@@ -83,7 +110,8 @@ class ArrayReceiver {
 		}
 	}
 
-	static void receiveFloats(final float[] data, final ZMQ.Socket socket)
+	static
+	void receiveFloats(final float[] data, final ZMQ.Socket socket)
 	{
 		final int TypeSize = 4;
 
@@ -127,7 +155,8 @@ class ArrayReceiver {
 		}
 	}
 
-	static void receiveDoubles(final double[] data, final ZMQ.Socket socket)
+	static
+	void receiveDoubles(final double[] data, final ZMQ.Socket socket)
 	{
 		final int TypeSize = 8;
 

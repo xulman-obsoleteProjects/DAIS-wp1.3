@@ -7,14 +7,17 @@ import java.nio.ByteBuffer;
 class ArraySender {
 	// -------- basic types storage vs. ByteType un/packagers --------
 
-	static void sendArray(final Object array, final ZMQ.Socket socket, boolean comingMore) {
+	static
+	void sendArray(final Object array, final ZMQ.Socket socket, boolean comingMore)
+	{
 		if(array instanceof byte[]) sendBytes((byte[]) array, socket, comingMore);
 		if(array instanceof short[]) sendShorts((short[]) array, socket, comingMore);
 		if(array instanceof float[]) sendFloats((float[]) array, socket, comingMore);
 		if(array instanceof double[]) sendDoubles((double[]) array, socket, comingMore);
 	}
 
-	static void sendBytes(final byte[] data, final ZMQ.Socket socket, boolean comingMore)
+	static
+	void sendBytes(final byte[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
 		buf.put(data);
@@ -22,7 +25,8 @@ class ArraySender {
 		socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
 	}
 
-	static void sendShorts(final short[] data, final ZMQ.Socket socket, boolean comingMore)
+	static
+	void sendShorts(final short[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		//the data array might be as much as twice longer than what a byte[] array can store,
 		//we have to copy half by half (each is up to byte[] array max capacity)
@@ -49,7 +53,8 @@ class ArraySender {
 		}
 	}
 
-	static void sendFloats(final float[] data, final ZMQ.Socket socket, boolean comingMore)
+	static
+	void sendFloats(final float[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final int TypeSize = 4;
 
@@ -88,7 +93,8 @@ class ArraySender {
 		}
 	}
 
-	static void sendDoubles(final double[] data, final ZMQ.Socket socket, boolean comingMore)
+	static
+	void sendDoubles(final double[] data, final ZMQ.Socket socket, boolean comingMore)
 	{
 		final int TypeSize = 8;
 
