@@ -17,17 +17,10 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import de.mpicbg.ulman.imgtransfer.ImgPacker;
 
-import io.scif.config.SCIFIOConfig;
-import io.scif.config.SCIFIOConfig.ImgMode;
-import io.scif.img.ImgIOException;
-import io.scif.img.ImgOpener;
-import io.scif.img.ImgSaver;
-
 import org.zeromq.ZMQ;
 
 public class TestPacker
 {
-	@SuppressWarnings("unchecked")
 	public static void main(final String... args)
 	{
 		final ImageJ ij = new net.imagej.ImageJ();
@@ -89,8 +82,7 @@ public class TestPacker
 			writerSocket.connect("tcp://localhost:54545");
 
 			//start up the packer class
-			final ImgPacker<UnsignedShortType> ip = new ImgPacker<>();
-			ip.packAndSend(imgPlus, writerSocket);
+			ImgPacker.packAndSend(imgPlus, writerSocket);
 
 			//clean up
 			writerSocket.close();
