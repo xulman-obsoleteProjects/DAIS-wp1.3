@@ -101,8 +101,7 @@ public class LocalNetReceiver implements Command
 
 			//process incoming data if there is some...
 			if (incomingData != null) {
-				final ImgPacker<?> ip = new ImgPacker<>();
-				imgP = ip.receiveAndUnpack(new String(incomingData), listenerSocket);
+				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), listenerSocket);
 				//NB: this guy returns the ImgPlus that we desire...
 			}
 

@@ -32,7 +32,7 @@ import java.util.StringTokenizer;
 
 import org.zeromq.ZMQ;
 
-public class ImgPacker<T extends NativeType<T>>
+public class ImgPacker
 {
 	///list of supported voxel types: so far only scalar images are supported
 	@SuppressWarnings("rawtypes")
@@ -44,7 +44,7 @@ public class ImgPacker<T extends NativeType<T>>
 	 *
 	 */
 	@SuppressWarnings("unchecked")
-	public
+	public static <T extends NativeType<T>>
 	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
 		Class<?> voxelClass = imgP.firstElement().getClass();
@@ -105,7 +105,7 @@ public class ImgPacker<T extends NativeType<T>>
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public
+	public static
 	ImgPlus<?> receiveAndUnpack(final String header, final ZMQ.Socket socket)
 	{
 		StringTokenizer headerST = new StringTokenizer(header, " ");
@@ -165,14 +165,14 @@ public class ImgPacker<T extends NativeType<T>>
 
 
 	// -------- support for the transmission of the image metadata --------
-	private
+	private static <T>
 	void packAndSendPlusData(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
 		//TODO: use mPack because metadata are of various types (including Strings)
 		//send single message with ZMQ.SNDMORE
 	}
 
-	private
+	private static <T>
 	void receiveAndUnpackPlusData(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
 		//TODO: use mPack because metadata are of various types (including Strings)
@@ -181,7 +181,7 @@ public class ImgPacker<T extends NativeType<T>>
 
 
 	// -------- support for the transmission of the payload/voxel data --------
-	private
+	private static <T extends NativeType<T>>
 	void packAndSendArrayImg(final ArrayImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket)
 	{
 		if (img.size() == 0)
@@ -191,7 +191,7 @@ public class ImgPacker<T extends NativeType<T>>
 		ArraySender.sendArray(data, socket, false);
 	}
 
-	private
+	private static <T extends NativeType<T>>
 	void receiveAndUnpackArrayImg(final ArrayImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket)
 	{
 		if (img.size() == 0)
@@ -201,7 +201,7 @@ public class ImgPacker<T extends NativeType<T>>
 		ArrayReceiver.receiveArray(data, socket);
 	}
 
-	private
+	private static <T extends NativeType<T>>
 	void packAndSendPlanarImg(final PlanarImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket)
 	{
 		if (img.size() == 0)
@@ -218,7 +218,7 @@ public class ImgPacker<T extends NativeType<T>>
 		}
 	}
 
-	private
+	private static <T extends NativeType<T>>
 	void receiveAndUnpackPlanarImg(final PlanarImg<T,? extends ArrayDataAccess<?>> img, final ZMQ.Socket socket)
 	{
 		if (img.size() == 0)
@@ -242,7 +242,8 @@ public class ImgPacker<T extends NativeType<T>>
 	 * until it gets to the underlying pure imglib2.Img.
 	 */
 	@SuppressWarnings("unchecked")
-	private <Q> Img<Q> getUnderlyingImg(final Img<Q> img)
+	private static <Q>
+	Img<Q> getUnderlyingImg(final Img<Q> img)
 	{
 		if (img instanceof Dataset)
 			return (Img<Q>) getUnderlyingImg( ((Dataset)img).getImgPlus() );
@@ -253,7 +254,8 @@ public class ImgPacker<T extends NativeType<T>>
 	}
 
 	@SuppressWarnings("rawtypes") // use raw type because of insufficient support of reflexive types in java
-	private NativeType createVoxelType(String typeStr)
+	private static
+	NativeType createVoxelType(String typeStr)
 	{
 		for(Class<? extends NativeType> aClass : SUPPORTED_VOXEL_CLASSES)
 			if(typeStr.startsWith(aClass.getSimpleName()))
@@ -265,8 +267,8 @@ public class ImgPacker<T extends NativeType<T>>
 		throw new IllegalArgumentException("Unsupported voxel type, sorry.");
 	}
 
-	@SuppressWarnings("hiding")
-	private <T extends NativeType<T>> Img<T> createImg(int[] dims, String backendStr, T type)
+	private static <T extends NativeType<T>>
+	Img<T> createImg(int[] dims, String backendStr, T type)
 	{
 		if (backendStr.startsWith("ArrayImg"))
 			return new ArrayImgFactory<T>().create(dims, type);

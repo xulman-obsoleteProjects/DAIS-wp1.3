@@ -60,8 +60,7 @@ public class LocalNetSender implements Command
 			log.info("sender connected");
 
 			//send the image
-			final ImgPacker<?> ip = new ImgPacker<>();
-			ip.packAndSend((ImgPlus) imgP, writerSocket);
+			ImgPacker.packAndSend((ImgPlus) imgP, writerSocket);
 
 			log.info("sender finished");
 		}
