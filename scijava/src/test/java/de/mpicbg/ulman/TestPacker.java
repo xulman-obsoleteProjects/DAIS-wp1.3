@@ -82,7 +82,7 @@ public class TestPacker
 			writerSocket.connect("tcp://localhost:54545");
 
 			//start up the packer class
-			ImgPacker.packAndSend(imgPlus, writerSocket);
+			ImgPacker.packAndSend(imgPlus, writerSocket, 60);
 
 			//clean up
 			writerSocket.close();
