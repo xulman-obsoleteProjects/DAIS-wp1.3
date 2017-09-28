@@ -31,18 +31,61 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
+import java.io.IOException;
 
 public class ImgPacker
 {
+	public static <T extends NativeType<T>>
+	void sendImage(final ImgPlus<T> imgP, final String addr,
+	               final int timeOut, final ProgressCallback log)
+	throws IOException
+	{
+		log.info("sender started");
+
+		//init the communication side
+		ZMQ.Context zmqContext = ZMQ.context(1);
+		ZMQ.Socket writerSocket = null;
+		try {
+			writerSocket = zmqContext.socket(ZMQ.PAIR);
+			if (writerSocket == null)
+				throw new Exception("cannot obtain local socket");
+
+			//peer to send data out
+			writerSocket.connect(addr);
+
+			//send the image
+			log.info("sender sending...");
+			packAndSend((ImgPlus) imgP, writerSocket, timeOut);
+
+			log.info("sender finished");
+		}
+		catch (ZMQException e) {
+			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (Exception e) {
+			throw new IOException("sender error: " + e.getMessage());
+		}
+		finally {
+			log.info("sender cleaning");
+			if (writerSocket != null)
+			{
+				writerSocket.disconnect(addr);
+				writerSocket.close();
+			}
+			zmqContext.close();
+			zmqContext.term();
+		}
+	}
+
+
+	// -------- transmission of the image, sockets --------
 	///list of supported voxel types: so far only scalar images are supported
 	@SuppressWarnings("rawtypes")
 	private static List<Class<? extends NativeType>> SUPPORTED_VOXEL_CLASSES =
 			Arrays.asList(ByteType.class, UnsignedByteType.class, ShortType.class,
 					UnsignedShortType.class, FloatType.class, DoubleType.class);
 
-	/**
-	 *
-	 */
 	@SuppressWarnings("unchecked")
 	public static <T extends NativeType<T>>
 	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket, final int timeOut)
