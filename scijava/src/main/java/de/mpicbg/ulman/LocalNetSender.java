@@ -69,11 +69,17 @@ public class LocalNetSender implements Command
 			log.info("sender crashed");
 		}
 		catch (Exception e) {
-			System.out.println("System error: " + e.getMessage());
+			System.out.println("sender error: " + e.getMessage());
 			e.printStackTrace();
 		}
 		finally {
-			if (writerSocket != null) writerSocket.close();
+			log.info("sender cleaning");
+			if (writerSocket != null)
+			{
+				writerSocket.disconnect("tcp://"+remoteURL);
+				writerSocket.close();
+			}
+			zmqContext.close();
 			zmqContext.term();
 		}
 	}

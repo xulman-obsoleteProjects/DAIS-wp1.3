@@ -112,11 +112,17 @@ public class LocalNetReceiver implements Command
 			log.info("receiver crashed");
 		}
 		catch (Exception e) {
-			System.out.println("System error: " + e.getMessage());
+			System.out.println("receiver error: " + e.getMessage());
 			e.printStackTrace();
 		}
 		finally {
-			if (listenerSocket != null) listenerSocket.close();
+			log.info("receiver cleaning");
+			if (listenerSocket != null)
+			{
+				listenerSocket.unbind("tcp://*:" + portNo);
+				listenerSocket.close();
+			}
+			zmqContext.close();
 			zmqContext.term();
 		}
 	}
