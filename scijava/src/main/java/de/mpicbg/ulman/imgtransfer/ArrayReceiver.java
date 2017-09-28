@@ -29,15 +29,55 @@ class ArrayReceiver {
 		return timeOut;
 	}
 
+	/**
+	 * This one checks periodically (until timeout period) if
+	 * there is some incoming data (a message sent with no SNDMORE
+	 * flag, hence message consists of just one, first part)
+	 * reported on the socket.
+	 *
+	 * If \e timeOut is negative, only one check is made without any
+	 * delay and exception might be triggered unless data is available.
+	 * Units are seconds.
+	 *
+	 * It finishes "nicely" if there is some, or finishes
+	 * with an exception complaining about timeout.
+	 */
+	static
+	void waitForFirstMessage(final ZMQ.Socket socket, final int timeOut)
+	{
+		int timeWaited = 0;
+		while (timeWaited < timeOut && (socket.getEvents() & 1) != 1)
+		//TODO: determine proper constant for getEvents()
+		//TODO: expected return value is 1. bit set according to tests
+		{
+			//if nothing found, wait a while before another checking attempt
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			++timeWaited;
+		}
+
+		if ((socket.getEvents() & 1) != 1)
+			throw new RuntimeException("Reached timeout for the first incoming data.");
+	}
+
+	static
+	void waitForFirstMessage(final ZMQ.Socket socket)
+	{ waitForFirstMessage(socket, timeOut); }
 
 	/**
 	 * This one checks periodically (until timeout period) if
-	 * there is some some incoming data reported on the socket.
+	 * there is next part of some incoming data (a message sent
+	 * with SNDMORE flag) reported on the socket.
+	 *
 	 * It finishes "nicely" if there is some, or finishes
-	 * with an expection complaining about timeout.
+	 * with an exception complaining about timeout.
 	 */
-	private static
-	void waitForVoxels(final ZMQ.Socket socket)
+	static
+	void waitForNextMessage(final ZMQ.Socket socket)
 	{
 		int timeWaited = 0;
 		while (timeWaited < timeOut && !socket.hasReceiveMore())
@@ -53,8 +93,9 @@ class ArrayReceiver {
 		}
 
 		if (!socket.hasReceiveMore())
-			throw new RuntimeException("Time out for incomming voxel data.");
+			throw new RuntimeException("Reached timeout for the next incoming data.");
 	}
+
 
 	static
 	void receiveArray(final Object array, final ZMQ.Socket socket) {
@@ -69,7 +110,7 @@ class ArrayReceiver {
 	{
 		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
 		//are there any further messages pending?
-		waitForVoxels(socket);
+		waitForNextMessage(socket);
 		socket.recvByteBuffer(buf, 0);
 		buf.rewind();
 		buf.get(data);
@@ -90,8 +131,8 @@ class ArrayReceiver {
 		//NB: firstBlockLen >= lastBlockLen
 
 		final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlockLen);
-		waitForVoxels(socket);
-		socket.recvByteBuffer(buf, 0); //blocking read since we got over waitForVoxels()
+		waitForNextMessage(socket);
+		socket.recvByteBuffer(buf, 0); //blocking read since we got over waitForNextMessage()
 		buf.rewind();
 		buf.asShortBuffer().get(data, 0, firstBlockLen);
 
@@ -102,7 +143,7 @@ class ArrayReceiver {
 			buf.rewind();
 
 			//get the data
-			waitForVoxels(socket);
+			waitForNextMessage(socket);
 			socket.recvByteBuffer(buf, 0);
 
 			buf.rewind(); //recvByteBuffer() has changed the position!
@@ -122,7 +163,7 @@ class ArrayReceiver {
 			//NB: the else branch below cannot handle when data.length < 3,
 			//    and why to split the short arrays anyways?
 			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
-			waitForVoxels(socket);
+			waitForNextMessage(socket);
 			socket.recvByteBuffer(buf, 0);
 			buf.rewind();
 			buf.asFloatBuffer().get(data, 0, data.length);
@@ -136,7 +177,7 @@ class ArrayReceiver {
 			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
 			for (int p=0; p < (TypeSize-1); ++p)
 			{
-				waitForVoxels(socket);
+				waitForNextMessage(socket);
 				socket.recvByteBuffer(buf, 0);
 				buf.rewind();
 				buf.asFloatBuffer().get(data, p*firstBlocksLen, firstBlocksLen);
@@ -147,7 +188,7 @@ class ArrayReceiver {
 			{
 				buf.limit(TypeSize*lastBlockLen);
 				buf.rewind();
-				waitForVoxels(socket);
+				waitForNextMessage(socket);
 				socket.recvByteBuffer(buf, 0);
 				buf.rewind();
 				buf.asFloatBuffer().get(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
@@ -167,7 +208,7 @@ class ArrayReceiver {
 			//NB: the else branch below cannot handle when data.length < 7,
 			//    and why to split the short arrays anyways?
 			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
-			waitForVoxels(socket);
+			waitForNextMessage(socket);
 			socket.recvByteBuffer(buf, 0);
 			buf.rewind();
 			buf.asDoubleBuffer().get(data, 0, data.length);
@@ -180,7 +221,7 @@ class ArrayReceiver {
 			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
 			for (int p=0; p < (TypeSize-1); ++p)
 			{
-				waitForVoxels(socket);
+				waitForNextMessage(socket);
 				socket.recvByteBuffer(buf, 0);
 				buf.rewind();
 				buf.asDoubleBuffer().get(data, p*firstBlocksLen, firstBlocksLen);
@@ -191,7 +232,7 @@ class ArrayReceiver {
 			{
 				buf.limit(TypeSize*lastBlockLen);
 				buf.rewind();
-				waitForVoxels(socket);
+				waitForNextMessage(socket);
 				socket.recvByteBuffer(buf, 0);
 				buf.rewind();
 				buf.asDoubleBuffer().get(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
