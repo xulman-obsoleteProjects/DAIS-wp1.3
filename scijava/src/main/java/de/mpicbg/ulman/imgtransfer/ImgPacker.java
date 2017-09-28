@@ -102,6 +102,12 @@ public class ImgPacker
 		}
 		else
 			throw new RuntimeException("Cannot determine the type of image, cannot send it.");
+
+		//wait for confirmation from the receiver
+		ArrayReceiver.waitForFirstMessage(socket);
+		msg = socket.recvStr();
+		if (! msg.startsWith("done"))
+			throw new RuntimeException("Protocol error, expected final confirmation from the receiver.");
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -164,6 +170,9 @@ public class ImgPacker
 		else
 			throw new RuntimeException("Unsupported image backend type, sorry.");
 
+		//send confirmation handshake after data has arrived
+		socket.send("done");
+
 		return imgP;
 	}
 
@@ -184,7 +193,7 @@ public class ImgPacker
 
 		final String confirmation = socket.recvStr();
 		if (! confirmation.startsWith("ready"))
-			throw new RuntimeException("Protocol error, expected confirmation from the receiver.");
+			throw new RuntimeException("Protocol error, expected initial confirmation from the receiver.");
 	}
 
 
