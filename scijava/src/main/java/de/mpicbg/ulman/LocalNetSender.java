@@ -11,14 +11,14 @@ import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ItemVisibility;
-//import org.scijava.app.StatusService;
+import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
-
 import net.imagej.ImgPlus;
 
-import org.zeromq.ZMQ;
-import org.zeromq.ZMQException;
+import java.io.IOException;
+
 import de.mpicbg.ulman.imgtransfer.ImgPacker;
+import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Sender")
 public class LocalNetSender implements Command
@@ -26,8 +26,8 @@ public class LocalNetSender implements Command
 	@Parameter
 	private LogService log;
 
-	//@Parameter
-	//private StatusService statusService;
+	@Parameter
+	private StatusService status;
 
 	@Parameter
 	private ImgPlus<?> imgP;
@@ -49,45 +49,34 @@ public class LocalNetSender implements Command
 			min="1")
 	private int timeoutTime = 60;
 
+	public class FijiLogger implements ProgressCallback
+	{
+		FijiLogger(final LogService _log, final StatusService _bar)
+		{ log = _log; bar = _bar; }
+
+		final LogService log;
+		final StatusService bar;
+
+		@Override
+		public void info(String msg)
+		{ log.info(msg); }
+
+		@Override
+		public void setProgress(float howFar)
+		{ bar.showProgress((int)(100 * howFar), 100); }
+	}
+
+	@SuppressWarnings("unchecked")
 	@Override
 	public void run()
 	{
-		log.info("sender started");
-
-		//init the communication side
-		ZMQ.Context zmqContext = ZMQ.context(1);
-		ZMQ.Socket writerSocket = null;
+		final FijiLogger flog = new FijiLogger(log, status);
 		try {
-			writerSocket = zmqContext.socket(ZMQ.PAIR);
-			if (writerSocket == null)
-				throw new Exception("cannot obtain local socket");
-
-			//peer to send data out
-			writerSocket.connect("tcp://"+remoteURL);
-
-			//send the image
-			log.info("sender sending...");
-			ImgPacker.packAndSend((ImgPlus) imgP, writerSocket, timeoutTime);
-
-			log.info("sender finished");
+			ImgPacker.sendImage((ImgPlus) imgP, "tcp://"+remoteURL,
+				timeoutTime, flog);
 		}
-		catch (ZMQException e) {
-			System.out.println("ZeroMQ error: " + e.getMessage());
-			log.info("sender crashed");
-		}
-		catch (Exception e) {
-			System.out.println("sender error: " + e.getMessage());
-			e.printStackTrace();
-		}
-		finally {
-			log.info("sender cleaning");
-			if (writerSocket != null)
-			{
-				writerSocket.disconnect("tcp://"+remoteURL);
-				writerSocket.close();
-			}
-			zmqContext.close();
-			zmqContext.term();
+		catch (IOException e) {
+			log.error(e.getMessage());
 		}
 	}
 }
