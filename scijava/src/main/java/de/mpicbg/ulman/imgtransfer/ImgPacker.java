@@ -45,7 +45,7 @@ public class ImgPacker
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T extends NativeType<T>>
-	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket)
+	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket, final int timeOut)
 	{
 		Class<?> voxelClass = imgP.firstElement().getClass();
 		if(!SUPPORTED_VOXEL_CLASSES.contains(voxelClass))
@@ -69,9 +69,9 @@ public class ImgPacker
 		if (img instanceof ArrayImg)
 		{
 			msg += " ArrayImg ";
-			socket.send(msg.getBytes(), ZMQ.SNDMORE);
 
-			//send metadata and voxel data afterwards
+			//send header, metadata and voxel data afterwards
+			packAndSendHeader(msg, socket, timeOut);
 			packAndSendPlusData(imgP, socket);
 			packAndSendArrayImg((ArrayImg<T,? extends ArrayDataAccess<?>>)img, socket);
 		}
@@ -82,21 +82,21 @@ public class ImgPacker
 			msg += " PlanarImg "; //+((PlanarImg<T,?>)img).numSlices()+" ";
 			//NB: The number of planes is deterministically given by the image size/dimensions.
 			//    Hence, it is not necessary to provide such hint... 
-			socket.send(msg.getBytes(), ZMQ.SNDMORE);
 
-			//send metadata and voxel data afterwards
+			//send header, metadata and voxel data afterwards
+			packAndSendHeader(msg, socket, timeOut);
 			packAndSendPlusData(imgP, socket);
 			packAndSendPlanarImg((PlanarImg<T,? extends ArrayDataAccess<?>>)img, socket);
 		}
 		else
 		if (img instanceof CellImg)
 		{
+			//possibly add additional configuration hints to 'msg'
 			msg += " CellImg ";
 			throw new RuntimeException("Cannot send CellImg images yet.");
-			//possibly add additional configuration hints to 'msg'
-			//socket.send(msg.getBytes(), ZMQ.SNDMORE);
 
-			//send metadata and voxel data afterwards
+			//send header, metadata and voxel data afterwards
+			//packAndSendHeader(msg, socket, timeOut);
 			//packAndSendPlusData(imgP, socket);
 			//packAndSendCellImg((CellImg<T,?>)img, socket);
 		}
@@ -130,6 +130,10 @@ public class ImgPacker
 
 		if (img == null)
 			throw new RuntimeException("Unsupported image backend type, sorry.");
+
+		//if we got here, we assume that we have everything prepared to receive
+		//the image, we therefore signal it to the sender
+		socket.send("ready");
 
 		//the core Img is prepared, lets extend it with metadata and fill with voxel values afterwards
 		//create the ImgPlus from it -- there is fortunately no deep coping
@@ -165,11 +169,31 @@ public class ImgPacker
 
 
 	// -------- support for the transmission of the image metadata --------
+	/// this function sends the header AND WAITS FOR RESPONSE
+	private static
+	void packAndSendHeader(final String hdr, final ZMQ.Socket socket, final int timeOut)
+	{
+		//send _complete_ message with just the header
+		socket.send(hdr.getBytes(), 0);
+		//NB: if message is not complete (i.e. SNDMORE is flagged),
+		//system/ZeroMQ will not be ready to listen for confirmation message
+
+		//wait for response, else complain for timeout-ing
+		ArrayReceiver.waitForFirstMessage(socket, timeOut);
+		//NB: if we got here, some message is ready to be read out
+
+		final String confirmation = socket.recvStr();
+		if (! confirmation.startsWith("ready"))
+			throw new RuntimeException("Protocol error, expected confirmation from the receiver.");
+	}
+
+
 	private static <T>
 	void packAndSendPlusData(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
 		//TODO: use mPack because metadata are of various types (including Strings)
 		//send single message with ZMQ.SNDMORE
+		socket.send("metadata dd1", ZMQ.SNDMORE);
 	}
 
 	private static <T>
@@ -177,6 +201,13 @@ public class ImgPacker
 	{
 		//TODO: use mPack because metadata are of various types (including Strings)
 		//read single message
+		ArrayReceiver.waitForFirstMessage(socket);
+		final String data = socket.recvStr();
+
+		if (! data.startsWith("metadata"))
+			throw new RuntimeException("Protocol error, expected metadata part from the receiver.");
+
+		//parse the incoming metadata from the 'data' string
 	}
 
 

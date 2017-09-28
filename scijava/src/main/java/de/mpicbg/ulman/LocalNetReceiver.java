@@ -72,7 +72,7 @@ public class LocalNetReceiver implements Command
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket listenerSocket = null;
 		try {
-			listenerSocket = zmqContext.socket(ZMQ.PULL);
+			listenerSocket = zmqContext.socket(ZMQ.PAIR);
 			if (listenerSocket == null)
 				throw new Exception("cannot obtain local socket");
 

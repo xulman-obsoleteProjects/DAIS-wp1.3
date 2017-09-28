@@ -42,6 +42,13 @@ public class LocalNetSender implements Command
 			columns=15)
 	private String remoteURL = "replace_me:54545";
 
+	@Parameter(label = "sending timeout in seconds:",
+			description = "The maximum time in seconds during which Fiji waits"
+			+" for establishing connection. If connection is not made after this period of time,"
+			+" no further attempts are made until this command is started again.",
+			min="1")
+	private int timeoutTime = 60;
+
 	@Override
 	public void run()
 	{
@@ -51,16 +58,16 @@ public class LocalNetSender implements Command
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket writerSocket = null;
 		try {
-			writerSocket = zmqContext.socket(ZMQ.PUSH);
+			writerSocket = zmqContext.socket(ZMQ.PAIR);
 			if (writerSocket == null)
 				throw new Exception("cannot obtain local socket");
 
 			//peer to send data out
 			writerSocket.connect("tcp://"+remoteURL);
-			log.info("sender connected");
 
 			//send the image
-			ImgPacker.packAndSend((ImgPlus) imgP, writerSocket);
+			log.info("sender sending...");
+			ImgPacker.packAndSend((ImgPlus) imgP, writerSocket, timeoutTime);
 
 			log.info("sender finished");
 		}
