@@ -20,7 +20,7 @@ import java.io.IOException;
 import de.mpicbg.ulman.imgtransfer.ImgPacker;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
-@Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Sender")
+@Plugin(type = Command.class, menuPath = "DAIS>Send Image over Network")
 public class LocalNetSender implements Command
 {
 	@Parameter
@@ -32,10 +32,10 @@ public class LocalNetSender implements Command
 	@Parameter
 	private ImgPlus<?> imgP;
 
-	@Parameter(visibility = ItemVisibility.MESSAGE, initializer="getHostURL")
+	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false)
 	private String hostURL = "Please, ask your receiving partner to tell you his address.";
 
-	@Parameter(label = "address:port of the receiving Fiji:",
+	@Parameter(label = "address:port of the receiving party:",
 			description = "The address can be anything as example.net or IP address"
 			+" as 10.0.0.2 delimited with ':' followed by a port number higher than"
 			+" 1024 such as 54545. It is important not to use any spaces.",

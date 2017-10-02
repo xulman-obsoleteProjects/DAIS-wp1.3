@@ -24,7 +24,7 @@ import java.io.IOException;
 import de.mpicbg.ulman.imgtransfer.ImgPacker;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
-@Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Receiver")
+@Plugin(type = Command.class, menuPath = "DAIS>Receive Image over Network")
 public class LocalNetReceiver implements Command
 {
 	@Parameter
@@ -36,7 +36,7 @@ public class LocalNetReceiver implements Command
 	@Parameter(type = ItemIO.OUTPUT)
 	private ImgPlus<?> imgP;
 
-	@Parameter(visibility = ItemVisibility.MESSAGE, initializer="getHostURL")
+	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false, initializer="getHostURL")
 	private String hostURLmsg = "";
 
 	private String hostURL = "";
@@ -44,23 +44,24 @@ public class LocalNetReceiver implements Command
 	{
 		hostURL = InetAddress.getLocalHost().getHostAddress();
 		hostURLmsg = "Please, tell your sending partner to use this for the address: ";
-		hostURLmsg += hostURL;
+		hostURLmsg += hostURL + ":";
+		hostURLmsg += new Integer(portNo).toString();
 	}
 
-	@Parameter(label = "port to listen at:",
+	@Parameter(label = "port to listen at:", callback="getHostURL", min="1025", max="65535",
 			description = "The port number should be higher than"
 			+" 1024 such as 54545. It is important not to use any spaces.")
 	private int portNo = 54545;
 
 	@Parameter(label = "listening timeout in seconds:",
 			description = "The maximum time in seconds during which Fiji waits"
-			+" for incomming connection. If nothing comes after this period of time,"
+			+" for incoming connection. If nothing comes after this period of time,"
 			+" the listening is stopped until this command is started again.",
 			min="1")
 	private int timeoutTime = 60;
 
-	@Parameter(visibility = ItemVisibility.MESSAGE)
-	private String firewallMsg = "Make sure the firewall is not blocking incomming connections to Fiji.";
+	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false)
+	private String firewallMsg = "Make sure the firewall is not blocking incoming connections to Fiji.";
 
 	public class FijiLogger implements ProgressCallback
 	{
