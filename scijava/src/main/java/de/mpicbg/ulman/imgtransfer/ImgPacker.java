@@ -36,6 +36,7 @@ import java.io.IOException;
 
 public class ImgPacker
 {
+	/// sends/pushes an image over network to someone who is receiving it
 	public static <T extends NativeType<T>>
 	void sendImage(final ImgPlus<T> imgP, final String addr,
 	               final int timeOut, final ProgressCallback log)
@@ -76,6 +77,94 @@ public class ImgPacker
 			zmqContext.close();
 			zmqContext.term();
 		}
+	}
+
+	/// receives an image over network from someone who is sending/pushing it
+	public static <T extends NativeType<T>>
+	ImgPlus<?> receiveImage(final int portNo,
+	                        final int timeOut, final ProgressCallback log)
+	throws IOException
+	{
+		log.info("receiver started");
+		ImgPlus<?> imgP = null;
+
+		//init the communication side
+		ZMQ.Context zmqContext = ZMQ.context(1);
+		ZMQ.Socket listenerSocket = null;
+		try {
+			listenerSocket = zmqContext.socket(ZMQ.PAIR);
+			if (listenerSocket == null)
+				throw new Exception("cannot obtain local socket");
+
+			//port to listen for incomming data
+			listenerSocket.bind("tcp://*:" + portNo);
+			log.info("receiver waiting");
+
+			//"an entry point" for the input data
+			byte[] incomingData = null;
+
+			//"busy wait" up to the given period of time
+			int timeAlreadyWaited = 0;
+			while (timeAlreadyWaited < timeOut && incomingData == null)
+			{
+				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
+					log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
+
+				//check if there is some data from a sender
+				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
+
+				//if nothing found, wait a while before another checking attempt
+				if (incomingData == null) Thread.sleep(1000);
+
+				++timeAlreadyWaited;
+			}
+
+			//process incoming data if there is some...
+			if (incomingData != null) {
+				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), listenerSocket);
+				//NB: this guy returns the ImgPlus that we desire...
+			}
+
+			log.info("receiver closed");
+		}
+		catch (ZMQException e) {
+			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (Exception e) {
+			throw new IOException("receiver error: " + e.getMessage());
+		}
+		finally {
+			log.info("receiver cleaning");
+			if (listenerSocket != null)
+			{
+				listenerSocket.unbind("tcp://*:" + portNo);
+				listenerSocket.close();
+			}
+			zmqContext.close();
+			zmqContext.term();
+		}
+
+		return imgP;
+	}
+
+
+	/// just like sendImage() but connection is initiated from the receiver
+	public static <T extends NativeType<T>>
+	void serveImage(final ImgPlus<T> imgP, final int portNo,
+	                final int timeOut, final ProgressCallback log)
+	throws IOException
+	{
+	}
+
+	/// just like receiveImage() but initiate the connection
+	public static <T extends NativeType<T>>
+	ImgPlus<?> requestImage(final String addr,
+	                        final int timeOut, final ProgressCallback log)
+	throws IOException
+	{
+		ImgPlus<?> imgP = null;
+
+		return imgP;
 	}
 
 
