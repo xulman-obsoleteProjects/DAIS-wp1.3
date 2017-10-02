@@ -21,7 +21,7 @@ import de.mpicbg.ulman.imgtransfer.ImgPacker;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Send Image over Network")
-public class LocalNetSender implements Command
+public class SendImage implements Command
 {
 	@Parameter
 	private LogService log;

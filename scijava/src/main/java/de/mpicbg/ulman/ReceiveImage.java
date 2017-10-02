@@ -25,7 +25,7 @@ import de.mpicbg.ulman.imgtransfer.ImgPacker;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Receive Image over Network")
-public class LocalNetReceiver implements Command
+public class ReceiveImage implements Command
 {
 	@Parameter
 	private LogService log;
