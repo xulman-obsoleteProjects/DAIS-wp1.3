@@ -10,20 +10,19 @@ package de.mpicbg.ulman;
 import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ItemVisibility;
+import org.scijava.app.StatusService;
+import org.scijava.log.LogService;
+import net.imagej.ImgPlus;
 
+import org.scijava.ItemIO;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.scijava.ItemIO;
-import org.scijava.ItemVisibility;
-//import org.scijava.app.StatusService;
-import org.scijava.log.LogService;
+import java.io.IOException;
 
-import net.imagej.ImgPlus;
-
-import org.zeromq.ZMQ;
-import org.zeromq.ZMQException;
 import de.mpicbg.ulman.imgtransfer.ImgPacker;
+import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 @Plugin(type = Command.class, menuPath = "DAIS>Local Network Image Receiver")
 public class LocalNetReceiver implements Command
@@ -31,8 +30,8 @@ public class LocalNetReceiver implements Command
 	@Parameter
 	private LogService log;
 
-	//@Parameter
-	//private StatusService statusService;
+	@Parameter
+	private StatusService status;
 
 	@Parameter(type = ItemIO.OUTPUT)
 	private ImgPlus<?> imgP;
@@ -51,7 +50,7 @@ public class LocalNetReceiver implements Command
 	@Parameter(label = "port to listen at:",
 			description = "The port number should be higher than"
 			+" 1024 such as 54545. It is important not to use any spaces.")
-	private String portNo = "54545";
+	private int portNo = 54545;
 
 	@Parameter(label = "listening timeout in seconds:",
 			description = "The maximum time in seconds during which Fiji waits"
@@ -63,67 +62,32 @@ public class LocalNetReceiver implements Command
 	@Parameter(visibility = ItemVisibility.MESSAGE)
 	private String firewallMsg = "Make sure the firewall is not blocking incomming connections to Fiji.";
 
+	public class FijiLogger implements ProgressCallback
+	{
+		FijiLogger(final LogService _log, final StatusService _bar)
+		{ log = _log; bar = _bar; }
+
+		final LogService log;
+		final StatusService bar;
+
+		@Override
+		public void info(String msg)
+		{ log.info(msg); }
+
+		@Override
+		public void setProgress(float howFar)
+		{ bar.showProgress((int)(100 * howFar), 100); }
+	}
+
 	@Override
 	public void run()
 	{
-		log.info("receiver started");
-
-		//init the communication side
-		ZMQ.Context zmqContext = ZMQ.context(1);
-		ZMQ.Socket listenerSocket = null;
+		final FijiLogger flog = new FijiLogger(log, status);
 		try {
-			listenerSocket = zmqContext.socket(ZMQ.PAIR);
-			if (listenerSocket == null)
-				throw new Exception("cannot obtain local socket");
-
-			//port to listen for incomming data
-			listenerSocket.bind("tcp://*:" + portNo);
-			log.info("receiver waiting");
-
-			//"an entry point" for the input data
-			byte[] incomingData = null;
-
-			//"busy wait" up to the given period of time
-			int timeAlreadyWaited = 0;
-			while (timeAlreadyWaited < timeoutTime && incomingData == null)
-			{
-				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
-					log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
-
-				//check if there is some data from a sender
-				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
-
-				//if nothing found, wait a while before another checking attempt
-				if (incomingData == null) Thread.sleep(1000);
-
-				++timeAlreadyWaited;
-			}
-
-			//process incoming data if there is some...
-			if (incomingData != null) {
-				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), listenerSocket);
-				//NB: this guy returns the ImgPlus that we desire...
-			}
-
-			log.info("receiver closed");
+			imgP = ImgPacker.receiveImage(portNo, timeoutTime, flog);
 		}
-		catch (ZMQException e) {
-			System.out.println("ZeroMQ error: " + e.getMessage());
-			log.info("receiver crashed");
-		}
-		catch (Exception e) {
-			System.out.println("receiver error: " + e.getMessage());
-			e.printStackTrace();
-		}
-		finally {
-			log.info("receiver cleaning");
-			if (listenerSocket != null)
-			{
-				listenerSocket.unbind("tcp://*:" + portNo);
-				listenerSocket.close();
-			}
-			zmqContext.close();
-			zmqContext.term();
+		catch (IOException e) {
+			log.error(e.getMessage());
 		}
 	}
 }
