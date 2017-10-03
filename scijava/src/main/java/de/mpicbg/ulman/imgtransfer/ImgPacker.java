@@ -456,26 +456,42 @@ public class ImgPacker
 	}
 
 
+	///meta data Message Separator
+	private static
+	final String mdMsgSep = new String("__QWE__");
+
 	private static <T>
 	void packAndSendPlusData(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
 		//TODO: use mPack because metadata are of various types (including Strings)
-		//send single message with ZMQ.SNDMORE
-		socket.send("metadata dd1", ZMQ.SNDMORE);
+
+		String msg = new String("metadata");
+		msg += mdMsgSep+"imagename"+mdMsgSep+imgP.getName();
+		msg += mdMsgSep+"endmetadata";
+		socket.send(msg, ZMQ.SNDMORE);
 	}
 
 	private static <T>
 	void receiveAndUnpackPlusData(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
 		//TODO: use mPack because metadata are of various types (including Strings)
-		//read single message
+
+		//read the single message
 		ArrayReceiver.waitForFirstMessage(socket);
 		final String data = socket.recvStr();
 
 		if (! data.startsWith("metadata"))
 			throw new RuntimeException("Protocol error, expected metadata part from the receiver.");
 
-		//parse the incoming metadata from the 'data' string
+		//split the input data to individual terms
+		String[] terms = data.split(mdMsgSep);
+
+		//should do more thorough tests....
+		if (terms.length != 4)
+			throw new RuntimeException("Protocol error, received likely corrupted metadata part.");
+
+		//set filename
+		imgP.setName(terms[2]);
 	}
 
 
