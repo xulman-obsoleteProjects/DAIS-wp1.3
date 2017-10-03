@@ -68,7 +68,6 @@ public class RequestImage implements Command
 		{ bar.showProgress((int)(100 * howFar), 100); }
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void run()
 	{
