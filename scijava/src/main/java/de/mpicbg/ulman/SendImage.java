@@ -15,12 +15,14 @@ import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 import net.imagej.ImgPlus;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.io.IOException;
 
 import de.mpicbg.ulman.imgtransfer.ImgPacker;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
-@Plugin(type = Command.class, menuPath = "DAIS>a_ Send Image over Network")
+@Plugin(type = Command.class, menuPath = "File>Export>Send Image")
 public class SendImage implements Command
 {
 	@Parameter
@@ -32,8 +34,9 @@ public class SendImage implements Command
 	@Parameter
 	private ImgPlus<?> imgP;
 
+	// ----------- sending ----------- 
 	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false)
-	private String hostURL = "Please, ask your receiving partner to tell you his address.";
+	private String remoteURLmsg = "Option A: Ask your receiving partner to tell you his address.";
 
 	@Parameter(label = "address:port of the receiving party:",
 			description = "The address can be anything as example.net or IP address"
@@ -42,13 +45,44 @@ public class SendImage implements Command
 			columns=15)
 	private String remoteURL = "replace_me:54545";
 
-	@Parameter(label = "sending timeout in seconds:",
+	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false)
+	private String sepMsgA = "------------------------------------------------------";
+
+	// ----------- serving ----------- 
+	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false, initializer="getHostURL")
+	private String hostURLmsg = "";
+
+	private String hostURL = "";
+	void getHostURL() throws UnknownHostException
+	{
+		hostURL = InetAddress.getLocalHost().getHostAddress();
+		hostURLmsg = "Option B: Tell your downloading partner this address: ";
+		hostURLmsg += hostURL + ":";
+		hostURLmsg += new Integer(portNo).toString();
+	}
+
+	@Parameter(label = "port to listen at:", callback="getHostURL", min="1025", max="65535",
+			description = "The port number should be higher than 1024 such as 54545.")
+	private int portNo = 54545;
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false)
+	private String firewallMsg = "Make sure the firewall is not blocking incoming connections to Fiji.";
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false)
+	private String sepMsgB = "------------------------------------------------------";
+
+	// ----------- common ----------- 
+	@Parameter(label = "Choose the same sending option as your partner:", choices = {"A", "B"})
+	private char transferMode = 'A';
+
+	@Parameter(label = "Connection timeout in seconds:",
 			description = "The maximum time in seconds during which Fiji waits"
 			+" for establishing connection. If connection is not made after this period of time,"
 			+" no further attempts are made until this command is started again.",
 			min="1")
 	private int timeoutTime = 60;
 
+	// ----------- executive part ----------- 
 	public class FijiLogger implements ProgressCallback
 	{
 		FijiLogger(final LogService _log, final StatusService _bar)
@@ -72,8 +106,10 @@ public class SendImage implements Command
 	{
 		final FijiLogger flog = new FijiLogger(log, status);
 		try {
-			ImgPacker.sendImage((ImgPlus) imgP, "tcp://"+remoteURL,
-				timeoutTime, flog);
+			if (transferMode == 'A')
+				ImgPacker.sendImage((ImgPlus) imgP, "tcp://"+remoteURL, timeoutTime, flog);
+			else
+				ImgPacker.serveImage((ImgPlus) imgP, portNo, timeoutTime, flog);
 		}
 		catch (IOException e) {
 			log.error(e.getMessage());
