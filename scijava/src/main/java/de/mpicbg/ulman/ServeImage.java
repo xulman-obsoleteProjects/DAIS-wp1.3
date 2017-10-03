@@ -23,7 +23,7 @@ import java.io.IOException;
 import de.mpicbg.ulman.imgtransfer.ImgPacker;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
-@Plugin(type = Command.class, menuPath = "DAIS>Serve Image over Network")
+@Plugin(type = Command.class, menuPath = "DAIS>b_ Serve Image over Network")
 public class ServeImage implements Command
 {
 	@Parameter

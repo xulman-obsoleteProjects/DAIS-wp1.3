@@ -20,7 +20,7 @@ import java.io.IOException;
 import de.mpicbg.ulman.imgtransfer.ImgPacker;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
-@Plugin(type = Command.class, menuPath = "DAIS>Send Image over Network")
+@Plugin(type = Command.class, menuPath = "DAIS>a_ Send Image over Network")
 public class SendImage implements Command
 {
 	@Parameter

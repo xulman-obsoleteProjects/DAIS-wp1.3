@@ -22,7 +22,7 @@ import java.io.IOException;
 import de.mpicbg.ulman.imgtransfer.ImgPacker;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
-@Plugin(type = Command.class, menuPath = "DAIS>Request Image over Network")
+@Plugin(type = Command.class, menuPath = "DAIS>b_ Request Image over Network")
 public class RequestImage implements Command
 {
 	@Parameter
@@ -37,7 +37,7 @@ public class RequestImage implements Command
 	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false)
 	private String hostURL = "Please, ask your serving partner to tell you his address.";
 
-	@Parameter(label = "address:port of the receiving party:",
+	@Parameter(label = "address:port of the serving party:",
 			description = "The address can be anything as example.net or IP address"
 			+" as 10.0.0.2 delimited with ':' followed by a port number higher than"
 			+" 1024 such as 54545. It is important not to use any spaces.",
