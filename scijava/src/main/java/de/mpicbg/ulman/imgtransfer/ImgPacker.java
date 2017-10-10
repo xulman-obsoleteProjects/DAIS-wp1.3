@@ -79,6 +79,14 @@ public class ImgPacker
 		}
 	}
 
+	/// sends/pushes an image over network to someone who is receiving it
+	public static <T extends NativeType<T>>
+	void sendImage(final ImgPlus<T> imgP, final String addr,
+	               final int timeOut)
+	throws IOException
+	{ sendImage(imgP, addr, timeOut, null); }
+
+
 	/// receives an image over network from someone who is sending/pushing it
 	public static <T extends NativeType<T>>
 	ImgPlus<?> receiveImage(final int portNo,
@@ -147,6 +155,12 @@ public class ImgPacker
 		return imgP;
 	}
 
+	/// receives an image over network from someone who is sending/pushing it
+	public static <T extends NativeType<T>>
+	ImgPlus<?> receiveImage(final int portNo,
+	                        final int timeOut)
+	throws IOException
+	{ return receiveImage(portNo, timeOut, null); }
 
 
 	/// just like sendImage() but connection is initiated from the receiver
@@ -219,6 +233,14 @@ public class ImgPacker
 			zmqContext.term();
 		}
 	}
+
+	/// just like sendImage() but connection is initiated from the receiver
+	public static <T extends NativeType<T>>
+	void serveImage(final ImgPlus<T> imgP, final int portNo,
+	                final int timeOut)
+	throws IOException
+	{ serveImage(imgP, portNo, timeOut, null); }
+
 
 	/// just like receiveImage() but initiate the connection
 	public static <T extends NativeType<T>>
@@ -294,6 +316,13 @@ public class ImgPacker
 
 		return imgP;
 	}
+
+	/// just like receiveImage() but initiate the connection
+	public static <T extends NativeType<T>>
+	ImgPlus<?> requestImage(final String addr,
+	                        final int timeOut)
+	throws IOException
+	{ return requestImage(addr, timeOut, null); }
 
 
 	// -------- transmission of the image, sockets --------
