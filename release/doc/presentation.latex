@@ -1,0 +1,350 @@
+%
+% compile with: pdflatex presentation.latex
+%
+\documentclass{beamer}
+\usepackage{graphicx}
+\usepackage{ucs}
+\usepackage[utf8x]{inputenc}
+\usepackage{textcomp}
+\usepackage{hyperref}
+\usepackage{multimedia}
+%\usepackage{movie15}
+\usepackage{url}
+\usepackage{siunitx}
+\usepackage{listings}
+%
+\usepackage[absolute,overlay]{textpos}
+\setlength{\TPHorizModule}{1cm}
+\setlength{\TPVertModule}{1cm}
+
+\newcommand{\heading}[1]{\textcolor[rgb]{0,0.6,0}{\bf#1}}
+\newcommand{\reference}[1]{\textcolor[rgb]{0.3,0.3,0.3}{\scriptsize\hfill#1}}
+\newcommand{\surl}[1]{{\small\url{#1}}}
+\def\etal{{\it et al.{}}}
+
+\mode<presentation>
+{
+   \usetheme{Boadilla}
+   \usecolortheme{whale}
+	\colorlet{beamer@blendedblue}{blue!55!green}
+	\setbeamercolor*{frametitle}{parent=palette secondary}
+	\font\part=cmss12
+   \setbeamercovered{transparent}
+   \setbeamertemplate{navigation symbols}{}
+}
+\setbeamercovered{invisible}
+
+\title[imglib2 network transfer]{imglib2 network transfer}
+\institute[CSBD and MPI-CBG]{CSBD and MPI-CBG}
+\author[Vladim\'\i{}r Ulman]{Vladim\'\i{}r Ulman}
+\date[10th Oct, 2017]{10th Oct, 2017\\DAIS wp 1.3, internal meeting, Dresden\\[1cm]%
+{\small The document is valid as of commit 1564092410fe50dded97a1d8e4df4847c388371b (3-Oct-2017)}}
+
+\begin{document}
+\begin{frame}
+	\titlepage
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{The Goal of DAIS wp 1.3}
+	\begin{itemize}
+	\item Direct transmission of the imglib2 data between two peers
+	\item Peers are assumed to be two independent processes
+	\medskip
+	\item Processes may:
+	\begin{itemize}
+		\item live on the same machine
+		\item live on machines connected over TCP/IP network
+		\item any app, e.g., FIJI, KNIME, wrapped C/C++/Python library
+	\end{itemize}
+	\item Inspired by the BlueTooth principles
+
+	\bigskip
+	\item Uses proprietary/own protocol:
+	\begin{itemize}
+		\item text header and binary voxel data
+		\item {\sl similar to ICS (Image Cytometry Standard)}
+		\item default TCP port 54545 
+		\item {\sl no collision in /etc/services}
+	\end{itemize}
+
+	\bigskip
+	\item Networking is done via ZeroMQ package.
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+	\frametitle{The API of DAIS wp 1.3}
+	How to use it from Java:
+	\scriptsize
+	\lstset{breakatwhitespace=true,
+	language=Java,
+	columns=fullflexible,
+	keepspaces=true,
+	breaklines=true,
+	tabsize=3, 
+	showstringspaces=false,
+	extendedchars=true}
+\begin{lstlisting}
+import de.mpicbg.ulman.imgtransfer.ImgPacker;
+[ import de.mpicbg.ulman.imgtransfer.ProgressCallback; ]
+
+ImgPlus<?> imgP = ...;
+
+A_sendsTo_B:
+A: ImgPacker.sendImage((ImgPlus) imgP, "tcp://"+remoteURL, timeoutTime[, logger]);
+B: imgP = ImgPacker.receiveImage(portNo, timeoutTime[, logger]);
+
+- or -
+
+A_downloadsFrom_B:
+B: ImgPacker.serveImage((ImgPlus) imgP, portNo, timeoutTime[, logger]);
+A: imgP = ImgPacker.requestImage("tcp://"+remoteURL, timeoutTime[, logger]);
+\end{lstlisting}
+	\begin{itemize}
+	\item TimeoutTime is given in seconds as int, max waiting time 68 yrs
+	\item Logger is optional
+	\item Logger must implement ProgressCallback.info(String) and ProgressCallback.setProgress(0$\le$float$\le$1)
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{The Principle of DAIS wp 1.3}
+	Why two communication models:
+	\begin{itemize}
+	\item Network stand point:
+	\medskip
+	{
+	\scriptsize
+	\item A and B on the same local network:
+	      \\$\rightarrow$ A$\_$sendsTo$\_$B, B$\_$sendsTo$\_$A, A$\_$downloadsFrom$\_$B, B$\_$downloadsFrom$\_$A
+	\medskip
+	\item A on local network (behind firewall/NAT),
+	\item B on remote network with public IP:
+	      \\$\rightarrow$ A$\_$sendsTo$\_$B, A$\_$downloadsFrom$\_$B
+	\medskip
+	\item A on local network (behind firewall/NAT),
+	\item B on remote network (behind firewall/NAT):
+	      \\$\rightarrow$ only with tunneling through public IP SSH server, or alike
+	}
+
+	\bigskip
+	\item PLANNED, local network discovery mode:
+	\begin{itemize}
+		\item A broadcasts "who is around"
+		\item B replies "B is at this IP"
+		\item A collects replies, presents them to user
+		\item A sends to\dots
+	\end{itemize}
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{The Principle of DAIS wp 1.3}
+	Why two communication models:
+	\begin{itemize}
+	\item Flow control stand point:
+	\medskip
+	\item A is the main program that asks someone to process data
+	\item A$\_$sendsTo$\_$B, B does some work, A$\_$downloadsFrom$\_$B
+
+	\bigskip
+	\item A knows B because it asks B to do some work for A
+	\item B does not need to know identification of A
+	\begin{itemize}
+		\item B: imgP = ImgPacker.receiveImage(portNo, timeoutTime);
+		\item B: process(imgP);
+		\item B: ImgPacker.serveImage((ImgPlus) imgP, portNo, timeoutTime);
+	\end{itemize}
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{The Principle of DAIS wp 1.3}
+	How to batch execute foreign code/binary (not tested yet):
+	\begin{itemize}
+	\item B: construct the foreign binary as:
+	\begin{itemize}
+		\item receive image, process image, serve image
+		\item {\sl only portNo is required}
+	\end{itemize}
+
+	\bigskip
+	\item A: construct the Java caller as:
+	\begin{itemize}
+		\item pre-process image,
+		\item send the image in thread Q $\&$ exec() the foreign binary in thread W,
+		\item receive image in thread Q $\&$ wait for thread W,
+		\item post-process image
+		\item {\sl connecting address of B is required}
+	\end{itemize}
+
+	\bigskip
+	\item Foreign code can be any executable\\e.g. Fiji-headless-plugin or wrapped C++ library
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+	\frametitle{The API of DAIS wp 1.3}
+	How to use it from Java (reminder):
+	\scriptsize
+	\lstset{breakatwhitespace=true,
+	language=Java,
+	columns=fullflexible,
+	keepspaces=true,
+	breaklines=true,
+	tabsize=3, 
+	showstringspaces=false,
+	extendedchars=true}
+\begin{lstlisting}
+import de.mpicbg.ulman.imgtransfer.ImgPacker;
+[ import de.mpicbg.ulman.imgtransfer.ProgressCallback; ]
+
+ImgPlus<?> imgP = ...;
+
+A_sendsTo_B:
+A: ImgPacker.sendImage((ImgPlus) imgP, "tcp://"+remoteURL, timeoutTime[, logger]);
+B: imgP = ImgPacker.receiveImage(portNo, timeoutTime[, logger]);
+
+- or -
+
+A_downloadsFrom_B:
+B: ImgPacker.serveImage((ImgPlus) imgP, portNo, timeoutTime[, logger]);
+A: imgP = ImgPacker.requestImage("tcp://"+remoteURL, timeoutTime[, logger]);
+\end{lstlisting}
+	\begin{itemize}
+	\item TimeoutTime is given in seconds as int, max waiting time 68 yrs
+	\item Logger is optional
+	\item Logger must implement ProgressCallback.info(String) and ProgressCallback.setProgress(0$\le$float$\le$1)
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{The Control Flow of API of DAIS wp 1.3}
+	\begin{itemize}
+	\item All 4 functions should finish either with:
+	\begin{itemize}
+		\item success after image was for sure sent or received
+		\item exception due to timeout (no functional connection was established)
+		\item exception due to other error (e.g. socket issues, protocol error)
+	\end{itemize}
+
+	\bigskip
+	\item Currently supported:
+	\begin{itemize}
+		\item only the image imgP.getName() metadata
+		\medskip
+		\item ImpPacker.SUPPORTED$\_$VOXEL$\_$CLASSES list supported voxel imglib2 types (ByteType, UnsignedByteType, ShortType, UnsignedShortType, FloatType, DoubleType)
+		\medskip
+		\item ArrayImg, PlanarImg supported; CellImg, CachedCellImg not yet
+	\end{itemize}
+	\end{itemize}
+\end{frame}
+
+
+\newcommand{\SEP}{QQ}
+\begin{frame}
+	\frametitle{The Control Flow of API of DAIS wp 1.3}
+	Technical details, A sends image to B:
+	\scriptsize
+	\begin{itemize}
+\item A calls ImgPacker.sendImage()
+\item A$\rightarrow$ sends "v1 dimNumber 2 256 256 Float PlanarImg" (example):
+    ImgPacker.packAndSend(); ImgPacker.packAndSendHeader()
+\bigskip
+\item B calls ImgPacker.receiveImage()
+\item B$\leftarrow$ periodically (non-blocking) reads its port until timeout: ImgPacker.receiveImage()
+\item B$\leftarrow$ reads header, tries to create empty image: ImgPacker.receiveAndUnpack()
+\item B$\rightarrow$ sends "ready": ImgPacker.receiveAndUnpack()
+\bigskip
+\item A$\leftarrow$ periodically (non-blocking) reads its port until timeout: ImgPacker.packAndSendHeader()
+\item A$\leftarrow$ needs to read "ready", else complain: ImgPacker.packAndSendHeader()
+\bigskip
+\item A$\rightarrow$ sends "metadata\SEP{}imagename\SEP{}someStringWithSpaces\SEP{}endmetadata": ImgPacker.packAndSendPlusData()
+\item B$\leftarrow$ reads metadata, parses them with the separator \SEP{} (ImgPacker.mdMsgSep): ImgPacker.receiveAndUnpackPlusData()
+\bigskip
+\item A$\rightarrow$ keeps sending PlanarImg voxel data: ImgPacker.packAndSendPlanarImg()
+\item B$\leftarrow$ keeps reading PlanarImg voxel data: ImgPacker.receiveAndUnpackPlanarImg()
+\bigskip
+\item B$\rightarrow$ sends "done" after it finishes reading: ImgPacker.receiveAndUnpack()
+\item B finishes
+\bigskip
+\item A$\leftarrow$ waits for "done", else complain: ImgPacker.packAndSend()
+\item A finishes
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+	\frametitle{The Control Flow of API of DAIS wp 1.3}
+	Technical details, A sends image to B:
+	\begin{itemize}
+	{\scriptsize
+	\item A$\rightarrow$ keeps sending PlanarImg voxel data
+	\item B$\leftarrow$ keeps reading PlanarImg voxel data}
+	\bigskip
+	\item ArrayImg is sent in one "chunk"
+	\item PlanarImg is sent plane-wise in multiple "chunks", one per plane
+	\item (CellImg will be sent cell-wise)
+
+	\bigskip
+	\item PlanarImg:
+	\end{itemize}
+	\scriptsize
+	\lstset{breakatwhitespace=true,
+	language=Java,
+	columns=fullflexible,
+	keepspaces=true,
+	breaklines=true,
+	tabsize=3, 
+	showstringspaces=false,
+	extendedchars=true}
+\begin{lstlisting}
+for (int slice = 0; slice < img.numSlices(); ++slice)
+{
+	final Object data = img.getPlane(slice).getCurrentStorageArray();
+	ArraySender.sendArray(data, socket)
+	// ArrayReceiver.receiveArray(data, socket);
+}
+\end{lstlisting}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{The Control Flow of API of DAIS wp 1.3}
+	\begin{itemize}
+	\item ArraySender.sendArray() $\&$ ArrayReceiver.receiveArray()
+	\begin{itemize}
+		\item send/receive one "chunk" of data
+		\item figure voxel type from Object data
+		\item call sending/receiving routines specific for that voxel type
+	\end{itemize}
+
+	\bigskip
+	\item Example specific for float:
+	\item void sendFloats(final float[] data, final ZMQ.Socket socket)
+	\begin{itemize}
+		\item data is length-limited array of 4B elements
+		\item but ZeroMQ consumes ByteBuffer: length-limited array of 1B elements
+		\item solution: send as 4 messages
+		\item one "chunk" is sent as 4 ZeroMQ messages for FloatType
+	\end{itemize}
+
+	\bigskip
+	\item Summary:
+	\begin{itemize}
+		\item ArrayImg is sent as a single plane
+		\item PlanarImg is sent plane-wise
+		\item each plane is sent as multiple ZeroMQ messages, depends on voxel type
+	\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\end{document}
