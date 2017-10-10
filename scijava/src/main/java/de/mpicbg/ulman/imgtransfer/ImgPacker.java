@@ -42,7 +42,7 @@ public class ImgPacker
 	               final int timeOut, final ProgressCallback log)
 	throws IOException
 	{
-		log.info("sender started");
+		if (log != null) log.info("sender started");
 
 		//init the communication side
 		ZMQ.Context zmqContext = ZMQ.context(1);
@@ -56,10 +56,10 @@ public class ImgPacker
 			writerSocket.connect(addr);
 
 			//send the image
-			log.info("sender sending...");
+			if (log != null) log.info("sender sending...");
 			packAndSend((ImgPlus) imgP, writerSocket, timeOut);
 
-			log.info("sender finished");
+			if (log != null) log.info("sender finished");
 		}
 		catch (ZMQException e) {
 			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
@@ -68,7 +68,7 @@ public class ImgPacker
 			throw new IOException("sender error: " + e.getMessage());
 		}
 		finally {
-			log.info("sender cleaning");
+			if (log != null) log.info("sender cleaning");
 			if (writerSocket != null)
 			{
 				writerSocket.disconnect(addr);
@@ -85,7 +85,7 @@ public class ImgPacker
 	                        final int timeOut, final ProgressCallback log)
 	throws IOException
 	{
-		log.info("receiver started");
+		if (log != null) log.info("receiver started");
 		ImgPlus<?> imgP = null;
 
 		//init the communication side
@@ -98,7 +98,7 @@ public class ImgPacker
 
 			//port to listen for incoming data
 			listenerSocket.bind("tcp://*:" + portNo);
-			log.info("receiver waiting");
+			if (log != null) log.info("receiver waiting");
 
 			//"an entry point" for the input data
 			byte[] incomingData = null;
@@ -108,7 +108,7 @@ public class ImgPacker
 			while (timeAlreadyWaited < timeOut && incomingData == null)
 			{
 				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
-					log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
+					if (log != null) log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
 
 				//check if there is some data from a sender
 				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
@@ -125,7 +125,7 @@ public class ImgPacker
 				//NB: this guy returns the ImgPlus that we desire...
 			}
 
-			log.info("receiver finished");
+			if (log != null) log.info("receiver finished");
 		}
 		catch (ZMQException e) {
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
@@ -134,7 +134,7 @@ public class ImgPacker
 			throw new IOException("receiver error: " + e.getMessage());
 		}
 		finally {
-			log.info("receiver cleaning");
+			if (log != null) log.info("receiver cleaning");
 			if (listenerSocket != null)
 			{
 				listenerSocket.unbind("tcp://*:" + portNo);
@@ -148,13 +148,14 @@ public class ImgPacker
 	}
 
 
+
 	/// just like sendImage() but connection is initiated from the receiver
 	public static <T extends NativeType<T>>
 	void serveImage(final ImgPlus<T> imgP, final int portNo,
 	                final int timeOut, final ProgressCallback log)
 	throws IOException
 	{
-		log.info("server started");
+		if (log != null) log.info("server started");
 
 		//init the communication side
 		ZMQ.Context zmqContext = ZMQ.context(1);
@@ -166,7 +167,7 @@ public class ImgPacker
 
 			//port to listen for incoming data
 			listenerSocket.bind("tcp://*:" + portNo);
-			log.info("server waiting");
+			if (log != null) log.info("server waiting");
 
 			//"an entry point" for the input data
 			byte[] incomingData = null;
@@ -176,7 +177,7 @@ public class ImgPacker
 			while (timeAlreadyWaited < timeOut && incomingData == null)
 			{
 				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
-					log.info("server waiting already " + timeAlreadyWaited + " seconds");
+					if (log != null) log.info("server waiting already " + timeAlreadyWaited + " seconds");
 
 				//check if there is some data from a sender
 				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
@@ -190,7 +191,7 @@ public class ImgPacker
 			//process incoming data if there is some...
 			if (incomingData != null && new String(incomingData).startsWith("can get"))
 			{
-				log.info("server sending...");
+				if (log != null) log.info("server sending...");
 				packAndSend((ImgPlus) imgP, listenerSocket, timeOut);
 			}
 			else
@@ -199,7 +200,7 @@ public class ImgPacker
 					throw new RuntimeException("Protocol error, expected initial ping from the receiver.");
 			}
 
-			log.info("server finished");
+			if (log != null) log.info("server finished");
 		}
 		catch (ZMQException e) {
 			throw new IOException("server crashed, ZeroMQ error: " + e.getMessage());
@@ -208,7 +209,7 @@ public class ImgPacker
 			throw new IOException("server error: " + e.getMessage());
 		}
 		finally {
-			log.info("server cleaning");
+			if (log != null) log.info("server cleaning");
 			if (listenerSocket != null)
 			{
 				listenerSocket.unbind("tcp://*:" + portNo);
@@ -225,7 +226,7 @@ public class ImgPacker
 	                        final int timeOut, final ProgressCallback log)
 	throws IOException
 	{
-		log.info("receiver started");
+		if (log != null) log.info("receiver started");
 		ImgPlus<?> imgP = null;
 
 		//init the communication side
@@ -240,7 +241,7 @@ public class ImgPacker
 			writerSocket.connect(addr);
 
 			//send the request
-			log.info("receiver request sent");
+			if (log != null) log.info("receiver request sent");
 			writerSocket.send("can get");
 
 			//wait for connection to happen...
@@ -255,7 +256,7 @@ public class ImgPacker
 			while (timeAlreadyWaited < timeOut && incomingData == null)
 			{
 				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
-					log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
+					if (log != null) log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
 
 				//check if there is some data from a sender
 				incomingData = writerSocket.recv(ZMQ.NOBLOCK);
@@ -272,7 +273,7 @@ public class ImgPacker
 				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), writerSocket);
 			}
 
-			log.info("receiver finished");
+			if (log != null) log.info("receiver finished");
 		}
 		catch (ZMQException e) {
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
@@ -281,7 +282,7 @@ public class ImgPacker
 			throw new IOException("receiver error: " + e.getMessage());
 		}
 		finally {
-			log.info("receiver cleaning");
+			if (log != null) log.info("receiver cleaning");
 			if (writerSocket != null)
 			{
 				writerSocket.disconnect(addr);
@@ -463,7 +464,7 @@ public class ImgPacker
 	private static <T>
 	void packAndSendPlusData(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
-		//TODO: use mPack because metadata are of various types (including Strings)
+		//TODO: use JSON because metadata are of various types (including Strings)
 
 		String msg = new String("metadata");
 		msg += mdMsgSep+"imagename"+mdMsgSep+imgP.getName();
@@ -474,7 +475,7 @@ public class ImgPacker
 	private static <T>
 	void receiveAndUnpackPlusData(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
-		//TODO: use mPack because metadata are of various types (including Strings)
+		//TODO: use JSON because metadata are of various types (including Strings)
 
 		//read the single message
 		ArrayReceiver.waitForFirstMessage(socket);
