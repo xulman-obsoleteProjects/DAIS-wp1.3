@@ -15,7 +15,7 @@ import net.imglib2.RandomAccess;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import de.mpicbg.ulman.imgtransfer.ImgPacker;
+import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 
 import org.zeromq.ZMQ;
 
@@ -82,7 +82,9 @@ public class TestPacker
 			writerSocket.connect("tcp://localhost:54545");
 
 			//start up the packer class
-			ImgPacker.packAndSend(imgPlus, writerSocket, 60, null);
+			//ImgTransfer.packAndSend(imgPlus, writerSocket, 60, null);
+
+			//TODO: send request to send image and wait for "ready" coming back
 
 			//clean up
 			writerSocket.close();
