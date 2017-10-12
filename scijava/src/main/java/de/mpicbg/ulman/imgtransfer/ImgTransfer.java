@@ -14,9 +14,50 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 import java.io.IOException;
 
+/**
+ * This class provides convenience, front-end functions for ImgPlus transfer.
+ *
+ * There are actually two main sorts of the functions. The first sort
+ * consists solely of static functions, which thus cannot remember any state
+ * of the transfer after they end. These functions, therefore, allow to
+ * send/receive only one image.
+ *
+ * The second sort of functions are not static functions. Caller must create
+ * an object/instance of this class in order to use them. In this way,
+ * multiple images can be sent/received one by one, always single image with
+ * single function call. This necessitates that the looping over images to be
+ * transferred has to happen on the caller's side, but it is not a difficult
+ * piece of code and brings additional flexibility for the caller to decide
+ * when he is ready for the transfer (e.g., allowing for streamlining of the
+ * processing of the transferred images).
+ *
+ * In order to transfer multiple images, just call the transfer function
+ * repeatedly (every time with different image, of course). The first call
+ * would open the connection and transfer the first image, consequent calls
+ * would just transfer their images. REMEMBER, however, to call the HangUp()
+ * after last image was transferred! Receiving party should call
+ * isThereNextImage() to determine if it should receive one more image or
+ * HangUp() now. Note that the image transferring protocol knows, after every
+ * image is transferred, whether there shall be next transfer.
+ *
+ * When sending images, you can optionally advice/send hint to the receiving
+ * party about the number of images you plan to send. This can be achieved by
+ * providing the constructor with the particular positive number. When receiving
+ * images, you can optionally read the hint with getExpectedNumberOfImages()
+ * anytime after the first image has arrived.
+ *
+ * Their might come, if requested, a third sort that would be collecting
+ * convenience functions to send/receive an array of images.
+ */
 public class ImgTransfer
 {
-	/// sends/pushes an image over network to someone who is receiving it
+// ------------------ static, single-image handling functions ------------------
+
+	/**
+	 * Sends/pushes an image over network to someone who is receiving it.
+	 *
+	 * Logging/reporting IS supported here whenever \e log != null.
+	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
 	public static <T extends NativeType<T>>
 	void sendImage(final ImgPlus<T> imgP, final String addr,
@@ -59,7 +100,11 @@ public class ImgTransfer
 		}
 	}
 
-	/// sends/pushes an image over network to someone who is receiving it
+	/**
+	 * Sends/pushes an image over network to someone who is receiving it.
+	 *
+	 * No logging/reporting is supported here.
+	 */
 	public static <T extends NativeType<T>>
 	void sendImage(final ImgPlus<T> imgP, final String addr,
 	               final int timeOut)
@@ -67,7 +112,11 @@ public class ImgTransfer
 	{ sendImage(imgP, addr, timeOut, null); }
 
 
-	/// receives an image over network from someone who is sending/pushing it
+	/**
+	 * Receives an image over network from someone who is sending/pushing it.
+	 *
+	 * Logging/reporting IS supported here whenever \e log != null.
+	 */
 	public static <T extends NativeType<T>>
 	ImgPlus<?> receiveImage(final int portNo,
 	                        final int timeOut, final ProgressCallback log)
@@ -119,7 +168,11 @@ public class ImgTransfer
 		return imgP;
 	}
 
-	/// receives an image over network from someone who is sending/pushing it
+	/**
+	 * Receives an image over network from someone who is sending/pushing it.
+	 *
+	 * No logging/reporting is supported here.
+	 */
 	public static <T extends NativeType<T>>
 	ImgPlus<?> receiveImage(final int portNo,
 	                        final int timeOut)
@@ -127,7 +180,13 @@ public class ImgTransfer
 	{ return receiveImage(portNo, timeOut, null); }
 
 
-	/// just like sendImage() but connection is initiated from the receiver
+	/**
+	 * Serves an image over network to someone who is receiving/pulling it,
+	 * it acts in fact as the sendImage() but connection is initiated from
+	 * the receiver (the other peer)
+	 *
+	 * Logging/reporting IS supported here whenever \e log != null.
+	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
 	public static <T extends NativeType<T>>
 	void serveImage(final ImgPlus<T> imgP, final int portNo,
@@ -182,7 +241,13 @@ public class ImgTransfer
 		}
 	}
 
-	/// just like sendImage() but connection is initiated from the receiver
+	/**
+	 * Serves an image over network to someone who is receiving/pulling it,
+	 * it acts in fact as the sendImage() but connection is initiated from
+	 * the receiver (the other peer)
+	 *
+	 * No logging/reporting is supported here.
+	 */
 	public static <T extends NativeType<T>>
 	void serveImage(final ImgPlus<T> imgP, final int portNo,
 	                final int timeOut)
@@ -190,7 +255,13 @@ public class ImgTransfer
 	{ serveImage(imgP, portNo, timeOut, null); }
 
 
-	/// just like receiveImage() but initiate the connection
+	/**
+	 * Receives/pulls an image over network from someone who is serving it,
+	 * it acts in fact as the receiveImage() but connection is initiated from
+	 * this function (the receiver).
+	 *
+	 * Logging/reporting IS supported here whenever \e log != null.
+	 */
 	public static <T extends NativeType<T>>
 	ImgPlus<?> requestImage(final String addr,
 	                        final int timeOut, final ProgressCallback log)
@@ -246,13 +317,24 @@ public class ImgTransfer
 		return imgP;
 	}
 
-	/// just like receiveImage() but initiate the connection
+	/**
+	 * Receives/pulls an image over network from someone who is serving it,
+	 * it acts in fact as the receiveImage() but connection is initiated from
+	 * this function (the receiver).
+	 *
+	 * No logging/reporting is supported here.
+	 */
 	public static <T extends NativeType<T>>
 	ImgPlus<?> requestImage(final String addr,
 	                        final int timeOut)
 	throws IOException
 	{ return requestImage(addr, timeOut, null); }
 
+
+// ------------------ non-static, multiple-images handling functions ------------------
+
+
+// ------------------ helper functions ------------------
 
 	/**
 	 * This is an internal helper function to poll socket for incoming data,
