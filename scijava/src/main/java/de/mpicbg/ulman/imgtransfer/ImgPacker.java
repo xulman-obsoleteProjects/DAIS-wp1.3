@@ -56,8 +56,7 @@ public class ImgPacker
 			writerSocket.connect(addr);
 
 			//send the image
-			if (log != null) log.info("sender sending...");
-			packAndSend((ImgPlus) imgP, writerSocket, timeOut);
+			packAndSend((ImgPlus) imgP, writerSocket, timeOut, log);
 
 			if (log != null) log.info("sender finished");
 		}
@@ -129,7 +128,7 @@ public class ImgPacker
 
 			//process incoming data if there is some...
 			if (incomingData != null) {
-				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), listenerSocket);
+				imgP = receiveAndUnpack(new String(incomingData), listenerSocket, log);
 				//NB: this guy returns the ImgPlus that we desire...
 			}
 
@@ -205,8 +204,7 @@ public class ImgPacker
 			//process incoming data if there is some...
 			if (incomingData != null && new String(incomingData).startsWith("can get"))
 			{
-				if (log != null) log.info("server sending...");
-				packAndSend((ImgPlus) imgP, listenerSocket, timeOut);
+				packAndSend((ImgPlus) imgP, listenerSocket, timeOut, log);
 			}
 			else
 			{
@@ -292,7 +290,7 @@ public class ImgPacker
 			//process incoming data if there is some...
 			if (incomingData != null)
 			{
-				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), writerSocket);
+				imgP = receiveAndUnpack(new String(incomingData), writerSocket, log);
 			}
 
 			if (log != null) log.info("receiver finished");
@@ -334,7 +332,8 @@ public class ImgPacker
 
 	@SuppressWarnings("unchecked")
 	public static <T extends NativeType<T>>
-	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket, final int timeOut)
+	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket,
+	                 final int timeOut, final ProgressCallback log)
 	{
 		Class<?> voxelClass = imgP.firstElement().getClass();
 		if(!SUPPORTED_VOXEL_CLASSES.contains(voxelClass))
@@ -360,7 +359,9 @@ public class ImgPacker
 			msg += " ArrayImg ";
 
 			//send header, metadata and voxel data afterwards
+			if (log != null) log.info("sending header: "+msg);
 			packAndSendHeader(msg, socket, timeOut);
+			if (log != null) log.info("sending the image...");
 			packAndSendPlusData(imgP, socket);
 			packAndSendArrayImg((ArrayImg<T,? extends ArrayDataAccess<?>>)img, socket);
 		}
@@ -372,8 +373,13 @@ public class ImgPacker
 			//NB: The number of planes is deterministically given by the image size/dimensions.
 			//    Hence, it is not necessary to provide such hint... 
 
+			//TODO: if cell image will also need not to add extra header hints,
+			//      we can move the 4 lines before this 3-branches-if
+
 			//send header, metadata and voxel data afterwards
+			if (log != null) log.info("sending header: "+msg);
 			packAndSendHeader(msg, socket, timeOut);
+			if (log != null) log.info("sending the image...");
 			packAndSendPlusData(imgP, socket);
 			packAndSendPlanarImg((PlanarImg<T,? extends ArrayDataAccess<?>>)img, socket);
 		}
@@ -385,7 +391,9 @@ public class ImgPacker
 			throw new RuntimeException("Cannot send CellImg images yet.");
 
 			//send header, metadata and voxel data afterwards
+			//if (log != null) log.info("sending header: "+msg);
 			//packAndSendHeader(msg, socket, timeOut);
+			//if (log != null) log.info("sending the image...");
 			//packAndSendPlusData(imgP, socket);
 			//packAndSendCellImg((CellImg<T,?>)img, socket);
 		}
@@ -401,8 +409,10 @@ public class ImgPacker
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static
-	ImgPlus<?> receiveAndUnpack(final String header, final ZMQ.Socket socket)
+	ImgPlus<?> receiveAndUnpack(final String header, final ZMQ.Socket socket,
+	                            final ProgressCallback log)
 	{
+		if (log != null) log.info("received header: "+header);
 		StringTokenizer headerST = new StringTokenizer(header, " ");
 		if (! headerST.nextToken().startsWith("v1"))
 			throw new RuntimeException("Unknown protocol, expecting protocol v1.");
@@ -429,6 +439,7 @@ public class ImgPacker
 		//if we got here, we assume that we have everything prepared to receive
 		//the image, we therefore signal it to the sender
 		socket.send("ready");
+		if (log != null) log.info("receiving the image...");
 
 		//the core Img is prepared, lets extend it with metadata and fill with voxel values afterwards
 		//create the ImgPlus from it -- there is fortunately no deep coping
@@ -478,7 +489,7 @@ public class ImgPacker
 
 		//wait for response, else complain for timeout-ing
 		ArrayReceiver.waitForFirstMessage(socket, timeOut);
-		//NB: if we got here, some message is ready to be read out
+		//NB: if we got here (after the waitFor..()), some message is ready to be read out
 
 		final String confirmation = socket.recvStr();
 		if (! confirmation.startsWith("ready"))
