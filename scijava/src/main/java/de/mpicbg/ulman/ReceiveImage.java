@@ -20,7 +20,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.IOException;
 
-import de.mpicbg.ulman.imgtransfer.ImgPacker;
+import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 @Plugin(type = Command.class, menuPath = "File>Import>Receive Image")
@@ -107,9 +107,9 @@ public class ReceiveImage implements Command
 		final FijiLogger flog = new FijiLogger(log, status);
 		try {
 			if (transferMode == 'A')
-				imgP = ImgPacker.receiveImage(portNo, timeoutTime, flog);
+				imgP = ImgTransfer.receiveImage(portNo, timeoutTime, flog);
 			else
-				imgP = ImgPacker.requestImage("tcp://"+remoteURL, timeoutTime, flog);
+				imgP = ImgTransfer.requestImage("tcp://"+remoteURL, timeoutTime, flog);
 		}
 		catch (IOException e) {
 			log.error(e.getMessage());

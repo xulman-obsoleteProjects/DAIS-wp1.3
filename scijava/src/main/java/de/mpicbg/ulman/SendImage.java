@@ -19,7 +19,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.IOException;
 
-import de.mpicbg.ulman.imgtransfer.ImgPacker;
+import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 @Plugin(type = Command.class, menuPath = "File>Export>Send Image")
@@ -100,16 +100,16 @@ public class SendImage implements Command
 		{ bar.showProgress((int)(100 * howFar), 100); }
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked","rawtypes"})
 	@Override
 	public void run()
 	{
 		final FijiLogger flog = new FijiLogger(log, status);
 		try {
 			if (transferMode == 'A')
-				ImgPacker.sendImage((ImgPlus) imgP, "tcp://"+remoteURL, timeoutTime, flog);
+				ImgTransfer.sendImage((ImgPlus) imgP, "tcp://"+remoteURL, timeoutTime, flog);
 			else
-				ImgPacker.serveImage((ImgPlus) imgP, portNo, timeoutTime, flog);
+				ImgTransfer.serveImage((ImgPlus) imgP, portNo, timeoutTime, flog);
 		}
 		catch (IOException e) {
 			log.error(e.getMessage());
