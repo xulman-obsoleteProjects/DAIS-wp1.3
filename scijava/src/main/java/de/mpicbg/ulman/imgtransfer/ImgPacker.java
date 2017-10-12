@@ -37,12 +37,12 @@ public class ImgPacker
 	// -------- transmission of the image, sockets --------
 	///list of supported voxel types: so far only scalar images are supported
 	@SuppressWarnings("rawtypes")
-	private static List<Class<? extends NativeType>> SUPPORTED_VOXEL_CLASSES =
+	static List<Class<? extends NativeType>> SUPPORTED_VOXEL_CLASSES =
 			Arrays.asList(ByteType.class, UnsignedByteType.class, ShortType.class,
 					UnsignedShortType.class, FloatType.class, DoubleType.class);
 
 	@SuppressWarnings("unchecked")
-	public static <T extends NativeType<T>>
+	static <T extends NativeType<T>>
 	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket,
 	                 final int timeOut, final ProgressCallback log)
 	{
@@ -119,7 +119,7 @@ public class ImgPacker
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static
+	static
 	ImgPlus<?> receiveAndUnpack(final String header, final ZMQ.Socket socket,
 	                            final ProgressCallback log)
 	{
