@@ -89,23 +89,7 @@ public class ImgTransfer
 			if (log != null) log.info("receiver waiting");
 
 			//"an entry point" for the input data
-			byte[] incomingData = null;
-
-			//"busy wait" up to the given period of time
-			int timeAlreadyWaited = 0;
-			while (timeAlreadyWaited < timeOut && incomingData == null)
-			{
-				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
-					if (log != null) log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
-
-				//check if there is some data from a sender
-				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
-
-				//if nothing found, wait a while before another checking attempt
-				if (incomingData == null) Thread.sleep(1000);
-
-				++timeAlreadyWaited;
-			}
+			byte[] incomingData = waitForIncomingData(listenerSocket, "receiver", timeOut, log);
 
 			//process incoming data if there is some...
 			if (incomingData != null) {
@@ -165,23 +149,7 @@ public class ImgTransfer
 			if (log != null) log.info("server waiting");
 
 			//"an entry point" for the input data
-			byte[] incomingData = null;
-
-			//"busy wait" up to the given period of time
-			int timeAlreadyWaited = 0;
-			while (timeAlreadyWaited < timeOut && incomingData == null)
-			{
-				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
-					if (log != null) log.info("server waiting already " + timeAlreadyWaited + " seconds");
-
-				//check if there is some data from a sender
-				incomingData = listenerSocket.recv(ZMQ.NOBLOCK);
-
-				//if nothing found, wait a while before another checking attempt
-				if (incomingData == null) Thread.sleep(1000);
-
-				++timeAlreadyWaited;
-			}
+			byte[] incomingData = waitForIncomingData(listenerSocket, "server", timeOut, log);
 
 			//process incoming data if there is some...
 			if (incomingData != null && new String(incomingData).startsWith("can get"))
@@ -248,26 +216,7 @@ public class ImgTransfer
 
 			//wait for connection to happen...
 			//wait for reply (already with image data)
-
-			//wait for the input image:
-			//"an entry point" for the input data
-			byte[] incomingData = null;
-
-			//"busy wait" up to the given period of time
-			int timeAlreadyWaited = 0;
-			while (timeAlreadyWaited < timeOut && incomingData == null)
-			{
-				if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
-					if (log != null) log.info("receiver waiting already " + timeAlreadyWaited + " seconds");
-
-				//check if there is some data from a sender
-				incomingData = writerSocket.recv(ZMQ.NOBLOCK);
-
-				//if nothing found, wait a while before another checking attempt
-				if (incomingData == null) Thread.sleep(1000);
-
-				++timeAlreadyWaited;
-			}
+			byte[] incomingData = waitForIncomingData(writerSocket, "receiver", timeOut, log);
 
 			//process incoming data if there is some...
 			if (incomingData != null)
@@ -303,4 +252,38 @@ public class ImgTransfer
 	                        final int timeOut)
 	throws IOException
 	{ return requestImage(addr, timeOut, null); }
+
+
+	/**
+	 * This is an internal helper function to poll socket for incoming data,
+	 * it reports progress of the polling too.
+	 *
+	 * Returns null if no data has arrived during the \e timeOut interval,
+	 * otherwise returns the data itself.
+	 */
+	private static byte[] waitForIncomingData(final ZMQ.Socket socket,
+		final String waiter, final int timeOut, final ProgressCallback log)
+	throws InterruptedException
+	{
+		//"an entry point" for the input data
+		byte[] incomingData = null;
+
+		//"busy wait" up to the given period of time
+		int timeAlreadyWaited = 0;
+		while (timeAlreadyWaited < timeOut && incomingData == null)
+		{
+			if (timeAlreadyWaited % 10 == 0 && timeAlreadyWaited > 0)
+				if (log != null) log.info(waiter+" waiting already " + timeAlreadyWaited + " seconds");
+
+			//check if there is some data from a sender
+			incomingData = socket.recv(ZMQ.NOBLOCK);
+
+			//if nothing found, wait a while before another checking attempt
+			if (incomingData == null) Thread.sleep(1000);
+
+			++timeAlreadyWaited;
+		}
+
+		return incomingData;
+	}
 }
