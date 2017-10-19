@@ -34,10 +34,10 @@ import java.io.IOException;
  * In order to transfer multiple images, just call the transfer function
  * repeatedly (every time with different image, of course). The first call
  * would open the connection and transfer the first image, consequent calls
- * would just transfer their images. REMEMBER, however, to call the HangUp()
+ * would just transfer their images. REMEMBER, however, to call the HangUpAndClose()
  * after last image was transferred! Receiving party should call
  * isThereNextImage() to determine if it should receive one more image or
- * HangUp() now. Note that the image transferring protocol knows, after every
+ * HangUpAndClose() now. Note that the image transferring protocol knows, after every
  * image is transferred, whether there shall be next transfer.
  *
  * When sending images, you can optionally advice/send hint to the receiving
@@ -332,6 +332,309 @@ public class ImgTransfer
 
 
 // ------------------ non-static, multiple-images handling functions ------------------
+
+	///names of the status of the object of this class
+	public enum TransferMode
+	{ SEND, RECEIVE, SERVE, REQUEST, CLOSED }
+
+	/**
+	 * Represents the "purpose" of this object to prevent users from mixing
+	 * between the front-end convenience functions.
+	 */
+	private TransferMode transferMode;
+
+	///connection stuff: peer's address -- used for SEND, REQUEST
+	final String addr;
+	///connection stuff: my port -- used for RECEIVE, SERVE
+	final int portNo;
+
+	///connection stuff: time in seconds for the first handshake
+	final int timeOut;
+	///optional reporter of the per-image progress
+	final ProgressCallback log;
+
+	///"hinting" constructor only for SEND senders, \e _log may be null
+	public ImgTransfer(final String _addr, final int _expectedNumberOfImages, final int _timeOut, final ProgressCallback _log)
+	{
+		transferMode = TransferMode.SEND;
+		addr = _addr;
+		expectedNumberOfImages = _expectedNumberOfImages;
+		timeOut = _timeOut;
+		log = _log;
+
+		//not used:
+		portNo = 54545;
+	}
+
+	///constructor only for RECEIVE receivers, \e _log may be null
+	public ImgTransfer(final int _portNo, final int _timeOut, final ProgressCallback _log)
+	{
+		transferMode = TransferMode.RECEIVE;
+		portNo = _portNo;
+		timeOut = _timeOut;
+		log = _log;
+
+		//not used:
+		addr = null;
+	}
+
+	///"hinting" constructor only for SERVE senders, \e _log may be null
+	public ImgTransfer(final int _portNo, final int _expectedNumberOfImages, final int _timeOut, final ProgressCallback _log)
+	{
+		transferMode = TransferMode.SERVE;
+		portNo = _portNo;
+		expectedNumberOfImages = _expectedNumberOfImages;
+		timeOut = _timeOut;
+		log = _log;
+
+		//not used:
+		addr = null;
+	}
+
+	///constructor only for REQUEST receivers, \e _log may be null
+	public ImgTransfer(final String _addr, final int _timeOut, final ProgressCallback _log)
+	{
+		transferMode = TransferMode.REQUEST;
+		addr = _addr;
+		timeOut = _timeOut;
+		log = _log;
+
+		//not used:
+		portNo = 54545;
+	}
+
+
+	/**
+	 * how many images are expected to be sent away (when \e transferMode == SEND),
+	 * or to be received (when \e transferMode == RECEIVE),
+	 *
+	 * Note that in the latter case the variable is not decremented after
+	 * every transfer (it is not remainingNumberOfImages).
+	 */
+	private int expectedNumberOfImages = 0;
+
+	/**
+	 * Mirrors the current state of the image transfer protocol, i.e., it
+	 * flags if last image has been received. This variable is valid only
+	 * when \e transferMode == RECEIVE.
+	 */
+	private boolean allTransferred = false;
+
+	///reads the expectedNumberOfImages variable
+	public int getExpectedNumberOfImages()
+	{ return expectedNumberOfImages; }
+
+	///reads inverted value of the allTransferred variable
+	public boolean isThereNextImage()
+	{ return (allTransferred == false); }
+
+	///standard alternative name to this.isThereNextImage()
+	public boolean hasNext()
+	{ return (allTransferred == false); }
+
+
+	///holds the ZeroMQ context
+	private ZMQ.Context zmqContext = ZMQ.context(1);
+	///holds, if not null, the opened ZeroMQ socket
+	private ZMQ.Socket zmqSocket = null;
+
+	///closes the ZeroMQ stuff
+	private void cleanUp()
+	{
+		if (log != null)
+		{
+			//report properly...
+			if (transferMode == TransferMode.SEND || transferMode == TransferMode.SERVE)
+				log.info("sender cleaning");
+			else
+				log.info("receiver cleaning");
+		}
+
+		//this render the object useless...
+		transferMode = TransferMode.CLOSED;
+
+		//close whatever remained opened
+		if (zmqSocket != null)
+		{
+			if (transferMode == TransferMode.SEND || transferMode == TransferMode.REQUEST)
+				zmqSocket.disconnect(addr);
+			else
+				zmqSocket.unbind("tcp://*:" + portNo);
+			zmqSocket.close();
+		}
+		if (zmqContext != null)
+		{
+			zmqContext.close();
+			zmqContext.term();
+		}
+	}
+
+	///(emergency) clean up...
+	@Override
+	public void finalize()
+	{ cleanUp(); }
+
+
+	/**
+	 * Sends/pushes an image over network to someone who is receiving it.
+	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public <T extends NativeType<T>>
+	void sendImage(final ImgPlus<T> imgP)
+	throws IOException
+	{
+		try {
+			if (this.transferMode != TransferMode.SEND)
+				throw new Exception("this transferrer cannot be used for sending");
+
+			if (log != null) log.info("sender started");
+
+			//socket already obtained? aka first run?
+			if (zmqSocket == null)
+			{
+				//first run
+				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				if (zmqSocket == null)
+					throw new Exception("cannot obtain local socket");
+
+				//peer to send data out
+				zmqSocket.connect(addr);
+			}
+
+			//send always the "hint" before the image
+			if (log != null) log.info("sending header: v0 expect "+expectedNumberOfImages+" images");
+			zmqSocket.send("v0 expect "+expectedNumberOfImages+" images");
+
+			//send the image
+			ImgPacker.packAndSend((ImgPlus) imgP, zmqSocket, timeOut, log);
+
+			if (log != null) log.info("sender finished");
+		}
+		catch (ZMQException e) {
+			cleanUp();
+			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (Exception e) {
+			cleanUp();
+			throw new IOException("sender error: " + e.getMessage());
+		}
+	}
+
+	///this guys sends also the "v0 header before the image", but without the image
+	public
+	void HangUpAndClose()
+	throws IOException
+	{
+		try {
+			if (this.transferMode != TransferMode.SEND && this.transferMode != TransferMode.SERVE)
+				throw new Exception("this transferrer cannot signal that last image was _sent_");
+
+			if (zmqSocket == null)
+				throw new Exception("no socket opened");
+
+			if (log != null) log.info("sender hanging up");
+			zmqSocket.send("v0 hangup");
+
+			//close the socket too! -> happens in the 'finally' catch-section
+		}
+		catch (ZMQException e) {
+			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (Exception e) {
+			throw new IOException("sender error: " + e.getMessage());
+		}
+		finally {
+			//clean up in any case, since this the end of the transfer
+			cleanUp();
+		}
+	}
+
+	/**
+	 * Receives an image over network from someone who is sending/pushing it.
+	 */
+	public <T extends NativeType<T>>
+	ImgPlus<?> receiveImage()
+	throws IOException
+	{
+		ImgPlus<?> imgP = null;
+
+		try {
+			if (this.transferMode != TransferMode.RECEIVE)
+				throw new Exception("this transferrer cannot be used for receiving");
+
+			if (log != null) log.info("receiver started");
+
+			//input aux byte buffer:
+			byte[] incomingData = null;
+
+			//socket already obtained? aka first run?
+			if (zmqSocket == null)
+			{
+				//first run
+				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				if (zmqSocket == null)
+					throw new Exception("cannot obtain local socket");
+
+				//port to listen for incoming data
+				zmqSocket.bind("tcp://*:" + portNo);
+				if (log != null) log.info("receiver waiting");
+
+				//now should read the first "v0 header"
+				incomingData = waitForIncomingData(zmqSocket, "receiver", timeOut, log);
+
+				//process 'incomingData' and extract 'expectedNumberOfImages'
+				final String msg = incomingData != null ? new String(incomingData) : null;
+				if (msg != null && (! msg.startsWith("v0")))
+				{
+					//msg.split
+					//expectedNumberOfImages = 999;         //TODO
+				}
+				else if (msg != null)
+					throw new RuntimeException("Protocol error, expected initial v0-header from the sender.");
+			}
+
+			//wait again for the proper image input data
+			incomingData = waitForIncomingData(zmqSocket, "receiver", timeOut, log);
+
+			//process incoming data if there is some...
+			if (incomingData != null) {
+				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), zmqSocket, log);
+				//NB: this guy returns the ImgPlus that we desire...
+				if (log != null) log.info("receiver finished");
+
+				//wait for the next "v0 header" to see if there is more images coming
+				//NB: this next header signifies there is a new image already being sent out
+				incomingData = waitForIncomingData(zmqSocket, "receiver", timeOut, log);
+			}
+
+			//either timeout happened (incomingData = null), or there is some data...
+			if (incomingData == null || new String(incomingData).startsWith("v0 hangup"))
+			{
+				allTransferred = true;
+				if (log != null) log.info("receiver hanging up");
+
+				//close the socket too!
+				this.cleanUp();
+			}
+			else
+				//we have received some msg for sure, hope it is the v0 header...
+				//NB: we consider the v0 header only for the first time
+				allTransferred = false;
+		}
+		catch (ZMQException e) {
+			cleanUp();
+			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (Exception e) {
+			cleanUp();
+			throw new IOException("receiver error: " + e.getMessage());
+		}
+
+		return imgP;
+	}
+
+
+
 
 
 // ------------------ helper functions ------------------

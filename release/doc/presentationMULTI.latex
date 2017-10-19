@@ -1,0 +1,226 @@
+%
+% compile with: pdflatex presentation.latex
+%
+\documentclass{beamer}
+\usepackage{graphicx}
+\usepackage{ucs}
+\usepackage[utf8x]{inputenc}
+\usepackage{textcomp}
+\usepackage{hyperref}
+\usepackage{multimedia}
+%\usepackage{movie15}
+\usepackage{url}
+\usepackage{siunitx}
+\usepackage{listings}
+%
+\usepackage[absolute,overlay]{textpos}
+\setlength{\TPHorizModule}{1cm}
+\setlength{\TPVertModule}{1cm}
+
+\newcommand{\heading}[1]{\textcolor[rgb]{0,0.6,0}{\bf#1}}
+\newcommand{\reference}[1]{\textcolor[rgb]{0.3,0.3,0.3}{\scriptsize\hfill#1}}
+\newcommand{\surl}[1]{{\small\url{#1}}}
+\def\etal{{\it et al.{}}}
+
+\mode<presentation>
+{
+   \usetheme{Boadilla}
+   \usecolortheme{whale}
+	\colorlet{beamer@blendedblue}{blue!55!green}
+	\setbeamercolor*{frametitle}{parent=palette secondary}
+	\font\part=cmss12
+   \setbeamercovered{transparent}
+   \setbeamertemplate{navigation symbols}{}
+}
+\setbeamercovered{invisible}
+\newcommand{\releaseDate}{19th Oct, 2017}
+
+\title[multiple imgs network transfer]{imglib2 network transfer of multiple images}
+\institute[CSBD and MPI-CBG]{CSBD and MPI-CBG}
+\author[Vladim\'\i{}r Ulman]{Vladim\'\i{}r Ulman}
+\date[\releaseDate]{\releaseDate\\DAIS wp 1.3\\[1cm]%
+{\small The document is valid as of commit TBA (\releaseDate)}}
+
+\begin{document}
+\begin{frame}
+	\titlepage
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{The Goal of DAIS wp 1.3 (recap)}
+	\begin{itemize}
+	\item Direct transmission of the imglib2 data between two peers
+	\item Peers are assumed to be two independent processes
+	\medskip
+	\item Processes may:
+	\begin{itemize}
+		\item live on the same machine
+		\item live on machines connected over TCP/IP network
+		\item any app, e.g., FIJI, KNIME, wrapped C/C++/Python library
+	\end{itemize}
+	\item Inspired by the BlueTooth principles
+
+	\bigskip
+	\item Uses proprietary/own protocol:
+	\begin{itemize}
+		\item text header and binary voxel data
+		\item {\sl similar to ICS (Image Cytometry Standard)}
+		\item default TCP port 54545 
+		\item {\sl no collision in /etc/services}
+	\end{itemize}
+
+	\bigskip
+	\item Networking is done via ZeroMQ package.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Multiple images extension}
+	\begin{itemize}
+	\item This document describes an extension of the single image tranfer
+	      to support sequential transfer of multiple images
+	\bigskip
+	\item The single image transfer is initiated with "v1" header
+	\item Multiple image transfer is encapsulating the original single-image protocol
+	\item Multiple image transfer is recognized with optional "v0" header
+	\bigskip
+	\item The "v0" header is a service part of the transfer protocol
+	\item The "v0" header is single-message transfer
+	\medskip
+	\item The "v1" header is a data-transfer part of the transfer protocol
+	\item The "v1" header is followed by multi-messages transfer
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Multiple images extension}
+	A sends two images to B, protocol view:
+	\scriptsize
+	\begin{itemize}
+	\item A: sends "v0 expect 2 images"
+	\item A: sends "v1 dimNumber...." and follows single image protocol for the 1st image
+	\smallskip
+	\item B: initially it waits for "v0 expect..." and populates ImgTransfer.expectedNumberOfImages, else complains
+	\smallskip
+	\item B: waits for "v1 dimNumber" and follows single image protocol for the 1st image
+	\item B: immediately waits for any message from sender
+	\smallskip
+	\item A: sends "v0 expect 2 images"
+	\item B: got message from sender, updates ImgTransfer.allTransfered = false
+	\item A: "v1 dimNumber...." and follows single image protocol for the 2nd image
+	\smallskip
+	\item B: waits for "v1 dimNumber" and follows single image protocol for the 2nd image
+	\item B: immediately waits for any message from sender
+	\smallskip
+	\item A: sends "v0 hangup"
+	\item B: got message from sender, updates ImgTransfer.allTransfered = true
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Multiple images extension}
+	A sends two images to B, programming view:
+	\begin{itemize}
+	\item A sends one image in one function call
+	\item Call ends once the image was transfered
+	\begin{itemize}
+		{
+		\scriptsize
+		\item A: sends "v0 expect 2 images"
+		\item A: sends "v1 dimNumber...." and follows single image protocol for the 1st image
+		\item A: (waits until it hears "done" from B)
+		}
+		\end{itemize}
+	\item Must call hangUpAndClose() to allow last image to be received!
+	\bigskip
+	\item B receives one image in one function call
+	\item Call ends after either "hangup" was received,\\
+	      or transfer of a next image has begun
+	\item Call returns always with an image (or with an exception)
+	\begin{itemize}
+		{
+		\scriptsize
+		\item B: initially it waits for "v0 expect..." and populates ImgTransfer.expectedNumberOfImages, else complains
+		\item B: (this above is not done for second and later function call)
+		\item B: waits for "v1 dimNumber" and follows single image protocol for the 1st image
+		\item B: (sends "done")
+		\item B: immediately waits for any message from sender
+		}
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{The API of DAIS wp 1.3}
+	How to use it from Java:
+	\scriptsize
+	\lstset{breakatwhitespace=true,
+	language=Java,
+	columns=fullflexible,
+	keepspaces=true,
+	breaklines=true,
+	tabsize=3, 
+	showstringspaces=false,
+	extendedchars=true}
+\begin{lstlisting}
+import de.mpicbg.ulman.imgtransfer.ImgTransfer;
+[ import de.mpicbg.ulman.imgtransfer.ProgressCallback; ]
+
+ImgPlus<?> imgP = ...;
+int imgsNo = 2;
+
+A_sendsTo_B:
+A: ImgTransfer A = new ImgTransfer("tcp://"+remoteURL, imgsNo, timeoutTime[, logger]);
+A: A.sendImage((ImgPlus) imgP);
+A: A.sendImage((ImgPlus) imgP);
+A: A.hangUpAndClose();
+
+B: ImgTransfer B = new ImgTransfer(portNo, timeoutTime[, logger]);
+B: while (B.isThereNextImage()) imgP = B.receiveImage();
+B:
+B: after first image: imgsNo = B.getExpectedNumberOfImages();
+B: after the while(): the connection is automatically closed
+
+- or -
+
+A_downloadsFrom_B:
+//similarily, symetrically...
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}
+	\frametitle{The API of DAIS wp 1.3}
+	\begin{itemize}
+	\item Multi-image is no longer using static methods
+	\item Objects must be created
+	\item No connection is initiated at all until the first transfer
+	\bigskip
+	\item There are 4 constructors, one for one transfer mode
+	\item Methods cannot be mixed, there's 1:1 enforced between available methods and used constructors
+	\bigskip
+	\item Logger is optional
+	\item Logger must implement ProgressCallback.info(String) and ProgressCallback.setProgress(0$\le$float$\le$1)
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{The Control Flow of API of DAIS wp 1.3}
+	\begin{itemize}
+	\item All 4 (state-aware, non-static) transfer functions should finish either with:
+	\begin{itemize}
+		\item success after image was for sure sent or received
+		\item exception due to timeout (no functional connection was established)
+		\item exception due to other error (e.g. socket issues, protocol error)
+	\end{itemize}
+
+	\bigskip
+	\item Currently supported:
+	\begin{itemize}
+		\item what ever is supported with inside "v1 header", that is:
+		\item what ever is supported for single image transfer
+	\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\end{document}
