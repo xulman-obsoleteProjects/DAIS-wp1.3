@@ -22,7 +22,7 @@ import java.io.IOException;
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
-@Plugin(type = Command.class, menuPath = "File>Export>Send Image")
+@Plugin(type = Command.class, menuPath = "File>Export>Send Current Image")
 public class SendImage implements Command
 {
 	@Parameter

@@ -23,7 +23,7 @@ import java.io.IOException;
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
-@Plugin(type = Command.class, menuPath = "File>Import>Receive Image")
+@Plugin(type = Command.class, menuPath = "File>Import>Receive One Image")
 public class ReceiveImage implements Command
 {
 	@Parameter
