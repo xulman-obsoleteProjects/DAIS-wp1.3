@@ -21,7 +21,6 @@ import java.net.UnknownHostException;
 import java.io.IOException;
 
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
-import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 @Plugin(type = Command.class, menuPath = "File>Import>Receive One Image")
 public class ReceiveImage implements Command
@@ -84,23 +83,6 @@ public class ReceiveImage implements Command
 	private int timeoutTime = 60;
 
 	// ----------- executive part ----------- 
-	public class FijiLogger implements ProgressCallback
-	{
-		FijiLogger(final LogService _log, final StatusService _bar)
-		{ log = _log; bar = _bar; }
-
-		final LogService log;
-		final StatusService bar;
-
-		@Override
-		public void info(String msg)
-		{ log.info(msg); }
-
-		@Override
-		public void setProgress(float howFar)
-		{ bar.showProgress((int)(100 * howFar), 100); }
-	}
-
 	@Override
 	public void run()
 	{
