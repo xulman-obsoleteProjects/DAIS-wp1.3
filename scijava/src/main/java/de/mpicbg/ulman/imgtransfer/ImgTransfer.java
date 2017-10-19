@@ -34,10 +34,10 @@ import java.io.IOException;
  * In order to transfer multiple images, just call the transfer function
  * repeatedly (every time with different image, of course). The first call
  * would open the connection and transfer the first image, consequent calls
- * would just transfer their images. REMEMBER, however, to call the HangUpAndClose()
+ * would just transfer their images. REMEMBER, however, to call the hangUpAndClose()
  * after last image was transferred! Receiving party should call
  * isThereNextImage() to determine if it should receive one more image or
- * HangUpAndClose() now. Note that the image transferring protocol knows, after every
+ * hangUpAndClose() now. Note that the image transferring protocol knows, after every
  * image is transferred, whether there shall be next transfer.
  *
  * When sending images, you can optionally advice/send hint to the receiving
@@ -522,7 +522,7 @@ public class ImgTransfer
 
 	///this guys sends also the "v0 header before the image", but without the image
 	public
-	void HangUpAndClose()
+	void hangUpAndClose()
 	throws IOException
 	{
 		try {
@@ -584,8 +584,9 @@ public class ImgTransfer
 
 				//process 'incomingData' and extract 'expectedNumberOfImages'
 				final String msg = incomingData != null ? new String(incomingData) : null;
-				if (msg != null && (! msg.startsWith("v0")))
+				if (msg != null && msg.startsWith("v0"))
 				{
+					if (log != null) log.info("received header: "+msg);
 					//msg.split
 					//expectedNumberOfImages = 999;         //TODO
 				}
@@ -600,11 +601,13 @@ public class ImgTransfer
 			if (incomingData != null) {
 				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), zmqSocket, log);
 				//NB: this guy returns the ImgPlus that we desire...
-				if (log != null) log.info("receiver finished");
 
 				//wait for the next "v0 header" to see if there is more images coming
 				//NB: this next header signifies there is a new image already being sent out
 				incomingData = waitForIncomingData(zmqSocket, "receiver", timeOut, log);
+
+				if (log != null && incomingData != null)
+					log.info("received header: "+new String(incomingData));
 			}
 
 			//either timeout happened (incomingData = null), or there is some data...
@@ -620,6 +623,8 @@ public class ImgTransfer
 				//we have received some msg for sure, hope it is the v0 header...
 				//NB: we consider the v0 header only for the first time
 				allTransferred = false;
+
+			if (log != null) log.info("receiver finished");
 		}
 		catch (ZMQException e) {
 			cleanUp();
