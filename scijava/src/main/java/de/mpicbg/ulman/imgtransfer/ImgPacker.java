@@ -116,6 +116,7 @@ public class ImgPacker
 		msg = socket.recvStr();
 		if (! msg.startsWith("done"))
 			throw new RuntimeException("Protocol error, expected final confirmation from the receiver.");
+		if (log != null) log.info("sending finished...");
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -183,6 +184,7 @@ public class ImgPacker
 
 		//send confirmation handshake after data has arrived
 		socket.send("done");
+		if (log != null) log.info("receiving finished...");
 
 		return imgP;
 	}
