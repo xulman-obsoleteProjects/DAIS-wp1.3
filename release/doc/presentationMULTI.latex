@@ -171,12 +171,13 @@ ImgPlus<?> imgP = ...;
 int imgsNo = 2;
 
 A_sendsTo_B:
-A: ImgTransfer A = new ImgTransfer("tcp://"+remoteURL, imgsNo, timeoutTime[, logger]);
+A: final ImgTransfer A
+      = new ImgTransfer("tcp://"+remoteURL, imgsNo, timeoutTime[, logger]);
 A: A.sendImage((ImgPlus) imgP);
 A: A.sendImage((ImgPlus) imgP);
 A: A.hangUpAndClose();
 
-B: ImgTransfer B = new ImgTransfer(portNo, timeoutTime[, logger]);
+B: final ImgTransfer B = new ImgTransfer(portNo, timeoutTime[, logger]);
 B: while (B.isThereNextImage()) imgP = B.receiveImage();
 B:
 B: after first image: imgsNo = B.getExpectedNumberOfImages();
