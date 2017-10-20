@@ -11,10 +11,11 @@ import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ItemVisibility;
-import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
+
 import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplayService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -31,8 +32,8 @@ public class ReceiveImages implements Command
 	@Parameter
 	private StatusService status;
 
-	@Parameter(type = ItemIO.OUTPUT)
-	private ImgPlus<?> imgP;
+	@Parameter
+	private ImageDisplayService ui;
 
 	// ----------- receiving -----------
 	@Parameter(visibility = ItemVisibility.MESSAGE, persist = false, required = false, initializer="getHostURL")
@@ -87,24 +88,52 @@ public class ReceiveImages implements Command
 	public void run()
 	{
 		final FijiLogger flog = new FijiLogger(log, status);
+
+		//number of received images, total expected no. of images
+		int cnt = 0, cntE = 0;
+
 		try {
 			if (transferMode == 'A')
 			{
 				final ImgTransfer Receiver = new ImgTransfer(portNo, timeoutTime, flog);
-				if (Receiver.isThereNextImage()) imgP = Receiver.receiveImage();
-				if (Receiver.isThereNextImage()) imgP = Receiver.receiveImage();
-				if (Receiver.isThereNextImage()) imgP = Receiver.receiveImage();
-				else System.out.println("ManyImgs: no more detected");
-				System.out.println("ManyImgs: claimed "+Receiver.getExpectedNumberOfImages()+" images");
+
+				while (Receiver.isThereNextImage())
+				{
+					//get next image and display it
+					final ImgPlus<?> i = Receiver.receiveImage();
+					ui.getDisplayService().createDisplay(i);
+
+					if (cnt == 0)
+					{
+						cntE = Receiver.getExpectedNumberOfImages();
+						log.info("ReceiveImages plugin: going to receive "+cntE+" images");
+					}
+
+					++cnt;
+					status.showProgress(cnt,cntE);
+					log.info("ReceiveImages plugin: received "+cnt+"/"+cntE+": "+i.getName());
+				}
 			}
 			else
 			{
 				final ImgTransfer Receiver = new ImgTransfer("tcp://"+remoteURL, timeoutTime, flog);
-				if (Receiver.isThereNextImage()) imgP = Receiver.requestImage();
-				if (Receiver.isThereNextImage()) imgP = Receiver.requestImage();
-				if (Receiver.isThereNextImage()) imgP = Receiver.requestImage();
-				else System.out.println("ManyImgs: no more detected");
-				System.out.println("ManyImgs: claimed "+Receiver.getExpectedNumberOfImages()+" images");
+
+				while (Receiver.isThereNextImage())
+				{
+					//get next image and display it
+					final ImgPlus<?> i = Receiver.requestImage();
+					ui.getDisplayService().createDisplay(i);
+
+					if (cnt == 0)
+					{
+						cntE = Receiver.getExpectedNumberOfImages();
+						log.info("ReceiveImages plugin: going to receive "+cntE+" images");
+					}
+
+					++cnt;
+					status.showProgress(cnt,cntE);
+					log.info("ReceiveImages plugin: received "+cnt+"/"+cntE+": "+i.getName());
+				}
 			}
 		}
 		catch (IOException e) {

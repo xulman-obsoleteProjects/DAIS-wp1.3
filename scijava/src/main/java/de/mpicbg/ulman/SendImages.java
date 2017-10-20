@@ -14,6 +14,8 @@ import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 import net.imagej.ImgPlus;
+import net.imagej.display.ImageDisplay;
+import net.imagej.display.ImageDisplayService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -30,6 +32,10 @@ public class SendImages implements Command
 	@Parameter
 	private StatusService status;
 
+	@Parameter
+	private ImageDisplayService ui;
+
+	//this one is here only to make sure the plugin does not start when there is no image opened
 	@Parameter
 	private ImgPlus<?> imgP;
 
@@ -87,19 +93,50 @@ public class SendImages implements Command
 	public void run()
 	{
 		final FijiLogger flog = new FijiLogger(log, status);
+
+		//number of received images, total no. of images to transfer
+		int cnt = 1;
+		final int cntE = ui.getImageDisplays().size();
+
 		try {
 			if (transferMode == 'A')
 			{
-				final ImgTransfer Sender = new ImgTransfer("tcp://"+remoteURL, 4, timeoutTime, flog);
-				Sender.sendImage((ImgPlus) imgP);
-				Sender.sendImage((ImgPlus) imgP);
+				//setup the tranfer object
+				final ImgTransfer Sender
+					= new ImgTransfer("tcp://"+remoteURL, cntE, timeoutTime, flog);
+
+				log.info("SendImages plugin: going to send "+cntE+" images");
+				for (ImageDisplay ID : ui.getImageDisplays())
+				{
+					log.info("SendImages plugin: sending "+cnt+"/"+cntE+": "
+						+ui.getActiveDataset(ID).getImgPlus().getName());
+
+					//send the image
+					Sender.sendImage( (ImgPlus)ui.getActiveDataset(ID).getImgPlus() );
+
+					status.showProgress(cnt,cntE);
+					++cnt;
+				}
 				Sender.hangUpAndClose();
 			}
 			else
 			{
-				final ImgTransfer Sender = new ImgTransfer(portNo, 4, timeoutTime, flog);
-				Sender.serveImage((ImgPlus) imgP);
-				Sender.serveImage((ImgPlus) imgP);
+				//setup the tranfer object
+				final ImgTransfer Sender
+					= new ImgTransfer(portNo, cntE, timeoutTime, flog);
+
+				log.info("SendImages plugin: going to serve "+cntE+" images");
+				for (ImageDisplay ID : ui.getImageDisplays())
+				{
+					log.info("SendImages plugin: serving "+cnt+"/"+cntE+": "
+						+ui.getActiveDataset(ID).getImgPlus().getName());
+
+					//send the image
+					Sender.serveImage( (ImgPlus)ui.getActiveDataset(ID).getImgPlus() );
+
+					status.showProgress(cnt,cntE);
+					++cnt;
+				}
 				Sender.hangUpAndClose();
 			}
 		}
