@@ -96,7 +96,12 @@ public class SendImages implements Command
 				Sender.hangUpAndClose();
 			}
 			else
-				ImgTransfer.serveImage((ImgPlus) imgP, portNo, timeoutTime, flog);
+			{
+				final ImgTransfer Sender = new ImgTransfer(portNo, 4, timeoutTime, flog);
+				Sender.serveImage((ImgPlus) imgP);
+				Sender.serveImage((ImgPlus) imgP);
+				Sender.hangUpAndClose();
+			}
 		}
 		catch (IOException e) {
 			log.error(e.getMessage());

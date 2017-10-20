@@ -98,7 +98,14 @@ public class ReceiveImages implements Command
 				System.out.println("ManyImgs: claimed "+Receiver.getExpectedNumberOfImages()+" images");
 			}
 			else
-				imgP = ImgTransfer.requestImage("tcp://"+remoteURL, timeoutTime, flog);
+			{
+				final ImgTransfer Receiver = new ImgTransfer("tcp://"+remoteURL, timeoutTime, flog);
+				if (Receiver.isThereNextImage()) imgP = Receiver.requestImage();
+				if (Receiver.isThereNextImage()) imgP = Receiver.requestImage();
+				if (Receiver.isThereNextImage()) imgP = Receiver.requestImage();
+				else System.out.println("ManyImgs: no more detected");
+				System.out.println("ManyImgs: claimed "+Receiver.getExpectedNumberOfImages()+" images");
+			}
 		}
 		catch (IOException e) {
 			log.error(e.getMessage());
