@@ -611,6 +611,9 @@ public class ImgTransfer
 					else
 						throw new RuntimeException("Protocol error, expected initial v0 header from the sender.");
 				}
+				else
+					//msg == null
+					throw new RuntimeException("Image not transferred, sender has not connected yet.");
 			}
 
 			//wait again for the proper image input data
