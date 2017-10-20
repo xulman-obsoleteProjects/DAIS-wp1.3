@@ -13,6 +13,7 @@ import net.imglib2.type.NativeType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 import java.io.IOException;
+import java.util.StringTokenizer;
 
 /**
  * This class provides convenience, front-end functions for ImgPlus transfer.
@@ -587,8 +588,12 @@ public class ImgTransfer
 				if (msg != null && msg.startsWith("v0"))
 				{
 					if (log != null) log.info("received header: "+msg);
-					//msg.split
-					//expectedNumberOfImages = 999;         //TODO
+
+					//extract 'expectedNumberOfImages'
+					StringTokenizer headerST = new StringTokenizer(msg, " ");
+					headerST.nextToken(); //positions at "v0"
+					if (headerST.nextToken().startsWith("expect"))
+						expectedNumberOfImages = Integer.valueOf(headerST.nextToken());
 				}
 				else if (msg != null)
 					throw new RuntimeException("Protocol error, expected initial v0-header from the sender.");
