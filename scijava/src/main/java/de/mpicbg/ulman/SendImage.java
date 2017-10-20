@@ -89,9 +89,15 @@ public class SendImage implements Command
 		final FijiLogger flog = new FijiLogger(log, status);
 		try {
 			if (transferMode == 'A')
+			{
+				log.info("SendImage plugin: sending "+imgP.getName());
 				ImgTransfer.sendImage((ImgPlus) imgP, "tcp://"+remoteURL, timeoutTime, flog);
+			}
 			else
+			{
+				log.info("SendImage plugin: serving "+imgP.getName());
 				ImgTransfer.serveImage((ImgPlus) imgP, portNo, timeoutTime, flog);
+			}
 		}
 		catch (IOException e) {
 			log.error(e.getMessage());

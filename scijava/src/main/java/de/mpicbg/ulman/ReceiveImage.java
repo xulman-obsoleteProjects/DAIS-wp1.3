@@ -92,6 +92,8 @@ public class ReceiveImage implements Command
 				imgP = ImgTransfer.receiveImage(portNo, timeoutTime, flog);
 			else
 				imgP = ImgTransfer.requestImage("tcp://"+remoteURL, timeoutTime, flog);
+
+			log.info("ReceiveImage plugin: received "+imgP.getName());
 		}
 		catch (IOException e) {
 			log.error(e.getMessage());

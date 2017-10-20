@@ -22,7 +22,7 @@ public class FijiLogger implements ProgressCallback
 
 	@Override
 	public void info(String msg)
-	{ log.info(msg); }
+	{ log.debug(msg); }
 
 	@Override
 	public void setProgress(float howFar)
