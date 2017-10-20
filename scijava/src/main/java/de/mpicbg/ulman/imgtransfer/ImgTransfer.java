@@ -449,14 +449,14 @@ public class ImgTransfer
 			//report properly...
 			switch (transferMode)
 			{
-			case TransferMode.SEND:
+			case SEND:
 				log.info("sender cleaning");
 				break;
-			case TransferMode.SERVE:
+			case SERVE:
 				log.info("server cleaning");
 				break;
-			case TransferMode.RECEIVE:
-			case TransferMode.REQUEST:
+			case RECEIVE:
+			case REQUEST:
 				log.info("receiver cleaning");
 				break;
 			default:
@@ -547,7 +547,13 @@ public class ImgTransfer
 			if (zmqSocket == null)
 				throw new Exception("no socket opened");
 
-			if (log != null) log.info("sender hanging up");
+			if (log != null)
+			{
+				if (transferMode == TransferMode.SEND)
+					log.info("sender hanging up");
+				else
+					log.info("server hanging up");
+			}
 			zmqSocket.send("v0 hangup");
 
 			//close the socket too! -> happens in the 'finally' catch-section
@@ -642,7 +648,7 @@ public class ImgTransfer
 				if (log != null) log.info("receiver hanging up");
 
 				//close the socket too!
-				this.cleanUp();
+				cleanUp();
 			}
 			else
 				//we have received some msg for sure, hope it is the v0 header...
