@@ -84,6 +84,7 @@
   </repositories>
 
   <dependencies>
+  <!-- FOR THE IMG TRANSFER PROTOCOL ITSELF -->
     <dependency>
       <groupId>org.scijava</groupId>
       <artifactId>scijava-common</artifactId>
@@ -94,15 +95,10 @@
       <version>0.4.2</version>
     </dependency>
 
+  <!-- ONLY FOR THE ASSOCIATED FIJI PLUGINS -->
     <dependency>
       <groupId>net.imagej</groupId>
       <artifactId>imagej</artifactId>
-		<scope>test</scope>
     </dependency>
-	  <dependency>
-		  <groupId>net.imagej</groupId>
-		  <artifactId>imagej-common</artifactId>
-		  <version>0.24.3</version>
-	  </dependency>
   </dependencies>
 </project>
