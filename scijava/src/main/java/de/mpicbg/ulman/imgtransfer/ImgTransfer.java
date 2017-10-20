@@ -96,8 +96,8 @@ public class ImgTransfer
 				writerSocket.disconnect(addr);
 				writerSocket.close();
 			}
-			zmqContext.close();
-			zmqContext.term();
+			//zmqContext.close();
+			//zmqContext.term();
 		}
 	}
 
@@ -164,8 +164,8 @@ public class ImgTransfer
 				listenerSocket.unbind("tcp://*:" + portNo);
 				listenerSocket.close();
 			}
-			zmqContext.close();
-			zmqContext.term();
+			//zmqContext.close();
+			//zmqContext.term();
 		}
 
 		return imgP;
@@ -238,8 +238,8 @@ public class ImgTransfer
 				listenerSocket.unbind("tcp://*:" + portNo);
 				listenerSocket.close();
 			}
-			zmqContext.close();
-			zmqContext.term();
+			//zmqContext.close();
+			//zmqContext.term();
 		}
 	}
 
@@ -313,8 +313,8 @@ public class ImgTransfer
 				writerSocket.disconnect(addr);
 				writerSocket.close();
 			}
-			zmqContext.close();
-			zmqContext.term();
+			//zmqContext.close();
+			//zmqContext.term();
 		}
 
 		return imgP;
@@ -479,8 +479,8 @@ public class ImgTransfer
 		}
 		if (zmqContext != null)
 		{
-			zmqContext.close();
-			zmqContext.term();
+			//zmqContext.close();
+			//zmqContext.term();
 		}
 	}
 
