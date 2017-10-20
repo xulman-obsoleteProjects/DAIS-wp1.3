@@ -136,9 +136,9 @@ public class ImgTransfer
 
 			//port to listen for incoming data
 			listenerSocket.bind("tcp://*:" + portNo);
-			if (log != null) log.info("receiver waiting");
 
 			//"an entry point" for the input data
+			if (log != null) log.info("receiver waiting");
 			byte[] incomingData = waitForIncomingData(listenerSocket, "receiver", timeOut, log);
 
 			//process incoming data if there is some...
@@ -146,6 +146,8 @@ public class ImgTransfer
 				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), listenerSocket, log);
 				//NB: this guy returns the ImgPlus that we desire...
 			}
+			else
+				throw new RuntimeException("Image not transferred, sender has not connected yet.");
 
 			if (log != null) log.info("receiver finished");
 		}
@@ -206,21 +208,20 @@ public class ImgTransfer
 
 			//port to listen for incoming data
 			listenerSocket.bind("tcp://*:" + portNo);
-			if (log != null) log.info("server waiting");
 
 			//"an entry point" for the input data
+			if (log != null) log.info("server waiting for initial request");
 			byte[] incomingData = waitForIncomingData(listenerSocket, "server", timeOut, log);
 
-			//process incoming data if there is some...
-			if (incomingData != null && new String(incomingData).startsWith("can get"))
-			{
-				ImgPacker.packAndSend((ImgPlus) imgP, listenerSocket, timeOut, log);
-			}
-			else
-			{
-				if (incomingData != null)
-					throw new RuntimeException("Protocol error, expected initial ping from the receiver.");
-			}
+			//if there is no incoming data, we need to close the server
+			if (incomingData == null)
+				throw new RuntimeException("Image not transferred, receiver has not connected yet.");
+
+			//there is some incoming data, check it:
+			if (! new String(incomingData).startsWith("can get"))
+				throw new RuntimeException("Protocol error, expected initial ping from the receiver.");
+
+			ImgPacker.packAndSend((ImgPlus) imgP, listenerSocket, timeOut, log);
 
 			if (log != null) log.info("server finished");
 		}
@@ -283,18 +284,19 @@ public class ImgTransfer
 			writerSocket.connect(addr);
 
 			//send the request
-			if (log != null) log.info("receiver request sent");
+			if (log != null) log.info("receiver initial request sent");
 			writerSocket.send("can get");
 
 			//wait for connection to happen...
 			//wait for reply (already with image data)
+			if (log != null) log.info("receiver waiting");
 			byte[] incomingData = waitForIncomingData(writerSocket, "receiver", timeOut, log);
 
 			//process incoming data if there is some...
 			if (incomingData != null)
-			{
 				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), writerSocket, log);
-			}
+			else
+				throw new RuntimeException("Image not transferred, server has not replied yet.");
 
 			if (log != null) log.info("receiver finished");
 		}
