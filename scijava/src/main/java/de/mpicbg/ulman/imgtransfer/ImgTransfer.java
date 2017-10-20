@@ -663,8 +663,167 @@ public class ImgTransfer
 		return imgP;
 	}
 
+	/**
+	 * Serves an image over network to someone who is receiving/pulling it.
+	 * Similar in principle to its static buddy this.serveImage(...).
+	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public <T extends NativeType<T>>
+	void serveImage(final ImgPlus<T> imgP)
+	throws IOException
+	{
+		try {
+			if (this.transferMode != TransferMode.SERVE)
+				throw new Exception("this transferrer cannot be used for serving");
 
+			if (log != null) log.info("server started");
 
+			//socket already obtained? aka first run?
+			if (zmqSocket == null)
+			{
+				//first run
+				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				if (zmqSocket == null)
+					throw new Exception("cannot obtain local socket");
+
+				//port to listen for incoming data
+				zmqSocket.bind("tcp://*:" + portNo);
+
+				//wait for the ping from the requester
+				if (log != null) log.info("server waiting for initial request");
+				byte[] incomingData = waitForIncomingData(zmqSocket, "server", timeOut, log);
+
+				//if there is no incoming data, we need to close the server
+				if (incomingData == null)
+					throw new RuntimeException("Image not transferred, receiver has not connected yet.");
+
+				//there is some incoming data, check it:
+				if (! new String(incomingData).startsWith("can get"))
+					throw new RuntimeException("Protocol error, expected initial ping from the receiver.");
+			}
+
+			//send always the "hint" before the image
+			if (log != null) log.info("sending header: v0 expect "+expectedNumberOfImages+" images");
+			zmqSocket.send("v0 expect "+expectedNumberOfImages+" images");
+
+			//send the image
+			ImgPacker.packAndSend((ImgPlus) imgP, zmqSocket, timeOut, log);
+
+			if (log != null) log.info("server finished");
+		}
+		catch (ZMQException e) {
+			cleanUp();
+			throw new IOException("server crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (Exception e) {
+			cleanUp();
+			throw new IOException("server error: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Receives/pulls an image over network from someone who is serving it.
+	 * Similar in principle to its static buddy this.requestImage(...).
+	 */
+	public <T extends NativeType<T>>
+	ImgPlus<?> requestImage()
+	throws IOException
+	{
+		ImgPlus<?> imgP = null;
+
+		try {
+			if (this.transferMode != TransferMode.REQUEST)
+				throw new Exception("this transferrer cannot be used for requesting");
+
+			if (log != null) log.info("receiver started");
+
+			//input aux byte buffer:
+			byte[] incomingData = null;
+
+			//socket already obtained? aka first run?
+			if (zmqSocket == null)
+			{
+				//first run
+				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				if (zmqSocket == null)
+					throw new Exception("cannot obtain local socket");
+
+				//peer to send data out
+				zmqSocket.connect(addr);
+
+				//very first thing: send the ping to the server
+				if (log != null) log.info("receiver initial request sent");
+				zmqSocket.send("can get");
+
+				//now should read the first "v0 header"
+				if (log != null) log.info("receiver waiting for first v0 header");
+				incomingData = waitForIncomingData(zmqSocket, "receiver", timeOut, log);
+
+				//process 'incomingData' and extract 'expectedNumberOfImages'
+				final String msg = incomingData != null ? new String(incomingData) : null;
+				if (msg != null)
+				{
+					if (log != null) log.info("received header: "+msg);
+					if (msg.startsWith("v0"))
+					{
+						//extract 'expectedNumberOfImages'
+						StringTokenizer headerST = new StringTokenizer(msg, " ");
+						headerST.nextToken(); //positions at "v0"
+						if (headerST.nextToken().startsWith("expect"))
+							expectedNumberOfImages = Integer.valueOf(headerST.nextToken());
+					}
+					else
+						throw new RuntimeException("Protocol error, expected initial v0 header from the sender.");
+				}
+				else
+					//msg == null
+					throw new RuntimeException("Image not transferred, server has not replied yet.");
+			}
+
+			//wait again for the proper image input data
+			incomingData = waitForIncomingData(zmqSocket, "receiver", timeOut, log);
+
+			//process incoming data if there is some...
+			if (incomingData != null) {
+				imgP = ImgPacker.receiveAndUnpack(new String(incomingData), zmqSocket, log);
+				//NB: this guy returns the ImgPlus that we desire...
+
+				//wait for the next "v0 header" to see if there is more images coming
+				//NB: this next header signifies there is a new image already being sent out
+				if (log != null) log.info("receiver waiting for next v0 header");
+				incomingData = waitForIncomingData(zmqSocket, "receiver", timeOut, log);
+
+				if (log != null && incomingData != null)
+					log.info("received header: "+new String(incomingData));
+			}
+
+			//either timeout happened (incomingData = null), or there is some data...
+			if (incomingData == null || new String(incomingData).startsWith("v0 hangup"))
+			{
+				allTransferred = true;
+				if (log != null) log.info("receiver hanging up");
+
+				//close the socket too!
+				cleanUp();
+			}
+			else
+				//we have received some msg for sure, hope it is the v0 header...
+				//NB: we consider the v0 header only for the first time
+				allTransferred = false;
+
+			if (log != null) log.info("receiver finished");
+		}
+		catch (ZMQException e) {
+			cleanUp();
+			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (Exception e) {
+			cleanUp();
+			throw new IOException("receiver error: " + e.getMessage());
+		}
+
+		return imgP;
+	}
 
 
 // ------------------ helper functions ------------------
