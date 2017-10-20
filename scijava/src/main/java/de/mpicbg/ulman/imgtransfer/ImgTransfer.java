@@ -445,13 +445,25 @@ public class ImgTransfer
 		if (log != null)
 		{
 			//report properly...
-			if (transferMode == TransferMode.SEND || transferMode == TransferMode.SERVE)
+			switch (transferMode)
+			{
+			case TransferMode.SEND:
 				log.info("sender cleaning");
-			else
+				break;
+			case TransferMode.SERVE:
+				log.info("server cleaning");
+				break;
+			case TransferMode.RECEIVE:
+			case TransferMode.REQUEST:
 				log.info("receiver cleaning");
+				break;
+			default:
+				//TransferMode.CLOSED, do nothing
+				return;
+			}
 		}
 
-		//this render the object useless...
+		//this renders the object useless for transferring...
 		transferMode = TransferMode.CLOSED;
 
 		//close whatever remained opened
@@ -578,25 +590,27 @@ public class ImgTransfer
 
 				//port to listen for incoming data
 				zmqSocket.bind("tcp://*:" + portNo);
-				if (log != null) log.info("receiver waiting");
 
 				//now should read the first "v0 header"
+				if (log != null) log.info("receiver waiting for first v0 header");
 				incomingData = waitForIncomingData(zmqSocket, "receiver", timeOut, log);
 
 				//process 'incomingData' and extract 'expectedNumberOfImages'
 				final String msg = incomingData != null ? new String(incomingData) : null;
-				if (msg != null && msg.startsWith("v0"))
+				if (msg != null)
 				{
 					if (log != null) log.info("received header: "+msg);
-
-					//extract 'expectedNumberOfImages'
-					StringTokenizer headerST = new StringTokenizer(msg, " ");
-					headerST.nextToken(); //positions at "v0"
-					if (headerST.nextToken().startsWith("expect"))
-						expectedNumberOfImages = Integer.valueOf(headerST.nextToken());
+					if (msg.startsWith("v0"))
+					{
+						//extract 'expectedNumberOfImages'
+						StringTokenizer headerST = new StringTokenizer(msg, " ");
+						headerST.nextToken(); //positions at "v0"
+						if (headerST.nextToken().startsWith("expect"))
+							expectedNumberOfImages = Integer.valueOf(headerST.nextToken());
+					}
+					else
+						throw new RuntimeException("Protocol error, expected initial v0 header from the sender.");
 				}
-				else if (msg != null)
-					throw new RuntimeException("Protocol error, expected initial v0-header from the sender.");
 			}
 
 			//wait again for the proper image input data
@@ -609,6 +623,7 @@ public class ImgTransfer
 
 				//wait for the next "v0 header" to see if there is more images coming
 				//NB: this next header signifies there is a new image already being sent out
+				if (log != null) log.info("receiver waiting for next v0 header");
 				incomingData = waitForIncomingData(zmqSocket, "receiver", timeOut, log);
 
 				if (log != null && incomingData != null)
