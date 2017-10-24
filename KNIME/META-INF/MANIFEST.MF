@@ -13,9 +13,9 @@ Require-Bundle: org.eclipse.core.runtime,
  org.knime.base,
  org.knime.knip.core,
  org.knime.knip.base,
- imagej-common;bundle-version="0.24.3",
- imglib2;bundle-version="3.2.1",
- scijava-cache;bundle-version="0.1.1"
+ imagej-common,
+ scijava-common,
+ imglib2
 Export-Package: de.mpicbg.ulman.nodeNetImgSink,
  de.mpicbg.ulman.nodeNetImgSource
 Bundle-ActivationPolicy: lazy
