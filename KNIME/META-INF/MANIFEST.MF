@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: ImageSendingNode for KNIME Analytics Platform
+Bundle-Name: Imglib2-images Tranferring Nodes for KNIME Analytics Platform
 Bundle-SymbolicName: DAIS-wp13-KNIME;singleton:=true
 Bundle-Version: 1.0.0
 Bundle-Vendor: Vladimir Ulman, MPI-CBG.de
@@ -20,4 +20,3 @@ Export-Package: de.mpicbg.ulman.nodeNetImgSink,
  de.mpicbg.ulman.nodeNetImgSource
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-
