@@ -1,16 +1,14 @@
-package de.mpicbg.ulman.nodeNetImgSource;
+package de.mpicbg.ulman.nodeNetImgSink;
 
 import java.io.File;
 import java.io.IOException;
 
+import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
-import org.knime.core.data.DataType;
-import org.knime.core.data.RowKey;
-import org.knime.core.data.def.DefaultRow;
-import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
+import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
@@ -20,7 +18,8 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 
 import org.knime.knip.base.data.img.ImgPlusCell;
-import org.knime.knip.base.data.img.ImgPlusCellFactory;
+import org.knime.knip.base.data.img.ImgPlusValue;
+import org.knime.knip.base.node.NodeUtils;
 
 import net.imagej.ImgPlus;
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
@@ -28,16 +27,16 @@ import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 
 /**
- * This is the implementation of DAIS wp1.3 "Image Receiver" Node for KNIME.com.
+ * This is the implementation of DAIS wp1.3 "Image Server" Node for KNIME.com.
  * It as an adopted code from the MyExampleNode found in the KNIME SDK.
  *
  * @author Vladimir Ulman, MPI-CBG.de
  */
-public class ReaderNodeModel extends NodeModel
+public class WriterNodeModel extends NodeModel
 {
 	/// the logger instance
 	private static
-	final NodeLogger logger = NodeLogger.getLogger("Image Receiver");
+	final NodeLogger logger = NodeLogger.getLogger("Image Server");
 
 	/*
 	 * A helper class to provide the same variable model for Port number.
@@ -46,7 +45,7 @@ public class ReaderNodeModel extends NodeModel
 	static
 	SettingsModelIntegerBounded createSettingsModel_Port()
 	{
-		return new SettingsModelIntegerBounded(ReaderNodeModel.CFG_PORTIN,54545,1024,65535);
+		return new SettingsModelIntegerBounded(WriterNodeModel.CFG_PORTOUT,54546,1024,65535);
 	}
 
 	/*
@@ -56,22 +55,30 @@ public class ReaderNodeModel extends NodeModel
 	static
 	SettingsModelIntegerBounded createSettingsModel_TimeOut()
 	{
-		return new SettingsModelIntegerBounded(ReaderNodeModel.CFG_TIMEOUT,60,0,Integer.MAX_VALUE);
+		return new SettingsModelIntegerBounded(WriterNodeModel.CFG_TIMEOUT,60,0,Integer.MAX_VALUE);
 	}
 
-	static final String CFG_PORTIN = "ReceivingPort";
-	static final String CFG_TIMEOUT = "ReceivingTimeOut";
+	static
+	SettingsModelString createSettingsModel_ImgColumn()
+	{
+		return new SettingsModelString(WriterNodeModel.CFG_IMGCOL,"");
+	}
+
+	static final String CFG_PORTOUT = "ServingPort";
+	static final String CFG_TIMEOUT = "ServingTimeOut";
+	static final String CFG_IMGCOL  = "ServingColumn";
 
 	/// port to listen at
 	private final SettingsModelIntegerBounded m_portNo
-		= ReaderNodeModel.createSettingsModel_Port();
+		= WriterNodeModel.createSettingsModel_Port();
 
 	/// timeOut to wait for the initial connection
 	private final SettingsModelIntegerBounded m_timeOut
-		= ReaderNodeModel.createSettingsModel_TimeOut();
+		= WriterNodeModel.createSettingsModel_TimeOut();
 
-	/// the fixed table specification, created once and for all
-	final DataTableSpec outTableSpec;
+	/// image column to be served
+	private final SettingsModelString m_selectedImgColumn
+		= WriterNodeModel.createSettingsModel_ImgColumn();
 
 	private class MyLogger implements ProgressCallback
 	{
@@ -84,14 +91,10 @@ public class ReaderNodeModel extends NodeModel
 	/**
 	 * Constructor for the node model.
 	 */
-	protected ReaderNodeModel()
+	protected WriterNodeModel()
 	{
-		// no incoming port and one outgoing port
-		super(0, 1);
-
-		//complete the out table specification/initialization
-		outTableSpec = new DataTableSpec(new String[] { "Image" },
-		                                 new DataType[] { ImgPlusCell.TYPE });
+		// one incoming port and no outgoing port
+		super(1, 0);
 	}
 
     /**
@@ -110,7 +113,12 @@ public class ReaderNodeModel extends NodeModel
 		  // the input settings should be OK: they are bounded integers
 		  // and the GUI should not leave them out of their bounds...
 
-        return new DataTableSpec[] { outTableSpec };
+		  //we only need to check that inSpecs contains a column with images:
+		  // Check table spec if column is available.
+		  NodeUtils.autoColumnSelection(inSpecs[0], m_selectedImgColumn,
+		                                ImgPlusValue.class, this.getClass());
+
+		  return new DataTableSpec[] { };
     }
 
     /**
@@ -121,57 +129,47 @@ public class ReaderNodeModel extends NodeModel
                                           final ExecutionContext exec)
     throws Exception
     {
-		// the execution context will provide us with storage capacity, in this
-		// case a data container to which we will add rows sequentially
-		// Note, this container can also handle arbitrary big data tables, it
-		// will buffer to disc if necessary.
-		BufferedDataContainer container = exec.createDataContainer(outTableSpec);
+		//shortcut to the input data
+		final BufferedDataTable data = inData[0];
+		final int colSpec = data.getSpec().findColumnIndex(m_selectedImgColumn.getStringValue());
 
-		//helper class to create new table cells with received images
-		final ImgPlusCellFactory imgPlusCellFactory = new ImgPlusCellFactory(exec);
+		//counters of received images, and expected no. of images to be sent
+		int cnt = 1, cntE = (int)data.size();
+		logger.info("SendImages node: going to serve "+cntE+" images");
 
-		//create receiver instance
+		//create server instance
 		MyLogger myLogger = new MyLogger();
-		ImgTransfer Receiver = new ImgTransfer(m_portNo.getIntValue(), m_timeOut.getIntValue(), myLogger);
+		ImgTransfer Server = new ImgTransfer(m_portNo.getIntValue(), cntE,
+		                                     m_timeOut.getIntValue(), myLogger);
 
-		//counters of received images, and expected no. of images to be received
-		int cnt = 0, cntE = 0;
-
-		while (Receiver.isThereNextImage())
+		for (final DataRow row : data)
 		{
 			// Check if execution got canceled.
 			exec.checkCanceled();
 			//TODO close the receiving interface after abort!
 
 			//get next image
-			final ImgPlus<?> i = Receiver.receiveImage();
-
-			//first image?
-			if (cnt == 0)
+			final ImgPlusCell<?> cell = (ImgPlusCell<?>)row.getCell(colSpec);
+			if (!cell.isMissing())
 			{
-				cntE = Receiver.getExpectedNumberOfImages();
-				if (cntE == 0) cntE = 1; //make sure we don't divide by zero later
+				final ImgPlus<?> i = cell.getImgPlus();
+				//TODO: row key or truly the image name, currently the later
 
-				logger.info("ReceiveImages node: going to receive "+cntE+" images");
+				logger.info("SendImages node: serving "+cnt+"/"+cntE+": "+i.getName());
+				Server.serveImage((ImgPlus)i);
 			}
+			//NB: if cell is missing, we just skip it
 
+			//count every processed row, not images...
 			++cnt;
-			logger.info("ReceiveImages node: received "+cnt+"/"+cntE+": "+i.getName());
-
-			//turn the image into a table cell
-			@SuppressWarnings("unchecked")
-			ImgPlusCell<?> ic = imgPlusCellFactory.createCell((ImgPlus)i);
-
-			//add the image as another row into the output table
-			final RowKey key = new RowKey( i.getName() );
-			container.addRowToTable(new DefaultRow(key, ic));
 
 			// Update progress indicator.
 			exec.setProgress(cnt / cntE);
 		}
 
-		container.close();
-		return new BufferedDataTable[] { container.getTable() };
+		Server.hangUpAndClose();
+		//return new BufferedDataTable[] { null };
+		return null;
     }
 
     /**
@@ -194,6 +192,7 @@ public class ReaderNodeModel extends NodeModel
         // tODO save user settings to the config object.
         m_portNo.saveSettingsTo(settings);
         m_timeOut.saveSettingsTo(settings);
+        m_selectedImgColumn.saveSettingsTo(settings);
     }
 
     /**
@@ -208,6 +207,7 @@ public class ReaderNodeModel extends NodeModel
         // method below.
         m_portNo.loadSettingsFrom(settings);
         m_timeOut.loadSettingsFrom(settings);
+        m_selectedImgColumn.loadSettingsFrom(settings);
     }
 
     /**
@@ -223,6 +223,7 @@ public class ReaderNodeModel extends NodeModel
         // Do not actually set any values of any member variables.
         m_portNo.validateSettings(settings);
         m_timeOut.validateSettings(settings);
+        m_selectedImgColumn.validateSettings(settings);
     }
 
     /**

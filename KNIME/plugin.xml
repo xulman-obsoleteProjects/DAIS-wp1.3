@@ -3,20 +3,21 @@
 <plugin>
 
    <extension
-         point="org.knime.workbench.repository.categories">
-      <category
-            level-id="vlado"
-            name="Vlado-testing"
-            path="/community/knip">
-      </category>
-   </extension>
-   <extension
          point="org.knime.workbench.repository.nodes">
       <node
             after="Image Reader"
             category-path="/community/knip/io"
             deprecated="false"
             factory-class="de.mpicbg.ulman.nodeNetImgSource.ReaderNodeFactory">
+      </node>
+   </extension>
+   <extension
+         point="org.knime.workbench.repository.nodes">
+      <node
+            after="Image Writer"
+            category-path="/community/knip/io"
+            deprecated="false"
+            factory-class="de.mpicbg.ulman.nodeNetImgSink.WriterNodeFactory">
       </node>
    </extension>
 
