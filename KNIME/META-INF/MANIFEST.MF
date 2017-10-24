@@ -16,7 +16,8 @@ Require-Bundle: org.eclipse.core.runtime,
  imagej-common;bundle-version="0.24.3",
  imglib2;bundle-version="3.2.1",
  scijava-cache;bundle-version="0.1.1"
-Export-Package: de.mpicbg.ulman.nodeNetImgSource
+Export-Package: de.mpicbg.ulman.nodeNetImgSink,
+ de.mpicbg.ulman.nodeNetImgSource
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 
