@@ -23,6 +23,7 @@ import org.knime.core.node.NodeSettingsWO;
 
 import net.imagej.ImgPlus;
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
+import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 
 /**
@@ -35,7 +36,7 @@ public class ReaderNodeModel extends NodeModel
 {
 	/// the logger instance
 	private static
-	final NodeLogger logger = NodeLogger.getLogger(ReaderNodeModel.class);
+	final NodeLogger logger = NodeLogger.getLogger("Image Receiver");
 
 	/*
 	 * A helper class to provide the same variable model for Port number.
@@ -70,6 +71,14 @@ public class ReaderNodeModel extends NodeModel
 
 	/// the fixed table specification, created once and for all
 	final DataTableSpec outTableSpec;
+
+	private class MyLogger implements ProgressCallback
+	{
+		@Override
+		public void info(String msg) { logger.info(msg); }
+		@Override
+		public void setProgress(float arg0) { /* empty */ }
+	}
 
 	/**
 	 * Constructor for the node model.
@@ -121,7 +130,8 @@ public class ReaderNodeModel extends NodeModel
 		final ImgPlusCellFactory imgPlusCellFactory = new ImgPlusCellFactory(exec);
 
 		//create receiver instance
-		ImgTransfer Receiver = new ImgTransfer(m_portNo.getIntValue(), m_timeOut.getIntValue(), null);
+		MyLogger myLogger = new MyLogger();
+		ImgTransfer Receiver = new ImgTransfer(m_portNo.getIntValue(), m_timeOut.getIntValue(), myLogger);
 
 		//counters of received images, and expected no. of images to be received
 		int cnt = 0, cntE = 0;
