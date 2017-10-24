@@ -3,16 +3,19 @@ Bundle-ManifestVersion: 2
 Bundle-Name: ImageSendingNode for KNIME Analytics Platform
 Bundle-SymbolicName: DAIS-wp13-KNIME;singleton:=true
 Bundle-Version: 1.0.0
+Bundle-Vendor: Vladimir Ulman, MPI-CBG.de
 Bundle-ClassPath: DAIS-wp13-KNIME.jar,
  lib/DAIS-wp13-1.0-SNAPSHOT.jar,
  lib/jeromq-0.4.2.jar
-Bundle-Vendor: KNIME.com
 Require-Bundle: org.eclipse.core.runtime,
  org.knime.workbench.core,
  org.knime.workbench.repository,
  org.knime.base,
+ org.knime.knip.core,
+ org.knime.knip.base,
  imagej-common;bundle-version="0.24.3",
- imglib2;bundle-version="3.2.1"
+ imglib2;bundle-version="3.2.1",
+ scijava-cache;bundle-version="0.1.1"
 Export-Package: de.mpicbg.ulman.nodeNetImgSource
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

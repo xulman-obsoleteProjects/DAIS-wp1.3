@@ -2,7 +2,6 @@ package de.mpicbg.ulman.nodeNetImgSource;
 
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
-import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 
 /**
  * <code>NodeDialog</code> for the "MyExampleNode" Node.
@@ -24,14 +23,11 @@ public class ReaderNodeDialog extends DefaultNodeSettingsPane {
      */
     protected ReaderNodeDialog() {
         super();
-        
-        addDialogComponent(new DialogComponentNumber(
-                new SettingsModelIntegerBounded(
-                    ReaderNodeModel.CFGKEY_COUNT,
-                    ReaderNodeModel.DEFAULT_COUNT,
-                    Integer.MIN_VALUE, Integer.MAX_VALUE),
-                    "Counter:", /*step*/ 1, /*componentwidth*/ 5));
-                    
+
+        addDialogComponent(new DialogComponentNumber(ReaderNodeModel.createSettingsModel_Port(),
+                           "TCP/IP port to listen at:", /*step*/ 1, /*componentwidth*/ 5));
+        addDialogComponent(new DialogComponentNumber(ReaderNodeModel.createSettingsModel_TimeOut(),
+                "Seconds to wait for initial connection:", /*step*/ 5, /*componentwidth*/ 5));
     }
 }
 
