@@ -5,7 +5,6 @@
    <extension
          point="org.knime.workbench.repository.nodes">
       <node
-            after="Image Reader"
             category-path="/community/knip/io"
             deprecated="false"
             factory-class="de.mpicbg.ulman.nodeNetImgSource.ReaderNodeFactory">
@@ -14,7 +13,6 @@
    <extension
          point="org.knime.workbench.repository.nodes">
       <node
-            after="Image Writer"
             category-path="/community/knip/io"
             deprecated="false"
             factory-class="de.mpicbg.ulman.nodeNetImgSink.WriterNodeFactory">
