@@ -26,10 +26,10 @@ import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 
 
 /**
- * This is the model implementation of MyExampleNode.
- * This is an example node provided by KNIME.com.
+ * This is the implementation of DAIS wp1.3 "Image Receiver" Node for KNIME.com.
+ * It as an adopted code from the MyExampleNode found in the KNIME SDK.
  *
- * @author KNIME.com
+ * @author Vladimir Ulman, MPI-CBG.de
  */
 public class ReaderNodeModel extends NodeModel
 {

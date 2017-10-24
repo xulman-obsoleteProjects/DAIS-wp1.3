@@ -5,10 +5,10 @@ import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
 
 /**
- * <code>NodeFactory</code> for the "MyExampleNode" Node.
- * This is an example node provided by KNIME.com.
+ * <code>NodeFactory</code> for the "Image Receiver" Node.
+ * It as an adopted code from the MyExampleNode found in the KNIME SDK.
  *
- * @author KNIME.com
+ * @author Vladimir Ulman, MPI-CBG.de
  */
 public class ReaderNodeFactory 
         extends NodeFactory<ReaderNodeModel> {

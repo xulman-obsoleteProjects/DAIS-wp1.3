@@ -3,10 +3,10 @@ package de.mpicbg.ulman.nodeNetImgSource;
 import org.knime.core.node.NodeView;
 
 /**
- * <code>NodeView</code> for the "MyExampleNode" Node.
- * This is an example node provided by KNIME.com.
+ * <code>NodeView</code> for the "Image Receiver" Node.
+ * It as an adopted code from the MyExampleNode found in the KNIME SDK.
  *
- * @author KNIME.com
+ * @author Vladimir Ulman, MPI-CBG.de
  */
 public class ReaderNodeView extends NodeView<ReaderNodeModel> {
 

@@ -13,7 +13,8 @@
    <extension
          point="org.knime.workbench.repository.nodes">
       <node
-            category-path="/community/knip/vlado/"
+            after="Image Reader"
+            category-path="/community/knip/io"
             deprecated="false"
             factory-class="de.mpicbg.ulman.nodeNetImgSource.ReaderNodeFactory">
       </node>

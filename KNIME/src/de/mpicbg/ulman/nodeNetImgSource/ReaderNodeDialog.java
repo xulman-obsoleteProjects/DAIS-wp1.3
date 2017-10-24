@@ -4,15 +4,15 @@ import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
 
 /**
- * <code>NodeDialog</code> for the "MyExampleNode" Node.
- * This is an example node provided by KNIME.com.
+ * <code>NodeDialog</code> for the "Image Receiver" Node.
+ * It as an adopted code from the MyExampleNode found in the KNIME SDK.
  *
  * This node dialog derives from {@link DefaultNodeSettingsPane} which allows
  * creation of a simple dialog with standard components. If you need a more 
  * complex dialog please derive directly from 
  * {@link org.knime.core.node.NodeDialogPane}.
  * 
- * @author KNIME.com
+ * @author Vladimir Ulman, MPI-CBG.de
  */
 public class ReaderNodeDialog extends DefaultNodeSettingsPane {
 
