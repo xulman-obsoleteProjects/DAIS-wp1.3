@@ -14,6 +14,9 @@ import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 public class FijiLogger implements ProgressCallback
 {
+	//singleton accross all loggers of this kind
+	final static long initTime = System.currentTimeMillis();
+
 	FijiLogger(final LogService _log, final StatusService _bar)
 	{ log = _log; bar = _bar; }
 
@@ -22,7 +25,7 @@ public class FijiLogger implements ProgressCallback
 
 	@Override
 	public void info(String msg)
-	{ log.debug(msg); }
+	{ System.out.println((System.currentTimeMillis()-initTime)+" : "+msg); }
 
 	@Override
 	public void setProgress(float howFar)
