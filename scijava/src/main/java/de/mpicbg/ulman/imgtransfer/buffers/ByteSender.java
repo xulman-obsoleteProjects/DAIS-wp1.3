@@ -14,4 +14,8 @@ public class ByteSender implements Sender
 	public
 	void send(final ByteBuffer bufWrite, final Object arrayRead, int offset, int length)
 	{ bufWrite.put((byte[])arrayRead); }
+
+	public
+	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length)
+	{ bufRead.get((byte[])arrayWrite); }
 }

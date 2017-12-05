@@ -11,5 +11,6 @@ import java.nio.ByteBuffer;
 
 public interface Sender
 {
-	void send(final ByteBuffer bufWrite, final Object arrayRead, int offset, int length);
+	void send(final ByteBuffer bufWrite, final Object arrayRead,  int offset, int length);
+	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length);
 }

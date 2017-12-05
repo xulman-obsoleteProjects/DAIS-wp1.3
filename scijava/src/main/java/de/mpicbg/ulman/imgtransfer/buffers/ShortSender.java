@@ -14,4 +14,8 @@ public class ShortSender implements Sender
 	public
 	void send(final ByteBuffer bufWrite, final Object arrayRead, int offset, int length)
 	{ bufWrite.asShortBuffer().put((short[])arrayRead, offset, length); }
+
+	public
+	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length)
+	{ bufRead.asShortBuffer().get((short[])arrayWrite, offset, length); }
 }

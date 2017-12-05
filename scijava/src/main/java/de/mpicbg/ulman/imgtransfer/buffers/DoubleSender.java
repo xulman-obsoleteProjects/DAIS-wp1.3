@@ -14,4 +14,8 @@ public class DoubleSender implements Sender
 	public
 	void send(final ByteBuffer bufWrite, final Object arrayRead, int offset, int length)
 	{ bufWrite.asDoubleBuffer().put((double[])arrayRead, offset, length); }
+
+	public
+	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length)
+	{ bufRead.asDoubleBuffer().get((double[])arrayWrite, offset, length); }
 }

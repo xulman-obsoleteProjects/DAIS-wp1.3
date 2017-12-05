@@ -14,4 +14,8 @@ public class FloatSender implements Sender
 	public
 	void send(final ByteBuffer bufWrite, final Object arrayRead, int offset, int length)
 	{ bufWrite.asFloatBuffer().put((float[])arrayRead, offset, length); }
+
+	public
+	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length)
+	{ bufRead.asFloatBuffer().get((float[])arrayWrite, offset, length); }
 }
