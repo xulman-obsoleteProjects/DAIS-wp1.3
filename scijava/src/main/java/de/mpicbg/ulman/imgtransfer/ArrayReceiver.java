@@ -2,9 +2,11 @@ package de.mpicbg.ulman.imgtransfer;
 
 import org.zeromq.ZMQ;
 
+import de.mpicbg.ulman.imgtransfer.buffers.*;
 import java.nio.ByteBuffer;
 
-class ArrayReceiver {
+class ArrayReceiver
+{
 	/**
 	 * A timeout interval used while waiting for next (not the first one)
 	 * "packet/message/chunk of data". That is, a waiting time applied only once
@@ -96,145 +98,103 @@ class ArrayReceiver {
 			throw new RuntimeException("Reached timeout for the next incoming data.");
 	}
 
+	//-------------------
+
+	/**
+	 * This is basically, the connector between the array of some basic
+	 * type (e.g., float[]) and the specific view of the ByteBuffer (e.g.,
+	 * ByteBuffer.asFloatBuffer()).
+	 */
+	final Sender arrayToBuffer;
+
+	/**
+	 * The length of the corresponding/input basic type array
+	 * (note that we get Object instead of, e.g., float[]) in the constructor)
+	 */
+	final int arrayLength;
+
+	///how many bytes the basic type occupies (e.g., float = 4 B)
+	final int arrayElemSize;
+
+	/**
+	 * constructor that caches type of the array (in this.arrayToBuffer), size of one
+	 * array element (in this.arrayElemSize), and length of the array (in this.arrayLength)
+	 */
+	ArrayReceiver(final Object array)
+	{
+		if (array instanceof byte[])
+		{
+			arrayToBuffer = new ByteSender();
+			arrayLength = ((byte[])array).length;
+			arrayElemSize = 1;
+		}
+		else
+		if (array instanceof short[])
+		{
+			arrayToBuffer = new ShortSender();
+			arrayLength = ((short[])array).length;
+			arrayElemSize = 2;
+		}
+		else
+		if (array instanceof float[])
+		{
+			arrayToBuffer = new FloatSender();
+			arrayLength = ((float[])array).length;
+			arrayElemSize = 4;
+		}
+		else
+		if (array instanceof double[])
+		{
+			arrayToBuffer = new DoubleSender();
+			arrayLength = ((double[])array).length;
+			arrayElemSize = 8;
+		}
+		else
+			throw new RuntimeException("Does not recognize this array type.");
+	}
 
 	void receiveArray(final Object array, final ZMQ.Socket socket) {
-		if(array instanceof byte[]) receiveBytes((byte[]) array, socket);
-		if(array instanceof short[]) receiveShorts((short[]) array, socket);
-		if(array instanceof float[]) receiveFloats((float[]) array, socket);
-		if(array instanceof double[]) receiveDoubles((double[]) array, socket);
-	}
+		//will do the template socket->data pushing using this.arrayToBuffer.recv()
 
-	static
-	void receiveBytes(final byte[] data, final ZMQ.Socket socket)
-	{
-		final ByteBuffer buf = ByteBuffer.allocateDirect(data.length);
-		//are there any further messages pending?
-		waitForNextMessage(socket);
-		socket.recvByteBuffer(buf, 0);
-		buf.rewind();
-		buf.get(data);
-	}
-
-	static
-	void receiveShorts(final short[] data, final ZMQ.Socket socket)
-	{
-		//the data array might be as much as twice longer than what a byte[] array can store,
-		//we have to copy half by half (each is up to byte[] array max capacity)
-		//
-		//but we keep addressing in the units of shorts :(
-		//while in bytes the length of the data is always perfectly divisible by two,
-		//it might not be the case in units of shorts
-		final int TypeSize = 2;
-		final int firstBlockLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
-		final int lastBlockLen = data.length - (TypeSize-1)*firstBlockLen;
-		//NB: firstBlockLen >= lastBlockLen
-
-		final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlockLen);
-		waitForNextMessage(socket);
-		socket.recvByteBuffer(buf, 0); //blocking read since we got over waitForNextMessage()
-		buf.rewind();
-		buf.asShortBuffer().get(data, 0, firstBlockLen);
-
-		if (lastBlockLen > 0)
-		{
-			//make buffer ready for receiving the second part
-			buf.limit(TypeSize*lastBlockLen);
-			buf.rewind();
-
-			//get the data
-			waitForNextMessage(socket);
-			socket.recvByteBuffer(buf, 0);
-
-			buf.rewind(); //recvByteBuffer() has changed the position!
-			buf.asShortBuffer().get(data, firstBlockLen, lastBlockLen);
-		}
-	}
-
-	static
-	void receiveFloats(final float[] data, final ZMQ.Socket socket)
-	{
-		final int TypeSize = 4;
-
-		if (data.length < 1024)
+		if (arrayLength < 1024 || arrayElemSize == 1)
 		{
 			//array that is short enough to be hosted entirely with byte[] array,
 			//will be sent in one shot
-			//NB: the else branch below cannot handle when data.length < 3,
+			//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
 			//    and why to split the short arrays anyways?
-			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
+			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
 			waitForNextMessage(socket);
 			socket.recvByteBuffer(buf, 0);
 			buf.rewind();
-			buf.asFloatBuffer().get(data, 0, data.length);
+			arrayToBuffer.recv(buf, array, 0, arrayLength);
 		}
 		else
 		{
-			//float array, when seen as byte array, may exceed byte array's max length
-			final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
-			final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
+			//for example: float array, when seen as byte array, may exceed byte array's max length;
+			//we, therefore, split into arrayElemSize-1 blocks of firstBlocksLen items long from
+			//the original basic type array, and into one block of lastBlockLen items long
+			final int firstBlocksLen = arrayLength/arrayElemSize + (arrayLength%arrayElemSize != 0? 1 : 0);
+			final int lastBlockLen   = arrayLength - (arrayElemSize-1)*firstBlocksLen;
+			//NB: firstBlockLen >= lastBlockLen
 
-			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
-			for (int p=0; p < (TypeSize-1); ++p)
+			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
+			for (int p=0; p < (arrayElemSize-1); ++p)
 			{
 				waitForNextMessage(socket);
 				socket.recvByteBuffer(buf, 0);
 				buf.rewind();
-				buf.asFloatBuffer().get(data, p*firstBlocksLen, firstBlocksLen);
+				arrayToBuffer.recv(buf, array, p*firstBlocksLen, firstBlocksLen);
 				buf.rewind();
 			}
 
 			if (lastBlockLen > 0)
 			{
-				buf.limit(TypeSize*lastBlockLen);
+				buf.limit(arrayElemSize*lastBlockLen);
 				buf.rewind();
 				waitForNextMessage(socket);
 				socket.recvByteBuffer(buf, 0);
 				buf.rewind();
-				buf.asFloatBuffer().get(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
-			}
-		}
-	}
-
-	static
-	void receiveDoubles(final double[] data, final ZMQ.Socket socket)
-	{
-		final int TypeSize = 8;
-
-		if (data.length < 1024)
-		{
-			//array that is short enough to be hosted entirely with byte[] array,
-			//will be sent in one shot
-			//NB: the else branch below cannot handle when data.length < 7,
-			//    and why to split the short arrays anyways?
-			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*data.length);
-			waitForNextMessage(socket);
-			socket.recvByteBuffer(buf, 0);
-			buf.rewind();
-			buf.asDoubleBuffer().get(data, 0, data.length);
-		}
-		else
-		{
-			final int firstBlocksLen = data.length/TypeSize + (data.length%TypeSize != 0? 1 : 0);
-			final int lastBlockLen = data.length - (TypeSize-1)*firstBlocksLen;
-
-			final ByteBuffer buf = ByteBuffer.allocateDirect(TypeSize*firstBlocksLen);
-			for (int p=0; p < (TypeSize-1); ++p)
-			{
-				waitForNextMessage(socket);
-				socket.recvByteBuffer(buf, 0);
-				buf.rewind();
-				buf.asDoubleBuffer().get(data, p*firstBlocksLen, firstBlocksLen);
-				buf.rewind();
-			}
-
-			if (lastBlockLen > 0)
-			{
-				buf.limit(TypeSize*lastBlockLen);
-				buf.rewind();
-				waitForNextMessage(socket);
-				socket.recvByteBuffer(buf, 0);
-				buf.rewind();
-				buf.asDoubleBuffer().get(data, (TypeSize-1)*firstBlocksLen, lastBlockLen);
+				arrayToBuffer.recv(buf, array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen);
 			}
 		}
 	}

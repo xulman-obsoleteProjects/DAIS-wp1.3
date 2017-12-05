@@ -268,7 +268,7 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to receive an empty image...");
 
 		final Object data = img.update(null).getCurrentStorageArray();
-		final ArrayReceiver ar = new ArrayReceiver();
+		final ArrayReceiver ar = new ArrayReceiver(data);
 		ar.receiveArray(data, socket);
 	}
 
@@ -296,7 +296,7 @@ public class ImgPacker
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to receive an empty image...");
 
-		final ArrayReceiver ar = new ArrayReceiver();
+		final ArrayReceiver ar = new ArrayReceiver(img.getPlane(0).getCurrentStorageArray());
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();
