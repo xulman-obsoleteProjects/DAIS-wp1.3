@@ -257,7 +257,8 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to send an empty image...");
 
 		final Object data = img.update(null).getCurrentStorageArray();
-		ArraySender.sendArray(data, socket, false);
+		final ArraySender as = new ArraySender(data);
+		as.sendArray(data, socket, false);
 	}
 
 	private static <T extends NativeType<T>>
@@ -267,7 +268,8 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to receive an empty image...");
 
 		final Object data = img.update(null).getCurrentStorageArray();
-		ArrayReceiver.receiveArray(data, socket);
+		final ArrayReceiver ar = new ArrayReceiver();
+		ar.receiveArray(data, socket);
 	}
 
 	private static <T extends NativeType<T>>
@@ -276,14 +278,15 @@ public class ImgPacker
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to send an empty image...");
 
+		final ArraySender as = new ArraySender(img.getPlane(0).getCurrentStorageArray());
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();
-			ArraySender.sendArray(data, socket, true);
+			as.sendArray(data, socket, true);
 		}
 		{
 			final Object data = img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-			ArraySender.sendArray(data, socket, false);
+			as.sendArray(data, socket, false);
 		}
 	}
 
@@ -293,14 +296,15 @@ public class ImgPacker
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to receive an empty image...");
 
+		final ArrayReceiver ar = new ArrayReceiver();
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();
-			ArrayReceiver.receiveArray(data, socket);
+			ar.receiveArray(data, socket);
 		}
 		{
 			final Object data = img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-			ArrayReceiver.receiveArray(data, socket);
+			ar.receiveArray(data, socket);
 		}
 	}
 

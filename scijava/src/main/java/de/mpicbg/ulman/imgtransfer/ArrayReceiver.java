@@ -97,7 +97,6 @@ class ArrayReceiver {
 	}
 
 
-	static
 	void receiveArray(final Object array, final ZMQ.Socket socket) {
 		if(array instanceof byte[]) receiveBytes((byte[]) array, socket);
 		if(array instanceof short[]) receiveShorts((short[]) array, socket);

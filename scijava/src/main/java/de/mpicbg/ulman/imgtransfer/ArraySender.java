@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 class ArraySender {
 	// -------- basic types storage vs. ByteType un/packagers --------
 
-	static
 	void sendArray(final Object array, final ZMQ.Socket socket, boolean comingMore)
 	{
 		if(array instanceof byte[]) sendBytes((byte[]) array, socket, comingMore);
