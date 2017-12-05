@@ -105,7 +105,7 @@ class ArrayReceiver
 	 * type (e.g., float[]) and the specific view of the ByteBuffer (e.g.,
 	 * ByteBuffer.asFloatBuffer()).
 	 */
-	final Sender arrayToBuffer;
+	final Sender arrayFromBuffer;
 
 	/**
 	 * The length of the corresponding/input basic type array
@@ -117,35 +117,35 @@ class ArrayReceiver
 	final int arrayElemSize;
 
 	/**
-	 * constructor that caches type of the array (in this.arrayToBuffer), size of one
+	 * constructor that caches type of the array (in this.arrayFromBuffer), size of one
 	 * array element (in this.arrayElemSize), and length of the array (in this.arrayLength)
 	 */
 	ArrayReceiver(final Object array)
 	{
 		if (array instanceof byte[])
 		{
-			arrayToBuffer = new ByteSender();
+			arrayFromBuffer = new ByteSender();
 			arrayLength = ((byte[])array).length;
 			arrayElemSize = 1;
 		}
 		else
 		if (array instanceof short[])
 		{
-			arrayToBuffer = new ShortSender();
+			arrayFromBuffer = new ShortSender();
 			arrayLength = ((short[])array).length;
 			arrayElemSize = 2;
 		}
 		else
 		if (array instanceof float[])
 		{
-			arrayToBuffer = new FloatSender();
+			arrayFromBuffer = new FloatSender();
 			arrayLength = ((float[])array).length;
 			arrayElemSize = 4;
 		}
 		else
 		if (array instanceof double[])
 		{
-			arrayToBuffer = new DoubleSender();
+			arrayFromBuffer = new DoubleSender();
 			arrayLength = ((double[])array).length;
 			arrayElemSize = 8;
 		}
@@ -154,7 +154,7 @@ class ArrayReceiver
 	}
 
 	void receiveArray(final Object array, final ZMQ.Socket socket) {
-		//will do the template socket->data pushing using this.arrayToBuffer.recv()
+		//will do the template socket->data pushing using this.arrayFromBuffer.recv()
 
 		if (arrayLength < 1024 || arrayElemSize == 1)
 		{
@@ -166,7 +166,7 @@ class ArrayReceiver
 			waitForNextMessage(socket);
 			socket.recvByteBuffer(buf, 0);
 			buf.rewind();
-			arrayToBuffer.recv(buf, array, 0, arrayLength);
+			arrayFromBuffer.recv(buf, array, 0, arrayLength);
 		}
 		else
 		{
@@ -183,7 +183,7 @@ class ArrayReceiver
 				waitForNextMessage(socket);
 				socket.recvByteBuffer(buf, 0);
 				buf.rewind();
-				arrayToBuffer.recv(buf, array, p*firstBlocksLen, firstBlocksLen);
+				arrayFromBuffer.recv(buf, array, p*firstBlocksLen, firstBlocksLen);
 				buf.rewind();
 			}
 
@@ -194,7 +194,7 @@ class ArrayReceiver
 				waitForNextMessage(socket);
 				socket.recvByteBuffer(buf, 0);
 				buf.rewind();
-				arrayToBuffer.recv(buf, array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen);
+				arrayFromBuffer.recv(buf, array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen);
 			}
 		}
 	}
