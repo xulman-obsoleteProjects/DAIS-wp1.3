@@ -191,7 +191,7 @@ public class ArrayReceiver
 		}
 	}
 
-	void sendArray(final Object array, boolean comingMore)
+	void transmitArray(final Object array, boolean comingMore)
 	{
 		if (arrayLength < 1024 || arrayElemSize == 1)
 		{
@@ -217,6 +217,7 @@ public class ArrayReceiver
 			{
 				arrayVsSocket.transmit(array, p*firstBlocksLen, firstBlocksLen,
 				  buf, (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ.SNDMORE : 0));
+				buf.rewind();
 			}
 
 			if (lastBlockLen > 0)
@@ -225,43 +226,6 @@ public class ArrayReceiver
 				buf.rewind();
 				arrayVsSocket.transmit(array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen,
 				                        buf, (comingMore? ZMQ.SNDMORE : 0));
-			}
-		}
-	}
-
-	void receiveArray(final Object array)
-	{
-		if (arrayLength < 1024 || arrayElemSize == 1)
-		{
-			//array that is short enough to be hosted entirely with byte[] array,
-			//will be sent in one shot
-			//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
-			//    and why to split the short arrays anyways?
-			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
-			arrayVsSocket.transmit(array, 0, arrayLength, buf, 0);
-		}
-		else
-		{
-			//for example: float array, when seen as byte array, may exceed byte array's max length;
-			//we, therefore, split into arrayElemSize-1 blocks of firstBlocksLen items long from
-			//the original basic type array, and into one block of lastBlockLen items long
-			final int firstBlocksLen = arrayLength/arrayElemSize + (arrayLength%arrayElemSize != 0? 1 : 0);
-			final int lastBlockLen   = arrayLength - (arrayElemSize-1)*firstBlocksLen;
-			//NB: firstBlockLen >= lastBlockLen
-
-			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
-			for (int p=0; p < (arrayElemSize-1); ++p)
-			{
-				arrayVsSocket.transmit(array, p*firstBlocksLen, firstBlocksLen, buf, 0);
-				buf.rewind();
-			}
-
-			if (lastBlockLen > 0)
-			{
-				buf.limit(arrayElemSize*lastBlockLen);
-				buf.rewind();
-				arrayVsSocket.transmit(array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen,
-				                        buf, 0);
 			}
 		}
 	}

@@ -258,7 +258,7 @@ public class ImgPacker
 
 		final Object data = img.update(null).getCurrentStorageArray();
 		final ArrayReceiver as = new ArrayReceiver(data, socket, ArrayReceiver.FROM_ARRAY_TO_SOCKET);
-		as.sendArray(data, false);
+		as.transmitArray(data, false);
 	}
 
 	private static <T extends NativeType<T>>
@@ -269,7 +269,7 @@ public class ImgPacker
 
 		final Object data = img.update(null).getCurrentStorageArray();
 		final ArrayReceiver ar = new ArrayReceiver(data, socket, ArrayReceiver.FROM_SOCKET_TO_ARRAY);
-		ar.receiveArray(data);
+		ar.transmitArray(data, false);
 	}
 
 	private static <T extends NativeType<T>>
@@ -283,11 +283,11 @@ public class ImgPacker
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();
-			as.sendArray(data, true);
+			as.transmitArray(data, true);
 		}
 		{
 			final Object data = img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-			as.sendArray(data, false);
+			as.transmitArray(data, false);
 		}
 	}
 
@@ -302,11 +302,11 @@ public class ImgPacker
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();
-			ar.receiveArray(data);
+			ar.transmitArray(data, false);
 		}
 		{
 			final Object data = img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-			ar.receiveArray(data);
+			ar.transmitArray(data, false);
 		}
 	}
 
