@@ -95,9 +95,9 @@ class ArraySender
 			final int lastBlockLen   = arrayLength - (arrayElemSize-1)*firstBlocksLen;
 			//NB: firstBlockLen >= lastBlockLen
 
+			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
 			for (int p=0; p < (arrayElemSize-1); ++p)
 			{
-				final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
 				arrayToBuffer.send(buf, array, p*firstBlocksLen, firstBlocksLen);
 				buf.rewind();
 				socket.sendByteBuffer(buf, (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ.SNDMORE : 0));
@@ -105,7 +105,8 @@ class ArraySender
 
 			if (lastBlockLen > 0)
 			{
-				final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*lastBlockLen);
+				buf.limit(arrayElemSize*lastBlockLen);
+				buf.rewind();
 				arrayToBuffer.send(buf, array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen);
 				buf.rewind();
 				socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
