@@ -8,7 +8,7 @@
 package de.mpicbg.ulman.imgtransfer.sockets;
 
 import de.mpicbg.ulman.imgtransfer.buffers.Buffer;
-import de.mpicbg.ulman.imgtransfer.ArrayReceiver;
+import de.mpicbg.ulman.imgtransfer.ArrayPacker;
 import org.zeromq.ZMQ;
 import java.nio.ByteBuffer;
 
@@ -48,7 +48,7 @@ public class RecvFromSocket implements Socket
 			buf = ByteBuffer.allocateDirect(arrayLength);
 		}
 
-		ArrayReceiver.waitForNextMessage(socket);
+		ArrayPacker.waitForNextMessage(socket);
 		socket.recvByteBuffer(buf, 0);
 		buf.rewind();
 		sender.recv(buf, arrayWrite, offset, length);
