@@ -12,5 +12,5 @@ import java.nio.ByteBuffer;
 
 public interface Socket
 {
-	void transmit(final ZMQ.Socket socket, final ByteBuffer buffer, final int flags);
+	void transmit(final ZMQ.Socket socket, final ByteBuffer buffer, final int sendOnlyFlags);
 }

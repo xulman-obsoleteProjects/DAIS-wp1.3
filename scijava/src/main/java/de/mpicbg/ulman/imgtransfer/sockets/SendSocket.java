@@ -13,9 +13,9 @@ import java.nio.ByteBuffer;
 public class SendSocket implements Socket
 {
 	public
-	void transmit(final ZMQ.Socket socket, final ByteBuffer bufRead, final int flags)
+	void transmit(final ZMQ.Socket socket, final ByteBuffer bufRead, final int sendOnlyFlags)
 	{
 		bufRead.rewind();
-		socket.sendByteBuffer(bufRead, flags);
+		socket.sendByteBuffer(bufRead, sendOnlyFlags);
 	}
 }

@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
 public class RecvSocket implements Socket
 {
 	public
-	void transmit(final ZMQ.Socket socket, final ByteBuffer bufWrite, final int flags)
+	void transmit(final ZMQ.Socket socket, final ByteBuffer bufWrite, final int sendOnlyFlags)
 	{
 		ArrayReceiver.waitForNextMessage(socket);
 		socket.recvByteBuffer(bufWrite, 0);
