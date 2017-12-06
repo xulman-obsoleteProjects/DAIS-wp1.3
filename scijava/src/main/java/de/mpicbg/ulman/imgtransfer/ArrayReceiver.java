@@ -3,6 +3,7 @@ package de.mpicbg.ulman.imgtransfer;
 import org.zeromq.ZMQ;
 
 import de.mpicbg.ulman.imgtransfer.buffers.*;
+import de.mpicbg.ulman.imgtransfer.sockets.*;
 import java.nio.ByteBuffer;
 
 public class ArrayReceiver
@@ -101,9 +102,11 @@ public class ArrayReceiver
 	//-------------------
 
 	/**
-	 * This is basically, the connector between the array of some basic
+	 * This is basically the connector between the array of some basic
 	 * type (e.g., float[]) and the specific view of the ByteBuffer (e.g.,
 	 * ByteBuffer.asFloatBuffer()).
+	 *
+	 * This is similar to the \e this.bufferToSocket
 	 */
 	final Sender arrayFromBuffer;
 
@@ -116,16 +119,34 @@ public class ArrayReceiver
 	///how many bytes the basic type occupies (e.g., float = 4 B)
 	final int arrayElemSize;
 
+
 	///socket to read from
 	final ZMQ.Socket socket;
+
+	/**
+	 * This is basically a connector between the ByteBuffer and \e socket,
+	 * it either pushes data from the buffer to the socket, or the opposite.
+	 *
+	 * This is similar to the \e this.arrayFromBuffer .
+	 */
+	final Socket bufferToSocket;
+
+
+	///constant for the constructor: tells that we want a sender
+	public final static int FROM_ARRAY_TO_SOCKET = 1;
+	///constant for the constructor: tells that we want a receiver
+	public final static int FROM_SOCKET_TO_ARRAY = 2;
+
 
 	/**
 	 * constructor that caches type of the array (in this.arrayFromBuffer), size of one
 	 * array element (in this.arrayElemSize), and length of the array (in this.arrayLength)
 	 *
-	 * the \e socket is read into ByteBuffer which is read into the \e array
+	 * Depending on the \e direction, the \e socket is either read into ByteBuffer which
+	 * is read into the \e array, or the \e array is read into ByteBuffer which is read
+	 * into the \e socket.
 	 */
-	ArrayReceiver(final Object array, final ZMQ.Socket _socket)
+	ArrayReceiver(final Object array, final ZMQ.Socket _socket, final int direction)
 	{
 		if (array instanceof byte[])
 		{
@@ -158,6 +179,18 @@ public class ArrayReceiver
 			throw new RuntimeException("Does not recognize this array type.");
 
 		socket = _socket;
+		//
+		switch (direction)
+		{
+		case FROM_ARRAY_TO_SOCKET:
+			bufferToSocket = new SendSocket();
+			break;
+		case FROM_SOCKET_TO_ARRAY:
+			bufferToSocket = new RecvSocket();
+			break;
+		default:
+			throw new RuntimeException("Does not recognize the job.");
+		}
 	}
 
 	void receiveArray(final Object array) {
