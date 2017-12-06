@@ -257,7 +257,7 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to send an empty image...");
 
 		final Object data = img.update(null).getCurrentStorageArray();
-		final ArraySender as = new ArraySender(data, socket);
+		final ArrayReceiver as = new ArrayReceiver(data, socket, ArrayReceiver.FROM_ARRAY_TO_SOCKET);
 		as.sendArray(data, false);
 	}
 
@@ -278,7 +278,8 @@ public class ImgPacker
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to send an empty image...");
 
-		final ArraySender as = new ArraySender(img.getPlane(0).getCurrentStorageArray(), socket);
+		final ArrayReceiver as = new ArrayReceiver(img.getPlane(0).getCurrentStorageArray(),
+		                                           socket, ArrayReceiver.FROM_ARRAY_TO_SOCKET);
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();

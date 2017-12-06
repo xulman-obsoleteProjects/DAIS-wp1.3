@@ -205,8 +205,7 @@ public class ArrayReceiver
 			//    and why to split the short arrays anyways?
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
 			arrayFromBuffer.send(buf, array, 0, arrayLength);
-			buf.rewind();
-			socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
+			bufferToSocket.transmit(socket, buf, (comingMore? ZMQ.SNDMORE : 0));
 		}
 		else
 		{
@@ -221,8 +220,7 @@ public class ArrayReceiver
 			for (int p=0; p < (arrayElemSize-1); ++p)
 			{
 				arrayFromBuffer.send(buf, array, p*firstBlocksLen, firstBlocksLen);
-				buf.rewind();
-				socket.sendByteBuffer(buf, (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ.SNDMORE : 0));
+				bufferToSocket.transmit(socket, buf, (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ.SNDMORE : 0));
 			}
 
 			if (lastBlockLen > 0)
@@ -230,8 +228,7 @@ public class ArrayReceiver
 				buf.limit(arrayElemSize*lastBlockLen);
 				buf.rewind();
 				arrayFromBuffer.send(buf, array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen);
-				buf.rewind();
-				socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
+				bufferToSocket.transmit(socket, buf, (comingMore? ZMQ.SNDMORE : 0));
 			}
 		}
 	}
@@ -246,9 +243,7 @@ public class ArrayReceiver
 			//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
 			//    and why to split the short arrays anyways?
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
-			waitForNextMessage(socket);
-			socket.recvByteBuffer(buf, 0);
-			buf.rewind();
+			bufferToSocket.transmit(socket, buf, 0);
 			arrayFromBuffer.recv(buf, array, 0, arrayLength);
 		}
 		else
@@ -263,9 +258,7 @@ public class ArrayReceiver
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
 			for (int p=0; p < (arrayElemSize-1); ++p)
 			{
-				waitForNextMessage(socket);
-				socket.recvByteBuffer(buf, 0);
-				buf.rewind();
+				bufferToSocket.transmit(socket, buf, 0);
 				arrayFromBuffer.recv(buf, array, p*firstBlocksLen, firstBlocksLen);
 				buf.rewind();
 			}
@@ -274,9 +267,7 @@ public class ArrayReceiver
 			{
 				buf.limit(arrayElemSize*lastBlockLen);
 				buf.rewind();
-				waitForNextMessage(socket);
-				socket.recvByteBuffer(buf, 0);
-				buf.rewind();
+				bufferToSocket.transmit(socket, buf, 0);
 				arrayFromBuffer.recv(buf, array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen);
 			}
 		}
