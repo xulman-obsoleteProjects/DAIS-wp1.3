@@ -102,15 +102,6 @@ public class ArrayReceiver
 	//-------------------
 
 	/**
-	 * This is basically the connector between the array of some basic
-	 * type (e.g., float[]) and the specific view of the ByteBuffer (e.g.,
-	 * ByteBuffer.asFloatBuffer()).
-	 *
-	 * This is similar to the \e this.bufferToSocket
-	 */
-	final Sender arrayFromBuffer;
-
-	/**
 	 * The length of the corresponding/input basic type array
 	 * (note that we get Object instead of, e.g., float[]) in the constructor)
 	 */
@@ -119,15 +110,11 @@ public class ArrayReceiver
 	///how many bytes the basic type occupies (e.g., float = 4 B)
 	final int arrayElemSize;
 
-
-	///socket to read from
-	final ZMQ.Socket socket;
-
 	/**
 	 * This is basically a connector between the ByteBuffer and \e socket,
 	 * it either pushes data from the buffer to the socket, or the opposite.
 	 *
-	 * This is similar to the \e this.arrayFromBuffer .
+	 * This is similar to the constructor's arrayVsBuffer.
 	 */
 	final Socket bufferToSocket;
 
@@ -139,54 +126,65 @@ public class ArrayReceiver
 
 
 	/**
-	 * constructor that caches type of the array (in this.arrayFromBuffer), size of one
-	 * array element (in this.arrayElemSize), and length of the array (in this.arrayLength)
+	 * Constructor that caches type of the \e sampleArray (inside this.bufferToSocket),
+	 * size of one array element (in this.arrayElemSize),
+	 * and length of the array (in this.arrayLength). The content of the \e sampleArray
+	 * is irrelevant for now, only its parameters (elemnent type and its size) are
+	 * important and must be representative of the arrays that will be sent/received
+	 * later on with this object.
 	 *
 	 * Depending on the \e direction, the \e socket is either read into ByteBuffer which
 	 * is read into the \e array, or the \e array is read into ByteBuffer which is read
 	 * into the \e socket.
 	 */
-	ArrayReceiver(final Object array, final ZMQ.Socket _socket, final int direction)
+	ArrayReceiver(final Object sampleArray, final ZMQ.Socket socket, final int direction)
 	{
-		if (array instanceof byte[])
+		/**
+		 * This is basically the connector between the array of some basic
+		 * type (e.g., float[]) and the specific view of the ByteBuffer (e.g.,
+		 * ByteBuffer.asFloatBuffer()).
+		 *
+		 * This is similar to the \e this.bufferToSocket
+		 */
+		Sender arrayVsBuffer;
+
+		if (sampleArray instanceof byte[])
 		{
-			arrayFromBuffer = new ByteSender();
-			arrayLength = ((byte[])array).length;
+			arrayVsBuffer = new ByteSender();
+			arrayLength = ((byte[])sampleArray).length;
 			arrayElemSize = 1;
 		}
 		else
-		if (array instanceof short[])
+		if (sampleArray instanceof short[])
 		{
-			arrayFromBuffer = new ShortSender();
-			arrayLength = ((short[])array).length;
+			arrayVsBuffer = new ShortSender();
+			arrayLength = ((short[])sampleArray).length;
 			arrayElemSize = 2;
 		}
 		else
-		if (array instanceof float[])
+		if (sampleArray instanceof float[])
 		{
-			arrayFromBuffer = new FloatSender();
-			arrayLength = ((float[])array).length;
+			arrayVsBuffer = new FloatSender();
+			arrayLength = ((float[])sampleArray).length;
 			arrayElemSize = 4;
 		}
 		else
-		if (array instanceof double[])
+		if (sampleArray instanceof double[])
 		{
-			arrayFromBuffer = new DoubleSender();
-			arrayLength = ((double[])array).length;
+			arrayVsBuffer = new DoubleSender();
+			arrayLength = ((double[])sampleArray).length;
 			arrayElemSize = 8;
 		}
 		else
 			throw new RuntimeException("Does not recognize this array type.");
 
-		socket = _socket;
-		//
 		switch (direction)
 		{
 		case FROM_ARRAY_TO_SOCKET:
-			bufferToSocket = new SendSocket();
+			bufferToSocket = new SendSocket(socket, arrayVsBuffer);
 			break;
 		case FROM_SOCKET_TO_ARRAY:
-			bufferToSocket = new RecvSocket();
+			bufferToSocket = new RecvSocket(socket, arrayVsBuffer);
 			break;
 		default:
 			throw new RuntimeException("Does not recognize the job.");
@@ -195,8 +193,6 @@ public class ArrayReceiver
 
 	void sendArray(final Object array, boolean comingMore)
 	{
-		//will do the template data->socket pushing using this.arrayFromBuffer.send()
-
 		if (arrayLength < 1024 || arrayElemSize == 1)
 		{
 			//array that is short enough to be hosted entirely with byte[] array,
@@ -204,8 +200,8 @@ public class ArrayReceiver
 			//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
 			//    and why to split the short arrays anyways?
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
-			arrayFromBuffer.send(buf, array, 0, arrayLength);
-			bufferToSocket.transmit(socket, buf, (comingMore? ZMQ.SNDMORE : 0));
+			bufferToSocket.transmit(array, 0, arrayLength,
+			                        buf, (comingMore? ZMQ.SNDMORE : 0));
 		}
 		else
 		{
@@ -219,23 +215,22 @@ public class ArrayReceiver
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
 			for (int p=0; p < (arrayElemSize-1); ++p)
 			{
-				arrayFromBuffer.send(buf, array, p*firstBlocksLen, firstBlocksLen);
-				bufferToSocket.transmit(socket, buf, (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ.SNDMORE : 0));
+				bufferToSocket.transmit(array, p*firstBlocksLen, firstBlocksLen,
+				  buf, (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ.SNDMORE : 0));
 			}
 
 			if (lastBlockLen > 0)
 			{
 				buf.limit(arrayElemSize*lastBlockLen);
 				buf.rewind();
-				arrayFromBuffer.send(buf, array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen);
-				bufferToSocket.transmit(socket, buf, (comingMore? ZMQ.SNDMORE : 0));
+				bufferToSocket.transmit(array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen,
+				                        buf, (comingMore? ZMQ.SNDMORE : 0));
 			}
 		}
 	}
 
-	void receiveArray(final Object array) {
-		//will do the template socket->data pushing using this.arrayFromBuffer.recv()
-
+	void receiveArray(final Object array)
+	{
 		if (arrayLength < 1024 || arrayElemSize == 1)
 		{
 			//array that is short enough to be hosted entirely with byte[] array,
@@ -243,8 +238,7 @@ public class ArrayReceiver
 			//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
 			//    and why to split the short arrays anyways?
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
-			bufferToSocket.transmit(socket, buf, 0);
-			arrayFromBuffer.recv(buf, array, 0, arrayLength);
+			bufferToSocket.transmit(array, 0, arrayLength, buf, 0);
 		}
 		else
 		{
@@ -258,8 +252,7 @@ public class ArrayReceiver
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
 			for (int p=0; p < (arrayElemSize-1); ++p)
 			{
-				bufferToSocket.transmit(socket, buf, 0);
-				arrayFromBuffer.recv(buf, array, p*firstBlocksLen, firstBlocksLen);
+				bufferToSocket.transmit(array, p*firstBlocksLen, firstBlocksLen, buf, 0);
 				buf.rewind();
 			}
 
@@ -267,8 +260,8 @@ public class ArrayReceiver
 			{
 				buf.limit(arrayElemSize*lastBlockLen);
 				buf.rewind();
-				bufferToSocket.transmit(socket, buf, 0);
-				arrayFromBuffer.recv(buf, array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen);
+				bufferToSocket.transmit(array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen,
+				                        buf, 0);
 			}
 		}
 	}
