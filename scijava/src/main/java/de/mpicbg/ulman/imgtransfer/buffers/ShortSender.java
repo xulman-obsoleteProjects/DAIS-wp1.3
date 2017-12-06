@@ -22,4 +22,8 @@ public class ShortSender implements Sender
 	public
 	int getElemSize()
 	{ return 2; }
+
+	public
+	int getElemCount(final Object array)
+	{ return ((short[])array).length; }
 }

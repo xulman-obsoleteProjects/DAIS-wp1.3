@@ -16,4 +16,7 @@ public interface Sender
 
 	/// how many Bytes are required to hold one element of the array
 	int getElemSize();
+
+	/// how many elements are there in the \e array (length of the proper array underneath)
+	int getElemCount(final Object array);
 }

@@ -102,21 +102,23 @@ public class ArrayReceiver
 	//-------------------
 
 	/**
-	 * The length of the corresponding/input basic type array
-	 * (note that we get Object instead of, e.g., float[]) in the constructor)
-	 */
-	final int arrayLength;
-
-	///how many bytes the basic type occupies (e.g., float = 4 B)
-	final int arrayElemSize;
-
-	/**
-	 * This is basically a connector between the ByteBuffer and \e socket,
+	 * This is basically a connector between the raw basic-type array and a socket,
 	 * it either pushes data from the buffer to the socket, or the opposite.
 	 *
-	 * This is similar to the constructor's arrayVsBuffer.
+	 * This is similar to the \e this.arrayVsBuffer .
 	 */
 	final Socket arrayVsSocket;
+
+	/**
+	 * This is basically the connector between the array of some basic
+	 * type (e.g., float[]) and the specific view of the ByteBuffer (e.g.,
+	 * ByteBuffer.asFloatBuffer()).
+	 *
+	 * This is similar to the \e this.arrayVsSocket but this one is just a helper.
+	 */
+	final Sender arrayVsBuffer;
+	///cached value, helper: how many bytes the basic type occupies (e.g., float = 4 B)
+	final int arrayElemSize;
 
 
 	///constant for the constructor: tells that we want a sender
@@ -126,10 +128,9 @@ public class ArrayReceiver
 
 
 	/**
-	 * Constructor that caches type of the \e sampleArray (inside this.arrayVsSocket),
-	 * size of one array element (in this.arrayElemSize),
-	 * and length of the array (in this.arrayLength). The content of the \e sampleArray
-	 * is irrelevant for now, only its parameters (elemnent type and its size) are
+	 * Constructor that caches type of the \e sampleArray (inside this.arrayVsSocket and
+	 * mainly inside this.arrayVsBuffer) and size of one array element (in this.arrayElemSize),
+	 * The content of the \e sampleArray is irrelevant for now, only its element type is
 	 * important and must be representative of the arrays that will be sent/received
 	 * later on with this object.
 	 *
@@ -139,40 +140,27 @@ public class ArrayReceiver
 	 */
 	ArrayReceiver(final Object sampleArray, final ZMQ.Socket socket, final int direction)
 	{
-		/**
-		 * This is basically the connector between the array of some basic
-		 * type (e.g., float[]) and the specific view of the ByteBuffer (e.g.,
-		 * ByteBuffer.asFloatBuffer()).
-		 *
-		 * This is similar to the \e this.arrayVsSocket
-		 */
-		Sender arrayVsBuffer;
-
 		if (sampleArray instanceof byte[])
 		{
 			arrayVsBuffer = new ByteSender();
-			arrayLength = ((byte[])sampleArray).length;
 			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 		if (sampleArray instanceof short[])
 		{
 			arrayVsBuffer = new ShortSender();
-			arrayLength = ((short[])sampleArray).length;
 			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 		if (sampleArray instanceof float[])
 		{
 			arrayVsBuffer = new FloatSender();
-			arrayLength = ((float[])sampleArray).length;
 			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 		if (sampleArray instanceof double[])
 		{
 			arrayVsBuffer = new DoubleSender();
-			arrayLength = ((double[])sampleArray).length;
 			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
@@ -193,6 +181,10 @@ public class ArrayReceiver
 
 	void transmitArray(final Object array, boolean comingMore)
 	{
+		//the length of the corresponding/input basic type array
+		//(because we got Object instead of, e.g., float[] for the parameter)
+		final int arrayLength = arrayVsBuffer.getElemCount(array);
+
 		if (arrayLength < 1024 || arrayElemSize == 1)
 		{
 			//array that is short enough to be hosted entirely with byte[] array,

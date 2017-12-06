@@ -22,4 +22,8 @@ public class ByteSender implements Sender
 	public
 	int getElemSize()
 	{ return 1; }
+
+	public
+	int getElemCount(final Object array)
+	{ return ((byte[])array).length; }
 }

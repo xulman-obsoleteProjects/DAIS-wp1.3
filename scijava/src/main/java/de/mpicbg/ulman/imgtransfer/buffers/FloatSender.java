@@ -22,4 +22,8 @@ public class FloatSender implements Sender
 	public
 	int getElemSize()
 	{ return 4; }
+
+	public
+	int getElemCount(final Object array)
+	{ return ((float[])array).length; }
 }

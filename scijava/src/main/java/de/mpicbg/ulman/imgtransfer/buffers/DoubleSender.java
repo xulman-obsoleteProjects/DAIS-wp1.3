@@ -22,4 +22,8 @@ public class DoubleSender implements Sender
 	public
 	int getElemSize()
 	{ return 8; }
+
+	public
+	int getElemCount(final Object array)
+	{ return ((double[])array).length; }
 }
