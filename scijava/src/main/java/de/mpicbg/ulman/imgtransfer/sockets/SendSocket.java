@@ -26,11 +26,11 @@ public class SendSocket implements Socket
 
 	public
 	void transmit(final Object arrayRead, int offset, int length,
-	              final ByteBuffer auxBuf, final int sendOnlyFlags)
+	              final int sendOnlyFlags)
 	{
-		//ignores any given cache buffer, as ZMQ.Socket does not copy ByteBuffer into
-		//its space; at the same time, it does not signal back if the data was transfered;
-		//so, we need to create an extra ByteBuffer for every individual tranfer
+		//ZMQ.Socket does not copy ByteBuffer into its own space;
+		//at the same time, it does not signal back if the data was transfered;
+		//so, we need to create an extra ByteBuffer for every individual transfer
 		final ByteBuffer buf = ByteBuffer.allocateDirect(sender.getElemSize()*length);
 
 		sender.send(buf, arrayRead, offset, length);

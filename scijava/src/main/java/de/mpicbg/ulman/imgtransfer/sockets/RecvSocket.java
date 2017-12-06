@@ -17,6 +17,9 @@ public class RecvSocket implements Socket
 	final ZMQ.Socket socket;
 	final Sender sender;
 
+	//a handle on a local buffer to be potentially re-used
+	ByteBuffer buf = null;
+
 	public
 	RecvSocket(final ZMQ.Socket _socket, final Sender _sender)
 	{
@@ -27,11 +30,27 @@ public class RecvSocket implements Socket
 
 	public
 	void transmit(final Object arrayWrite, int offset, int length,
-	              final ByteBuffer auxBuf, final int sendOnlyFlags)
+	              final int sendOnlyFlags)
 	{
+		//the optimal length of the aux ByteBuffer for the current data
+		final int arrayLength = sender.getElemSize()*length;
+
+		if (buf != null)
+		{
+			//buffer exist, is long enough?
+			//NB: must be limited to the exact length, otherwise ZMQ waits to fill it...
+			if (buf.limit() > arrayLength) buf.limit(arrayLength);
+			buf.rewind();
+		}
+		if (buf == null || buf.limit() < arrayLength)
+		{
+			//no buffer, or one with an inadequate length
+			buf = ByteBuffer.allocateDirect(arrayLength);
+		}
+
 		ArrayReceiver.waitForNextMessage(socket);
-		socket.recvByteBuffer(auxBuf, 0);
-		auxBuf.rewind();
-		sender.recv(auxBuf, arrayWrite, offset, length);
+		socket.recvByteBuffer(buf, 0);
+		buf.rewind();
+		sender.recv(buf, arrayWrite, offset, length);
 	}
 }
