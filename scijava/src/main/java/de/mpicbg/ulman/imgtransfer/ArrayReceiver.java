@@ -116,7 +116,7 @@ public class ArrayReceiver
 	 *
 	 * This is similar to the constructor's arrayVsBuffer.
 	 */
-	final Socket bufferToSocket;
+	final Socket arrayVsSocket;
 
 
 	///constant for the constructor: tells that we want a sender
@@ -126,7 +126,7 @@ public class ArrayReceiver
 
 
 	/**
-	 * Constructor that caches type of the \e sampleArray (inside this.bufferToSocket),
+	 * Constructor that caches type of the \e sampleArray (inside this.arrayVsSocket),
 	 * size of one array element (in this.arrayElemSize),
 	 * and length of the array (in this.arrayLength). The content of the \e sampleArray
 	 * is irrelevant for now, only its parameters (elemnent type and its size) are
@@ -144,7 +144,7 @@ public class ArrayReceiver
 		 * type (e.g., float[]) and the specific view of the ByteBuffer (e.g.,
 		 * ByteBuffer.asFloatBuffer()).
 		 *
-		 * This is similar to the \e this.bufferToSocket
+		 * This is similar to the \e this.arrayVsSocket
 		 */
 		Sender arrayVsBuffer;
 
@@ -181,10 +181,10 @@ public class ArrayReceiver
 		switch (direction)
 		{
 		case FROM_ARRAY_TO_SOCKET:
-			bufferToSocket = new SendSocket(socket, arrayVsBuffer);
+			arrayVsSocket = new SendSocket(socket, arrayVsBuffer);
 			break;
 		case FROM_SOCKET_TO_ARRAY:
-			bufferToSocket = new RecvSocket(socket, arrayVsBuffer);
+			arrayVsSocket = new RecvSocket(socket, arrayVsBuffer);
 			break;
 		default:
 			throw new RuntimeException("Does not recognize the job.");
@@ -200,7 +200,7 @@ public class ArrayReceiver
 			//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
 			//    and why to split the short arrays anyways?
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
-			bufferToSocket.transmit(array, 0, arrayLength,
+			arrayVsSocket.transmit(array, 0, arrayLength,
 			                        buf, (comingMore? ZMQ.SNDMORE : 0));
 		}
 		else
@@ -215,7 +215,7 @@ public class ArrayReceiver
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
 			for (int p=0; p < (arrayElemSize-1); ++p)
 			{
-				bufferToSocket.transmit(array, p*firstBlocksLen, firstBlocksLen,
+				arrayVsSocket.transmit(array, p*firstBlocksLen, firstBlocksLen,
 				  buf, (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ.SNDMORE : 0));
 			}
 
@@ -223,7 +223,7 @@ public class ArrayReceiver
 			{
 				buf.limit(arrayElemSize*lastBlockLen);
 				buf.rewind();
-				bufferToSocket.transmit(array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen,
+				arrayVsSocket.transmit(array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen,
 				                        buf, (comingMore? ZMQ.SNDMORE : 0));
 			}
 		}
@@ -238,7 +238,7 @@ public class ArrayReceiver
 			//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
 			//    and why to split the short arrays anyways?
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
-			bufferToSocket.transmit(array, 0, arrayLength, buf, 0);
+			arrayVsSocket.transmit(array, 0, arrayLength, buf, 0);
 		}
 		else
 		{
@@ -252,7 +252,7 @@ public class ArrayReceiver
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
 			for (int p=0; p < (arrayElemSize-1); ++p)
 			{
-				bufferToSocket.transmit(array, p*firstBlocksLen, firstBlocksLen, buf, 0);
+				arrayVsSocket.transmit(array, p*firstBlocksLen, firstBlocksLen, buf, 0);
 				buf.rewind();
 			}
 
@@ -260,7 +260,7 @@ public class ArrayReceiver
 			{
 				buf.limit(arrayElemSize*lastBlockLen);
 				buf.rewind();
-				bufferToSocket.transmit(array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen,
+				arrayVsSocket.transmit(array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen,
 				                        buf, 0);
 			}
 		}
