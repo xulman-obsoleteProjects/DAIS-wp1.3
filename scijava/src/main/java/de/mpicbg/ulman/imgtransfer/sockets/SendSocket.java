@@ -7,15 +7,29 @@
  */
 package de.mpicbg.ulman.imgtransfer.sockets;
 
+import de.mpicbg.ulman.imgtransfer.buffers.Sender;
 import org.zeromq.ZMQ;
 import java.nio.ByteBuffer;
 
 public class SendSocket implements Socket
 {
+	final ZMQ.Socket socket;
+	final Sender sender;
+
 	public
-	void transmit(final ZMQ.Socket socket, final ByteBuffer bufRead, final int sendOnlyFlags)
+	SendSocket(final ZMQ.Socket _socket, final Sender _sender)
 	{
-		bufRead.rewind();
-		socket.sendByteBuffer(bufRead, sendOnlyFlags);
+		socket = _socket;
+		sender = _sender;
+	}
+
+
+	public
+	void transmit(final Object arrayRead, int offset, int length,
+	              final ByteBuffer auxBuf, final int sendOnlyFlags)
+	{
+		sender.send(auxBuf, arrayRead, offset, length);
+		auxBuf.rewind();
+		socket.sendByteBuffer(auxBuf, sendOnlyFlags);
 	}
 }

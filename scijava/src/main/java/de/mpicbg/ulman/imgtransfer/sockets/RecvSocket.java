@@ -7,17 +7,31 @@
  */
 package de.mpicbg.ulman.imgtransfer.sockets;
 
+import de.mpicbg.ulman.imgtransfer.buffers.Sender;
 import de.mpicbg.ulman.imgtransfer.ArrayReceiver;
 import org.zeromq.ZMQ;
 import java.nio.ByteBuffer;
 
 public class RecvSocket implements Socket
 {
+	final ZMQ.Socket socket;
+	final Sender sender;
+
 	public
-	void transmit(final ZMQ.Socket socket, final ByteBuffer bufWrite, final int sendOnlyFlags)
+	RecvSocket(final ZMQ.Socket _socket, final Sender _sender)
+	{
+		socket = _socket;
+		sender = _sender;
+	}
+
+
+	public
+	void transmit(final Object arrayWrite, int offset, int length,
+	              final ByteBuffer auxBuf, final int sendOnlyFlags)
 	{
 		ArrayReceiver.waitForNextMessage(socket);
-		socket.recvByteBuffer(bufWrite, 0);
-		bufWrite.rewind();
+		socket.recvByteBuffer(auxBuf, 0);
+		auxBuf.rewind();
+		sender.recv(auxBuf, arrayWrite, offset, length);
 	}
 }
