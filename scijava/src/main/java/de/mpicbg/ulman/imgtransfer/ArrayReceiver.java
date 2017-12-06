@@ -193,7 +193,7 @@ public class ArrayReceiver
 			//    and why to split the short arrays anyways?
 			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
 			arrayVsSocket.transmit(array, 0, arrayLength,
-			                        buf, (comingMore? ZMQ.SNDMORE : 0));
+			                       buf, (comingMore? ZMQ.SNDMORE : 0));
 		}
 		else
 		{
@@ -217,7 +217,7 @@ public class ArrayReceiver
 				buf.limit(arrayElemSize*lastBlockLen);
 				buf.rewind();
 				arrayVsSocket.transmit(array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen,
-				                        buf, (comingMore? ZMQ.SNDMORE : 0));
+				                       buf, (comingMore? ZMQ.SNDMORE : 0));
 			}
 		}
 	}

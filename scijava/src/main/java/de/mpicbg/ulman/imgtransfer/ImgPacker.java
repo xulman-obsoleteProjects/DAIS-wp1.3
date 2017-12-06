@@ -278,6 +278,7 @@ public class ImgPacker
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to send an empty image...");
 
+		//TODO: remember the first array, transmitArray-it, and start for-cycle with slice=1
 		final ArrayReceiver as = new ArrayReceiver(img.getPlane(0).getCurrentStorageArray(),
 		                                           socket, ArrayReceiver.FROM_ARRAY_TO_SOCKET);
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
@@ -297,6 +298,7 @@ public class ImgPacker
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to receive an empty image...");
 
+		//TODO: remember the first array, transmitArray-it, and start for-cycle with slice=1
 		final ArrayReceiver ar = new ArrayReceiver(img.getPlane(0).getCurrentStorageArray(),
 		                                           socket, ArrayReceiver.FROM_SOCKET_TO_ARRAY);
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
