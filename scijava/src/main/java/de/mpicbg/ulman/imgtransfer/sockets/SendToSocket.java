@@ -7,17 +7,17 @@
  */
 package de.mpicbg.ulman.imgtransfer.sockets;
 
-import de.mpicbg.ulman.imgtransfer.buffers.Sender;
+import de.mpicbg.ulman.imgtransfer.buffers.Buffer;
 import org.zeromq.ZMQ;
 import java.nio.ByteBuffer;
 
-public class SendSocket implements Socket
+public class SendToSocket implements Socket
 {
 	final ZMQ.Socket socket;
-	final Sender sender;
+	final Buffer sender;
 
 	public
-	SendSocket(final ZMQ.Socket _socket, final Sender _sender)
+	SendToSocket(final ZMQ.Socket _socket, final Buffer _sender)
 	{
 		socket = _socket;
 		sender = _sender;

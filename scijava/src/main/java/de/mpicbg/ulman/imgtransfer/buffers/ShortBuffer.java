@@ -9,21 +9,21 @@ package de.mpicbg.ulman.imgtransfer.buffers;
 
 import java.nio.ByteBuffer;
 
-public class FloatSender implements Sender
+public class ShortBuffer implements Buffer
 {
 	public
 	void send(final ByteBuffer bufWrite, final Object arrayRead, int offset, int length)
-	{ bufWrite.asFloatBuffer().put((float[])arrayRead, offset, length); }
+	{ bufWrite.asShortBuffer().put((short[])arrayRead, offset, length); }
 
 	public
 	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length)
-	{ bufRead.asFloatBuffer().get((float[])arrayWrite, offset, length); }
+	{ bufRead.asShortBuffer().get((short[])arrayWrite, offset, length); }
 
 	public
 	int getElemSize()
-	{ return 4; }
+	{ return 2; }
 
 	public
 	int getElemCount(final Object array)
-	{ return ((float[])array).length; }
+	{ return ((short[])array).length; }
 }

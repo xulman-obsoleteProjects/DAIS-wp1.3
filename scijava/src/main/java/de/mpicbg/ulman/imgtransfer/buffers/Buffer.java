@@ -9,7 +9,7 @@ package de.mpicbg.ulman.imgtransfer.buffers;
 
 import java.nio.ByteBuffer;
 
-public interface Sender
+public interface Buffer
 {
 	void send(final ByteBuffer bufWrite, final Object arrayRead,  int offset, int length);
 	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length);

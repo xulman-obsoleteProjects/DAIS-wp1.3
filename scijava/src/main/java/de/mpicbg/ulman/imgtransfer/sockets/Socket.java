@@ -7,8 +7,6 @@
  */
 package de.mpicbg.ulman.imgtransfer.sockets;
 
-import java.nio.ByteBuffer;
-
 public interface Socket
 {
 	/**

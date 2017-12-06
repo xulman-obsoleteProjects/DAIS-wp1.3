@@ -4,9 +4,8 @@ import org.zeromq.ZMQ;
 
 import de.mpicbg.ulman.imgtransfer.buffers.*;
 import de.mpicbg.ulman.imgtransfer.sockets.*;
-import java.nio.ByteBuffer;
 
-public class ArrayReceiver
+public class ArrayPacker
 {
 	/**
 	 * A timeout interval used while waiting for next (not the first one)
@@ -116,7 +115,7 @@ public class ArrayReceiver
 	 *
 	 * This is similar to the \e this.arrayVsSocket but this one is just a helper.
 	 */
-	final Sender arrayVsBuffer;
+	final Buffer arrayVsBuffer;
 	///cached value, helper: how many bytes the basic type occupies (e.g., float = 4 B)
 	final int arrayElemSize;
 
@@ -138,29 +137,29 @@ public class ArrayReceiver
 	 * is read into the \e array, or the \e array is read into ByteBuffer which is read
 	 * into the \e socket.
 	 */
-	ArrayReceiver(final Object sampleArray, final ZMQ.Socket socket, final int direction)
+	ArrayPacker(final Object sampleArray, final ZMQ.Socket socket, final int direction)
 	{
 		if (sampleArray instanceof byte[])
 		{
-			arrayVsBuffer = new ByteSender();
+			arrayVsBuffer = new ByteBuffer();
 			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 		if (sampleArray instanceof short[])
 		{
-			arrayVsBuffer = new ShortSender();
+			arrayVsBuffer = new ShortBuffer();
 			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 		if (sampleArray instanceof float[])
 		{
-			arrayVsBuffer = new FloatSender();
+			arrayVsBuffer = new FloatBuffer();
 			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 		if (sampleArray instanceof double[])
 		{
-			arrayVsBuffer = new DoubleSender();
+			arrayVsBuffer = new DoubleBuffer();
 			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
@@ -169,10 +168,10 @@ public class ArrayReceiver
 		switch (direction)
 		{
 		case FROM_ARRAY_TO_SOCKET:
-			arrayVsSocket = new SendSocket(socket, arrayVsBuffer);
+			arrayVsSocket = new SendToSocket(socket, arrayVsBuffer);
 			break;
 		case FROM_SOCKET_TO_ARRAY:
-			arrayVsSocket = new RecvSocket(socket, arrayVsBuffer);
+			arrayVsSocket = new RecvFromSocket(socket, arrayVsBuffer);
 			break;
 		default:
 			throw new RuntimeException("Does not recognize the job.");

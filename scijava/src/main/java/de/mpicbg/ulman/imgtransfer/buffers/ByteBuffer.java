@@ -7,16 +7,16 @@
  */
 package de.mpicbg.ulman.imgtransfer.buffers;
 
-import java.nio.ByteBuffer;
+//import java.nio.ByteBuffer;
 
-public class ByteSender implements Sender
+public class ByteBuffer implements Buffer
 {
 	public
-	void send(final ByteBuffer bufWrite, final Object arrayRead, int offset, int length)
+	void send(final java.nio.ByteBuffer bufWrite, final Object arrayRead, int offset, int length)
 	{ bufWrite.put((byte[])arrayRead); }
 
 	public
-	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length)
+	void recv(final java.nio.ByteBuffer bufRead,  final Object arrayWrite, int offset, int length)
 	{ bufRead.get((byte[])arrayWrite); }
 
 	public

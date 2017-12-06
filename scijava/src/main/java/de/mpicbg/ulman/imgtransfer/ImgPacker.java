@@ -112,7 +112,7 @@ public class ImgPacker
 			throw new RuntimeException("Cannot determine the type of image, cannot send it.");
 
 		//wait for confirmation from the receiver
-		ArrayReceiver.waitForFirstMessage(socket);
+		ArrayPacker.waitForFirstMessage(socket);
 		msg = socket.recvStr();
 		if (! msg.startsWith("done"))
 			throw new RuntimeException("Protocol error, expected final confirmation from the receiver.");
@@ -201,7 +201,7 @@ public class ImgPacker
 		//system/ZeroMQ will not be ready to listen for confirmation message
 
 		//wait for response, else complain for timeout-ing
-		ArrayReceiver.waitForFirstMessage(socket, timeOut);
+		ArrayPacker.waitForFirstMessage(socket, timeOut);
 		//NB: if we got here (after the waitFor..()), some message is ready to be read out
 
 		final String confirmation = socket.recvStr();
@@ -231,7 +231,7 @@ public class ImgPacker
 		//TODO: use JSON because metadata are of various types (including Strings)
 
 		//read the single message
-		ArrayReceiver.waitForFirstMessage(socket);
+		ArrayPacker.waitForFirstMessage(socket);
 		final String data = socket.recvStr();
 
 		if (! data.startsWith("metadata"))
@@ -257,7 +257,7 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to send an empty image...");
 
 		final Object data = img.update(null).getCurrentStorageArray();
-		final ArrayReceiver as = new ArrayReceiver(data, socket, ArrayReceiver.FROM_ARRAY_TO_SOCKET);
+		final ArrayPacker as = new ArrayPacker(data, socket, ArrayPacker.FROM_ARRAY_TO_SOCKET);
 		as.transmitArray(data, false);
 	}
 
@@ -268,7 +268,7 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to receive an empty image...");
 
 		final Object data = img.update(null).getCurrentStorageArray();
-		final ArrayReceiver ar = new ArrayReceiver(data, socket, ArrayReceiver.FROM_SOCKET_TO_ARRAY);
+		final ArrayPacker ar = new ArrayPacker(data, socket, ArrayPacker.FROM_SOCKET_TO_ARRAY);
 		ar.transmitArray(data, false);
 	}
 
@@ -279,8 +279,8 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to send an empty image...");
 
 		//TODO: remember the first array, transmitArray-it, and start for-cycle with slice=1
-		final ArrayReceiver as = new ArrayReceiver(img.getPlane(0).getCurrentStorageArray(),
-		                                           socket, ArrayReceiver.FROM_ARRAY_TO_SOCKET);
+		final ArrayPacker as = new ArrayPacker(img.getPlane(0).getCurrentStorageArray(),
+		                                           socket, ArrayPacker.FROM_ARRAY_TO_SOCKET);
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();
@@ -299,8 +299,8 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to receive an empty image...");
 
 		//TODO: remember the first array, transmitArray-it, and start for-cycle with slice=1
-		final ArrayReceiver ar = new ArrayReceiver(img.getPlane(0).getCurrentStorageArray(),
-		                                           socket, ArrayReceiver.FROM_SOCKET_TO_ARRAY);
+		final ArrayPacker ar = new ArrayPacker(img.getPlane(0).getCurrentStorageArray(),
+		                                           socket, ArrayPacker.FROM_SOCKET_TO_ARRAY);
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();
