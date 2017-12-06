@@ -18,4 +18,8 @@ public class ShortSender implements Sender
 	public
 	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length)
 	{ bufRead.asShortBuffer().get((short[])arrayWrite, offset, length); }
+
+	public
+	int getElemSize()
+	{ return 2; }
 }

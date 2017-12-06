@@ -18,4 +18,8 @@ public class DoubleSender implements Sender
 	public
 	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length)
 	{ bufRead.asDoubleBuffer().get((double[])arrayWrite, offset, length); }
+
+	public
+	int getElemSize()
+	{ return 8; }
 }

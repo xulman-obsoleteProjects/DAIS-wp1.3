@@ -152,28 +152,28 @@ public class ArrayReceiver
 		{
 			arrayVsBuffer = new ByteSender();
 			arrayLength = ((byte[])sampleArray).length;
-			arrayElemSize = 1;
+			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 		if (sampleArray instanceof short[])
 		{
 			arrayVsBuffer = new ShortSender();
 			arrayLength = ((short[])sampleArray).length;
-			arrayElemSize = 2;
+			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 		if (sampleArray instanceof float[])
 		{
 			arrayVsBuffer = new FloatSender();
 			arrayLength = ((float[])sampleArray).length;
-			arrayElemSize = 4;
+			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 		if (sampleArray instanceof double[])
 		{
 			arrayVsBuffer = new DoubleSender();
 			arrayLength = ((double[])sampleArray).length;
-			arrayElemSize = 8;
+			arrayElemSize = arrayVsBuffer.getElemSize();
 		}
 		else
 			throw new RuntimeException("Does not recognize this array type.");

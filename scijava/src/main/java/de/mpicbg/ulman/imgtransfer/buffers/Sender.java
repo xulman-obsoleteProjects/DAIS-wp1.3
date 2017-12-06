@@ -13,4 +13,7 @@ public interface Sender
 {
 	void send(final ByteBuffer bufWrite, final Object arrayRead,  int offset, int length);
 	void recv(final ByteBuffer bufRead,  final Object arrayWrite, int offset, int length);
+
+	/// how many Bytes are required to hold one element of the array
+	int getElemSize();
 }
