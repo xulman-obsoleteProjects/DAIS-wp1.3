@@ -25,11 +25,16 @@ class ArraySender
 	///how many bytes the basic type occupies (e.g., float = 4 B)
 	final int arrayElemSize;
 
+	///socket to write to
+	final ZMQ.Socket socket;
+
 	/**
 	 * constructor that caches type of the array (in this.arrayToBuffer), size of one
 	 * array element (in this.arrayElemSize), and length of the array (in this.arrayLength)
+	 *
+	 * the \e array is read into ByteBuffer which is read into the \e socket
 	 */
-	ArraySender(final Object array)
+	ArraySender(final Object array, final ZMQ.Socket _socket)
 	{
 		if (array instanceof byte[])
 		{
@@ -60,9 +65,11 @@ class ArraySender
 		}
 		else
 			throw new RuntimeException("Does not recognize this array type.");
+
+		socket = _socket;
 	}
 
-	void sendArray(final Object array, final ZMQ.Socket socket, boolean comingMore)
+	void sendArray(final Object array, boolean comingMore)
 	{
 		//will do the template data->socket pushing using this.arrayToBuffer.send()
 		//final ByteBuffer buf = ByteBuffer.allocateDirect(arrayLength);

@@ -116,11 +116,16 @@ class ArrayReceiver
 	///how many bytes the basic type occupies (e.g., float = 4 B)
 	final int arrayElemSize;
 
+	///socket to read from
+	final ZMQ.Socket socket;
+
 	/**
 	 * constructor that caches type of the array (in this.arrayFromBuffer), size of one
 	 * array element (in this.arrayElemSize), and length of the array (in this.arrayLength)
+	 *
+	 * the \e socket is read into ByteBuffer which is read into the \e array
 	 */
-	ArrayReceiver(final Object array)
+	ArrayReceiver(final Object array, final ZMQ.Socket _socket)
 	{
 		if (array instanceof byte[])
 		{
@@ -151,9 +156,11 @@ class ArrayReceiver
 		}
 		else
 			throw new RuntimeException("Does not recognize this array type.");
+
+		socket = _socket;
 	}
 
-	void receiveArray(final Object array, final ZMQ.Socket socket) {
+	void receiveArray(final Object array) {
 		//will do the template socket->data pushing using this.arrayFromBuffer.recv()
 
 		if (arrayLength < 1024 || arrayElemSize == 1)

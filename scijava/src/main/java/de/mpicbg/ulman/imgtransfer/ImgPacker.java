@@ -257,8 +257,8 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to send an empty image...");
 
 		final Object data = img.update(null).getCurrentStorageArray();
-		final ArraySender as = new ArraySender(data);
-		as.sendArray(data, socket, false);
+		final ArraySender as = new ArraySender(data, socket);
+		as.sendArray(data, false);
 	}
 
 	private static <T extends NativeType<T>>
@@ -268,8 +268,8 @@ public class ImgPacker
 			throw new RuntimeException("Refusing to receive an empty image...");
 
 		final Object data = img.update(null).getCurrentStorageArray();
-		final ArrayReceiver ar = new ArrayReceiver(data);
-		ar.receiveArray(data, socket);
+		final ArrayReceiver ar = new ArrayReceiver(data, socket);
+		ar.receiveArray(data);
 	}
 
 	private static <T extends NativeType<T>>
@@ -278,15 +278,15 @@ public class ImgPacker
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to send an empty image...");
 
-		final ArraySender as = new ArraySender(img.getPlane(0).getCurrentStorageArray());
+		final ArraySender as = new ArraySender(img.getPlane(0).getCurrentStorageArray(), socket);
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();
-			as.sendArray(data, socket, true);
+			as.sendArray(data, true);
 		}
 		{
 			final Object data = img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-			as.sendArray(data, socket, false);
+			as.sendArray(data, false);
 		}
 	}
 
@@ -296,15 +296,15 @@ public class ImgPacker
 		if (img.size() == 0)
 			throw new RuntimeException("Refusing to receive an empty image...");
 
-		final ArrayReceiver ar = new ArrayReceiver(img.getPlane(0).getCurrentStorageArray());
+		final ArrayReceiver ar = new ArrayReceiver(img.getPlane(0).getCurrentStorageArray(), socket);
 		for (int slice = 0; slice < img.numSlices()-1; ++slice)
 		{
 			final Object data = img.getPlane(slice).getCurrentStorageArray();
-			ar.receiveArray(data, socket);
+			ar.receiveArray(data);
 		}
 		{
 			final Object data = img.getPlane(img.numSlices()-1).getCurrentStorageArray();
-			ar.receiveArray(data, socket);
+			ar.receiveArray(data);
 		}
 	}
 
