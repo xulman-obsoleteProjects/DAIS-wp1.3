@@ -193,6 +193,49 @@ public class ArrayReceiver
 		}
 	}
 
+	void sendArray(final Object array, boolean comingMore)
+	{
+		//will do the template data->socket pushing using this.arrayFromBuffer.send()
+
+		if (arrayLength < 1024 || arrayElemSize == 1)
+		{
+			//array that is short enough to be hosted entirely with byte[] array,
+			//will be sent in one shot
+			//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
+			//    and why to split the short arrays anyways?
+			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*arrayLength);
+			arrayFromBuffer.send(buf, array, 0, arrayLength);
+			buf.rewind();
+			socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
+		}
+		else
+		{
+			//for example: float array, when seen as byte array, may exceed byte array's max length;
+			//we, therefore, split into arrayElemSize-1 blocks of firstBlocksLen items long from
+			//the original basic type array, and into one block of lastBlockLen items long
+			final int firstBlocksLen = arrayLength/arrayElemSize + (arrayLength%arrayElemSize != 0? 1 : 0);
+			final int lastBlockLen   = arrayLength - (arrayElemSize-1)*firstBlocksLen;
+			//NB: firstBlockLen >= lastBlockLen
+
+			final ByteBuffer buf = ByteBuffer.allocateDirect(arrayElemSize*firstBlocksLen);
+			for (int p=0; p < (arrayElemSize-1); ++p)
+			{
+				arrayFromBuffer.send(buf, array, p*firstBlocksLen, firstBlocksLen);
+				buf.rewind();
+				socket.sendByteBuffer(buf, (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ.SNDMORE : 0));
+			}
+
+			if (lastBlockLen > 0)
+			{
+				buf.limit(arrayElemSize*lastBlockLen);
+				buf.rewind();
+				arrayFromBuffer.send(buf, array, (arrayElemSize-1)*firstBlocksLen, lastBlockLen);
+				buf.rewind();
+				socket.sendByteBuffer(buf, (comingMore? ZMQ.SNDMORE : 0));
+			}
+		}
+	}
+
 	void receiveArray(final Object array) {
 		//will do the template socket->data pushing using this.arrayFromBuffer.recv()
 
