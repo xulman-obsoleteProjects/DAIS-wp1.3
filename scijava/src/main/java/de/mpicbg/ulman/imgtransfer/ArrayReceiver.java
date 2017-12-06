@@ -5,7 +5,7 @@ import org.zeromq.ZMQ;
 import de.mpicbg.ulman.imgtransfer.buffers.*;
 import java.nio.ByteBuffer;
 
-class ArrayReceiver
+public class ArrayReceiver
 {
 	/**
 	 * A timeout interval used while waiting for next (not the first one)
@@ -15,13 +15,13 @@ class ArrayReceiver
 	 *
 	 * Shouldn't be negative. Default is 30 seconds.
 	 */
-	private static int timeOut = 30;
+	private static int timeOut = 60;
 
 	/// sets this.timeOut
 	public static
 	void setConnectionBrokenTimeout(final int seconds)
 	{
-		timeOut = seconds < 0 ? 30 : seconds;
+		timeOut = seconds < 0 ? 60 : seconds;
 	}
 
 	/// reads current this.timeOut
@@ -44,11 +44,11 @@ class ArrayReceiver
 	 * It finishes "nicely" if there is some, or finishes
 	 * with an exception complaining about timeout.
 	 */
-	static
-	void waitForFirstMessage(final ZMQ.Socket socket, final int timeOut)
+	public static
+	void waitForFirstMessage(final ZMQ.Socket socket, final int _timeOut)
 	{
 		int timeWaited = 0;
-		while (timeWaited < timeOut && (socket.getEvents() & 1) != 1)
+		while (timeWaited < _timeOut && (socket.getEvents() & 1) != 1)
 		//TODO: determine proper constant for getEvents()
 		//TODO: expected return value is 1. bit set according to tests
 		{
@@ -66,7 +66,7 @@ class ArrayReceiver
 			throw new RuntimeException("Reached timeout for the first incoming data.");
 	}
 
-	static
+	public static
 	void waitForFirstMessage(final ZMQ.Socket socket)
 	{ waitForFirstMessage(socket, timeOut); }
 
@@ -78,7 +78,7 @@ class ArrayReceiver
 	 * It finishes "nicely" if there is some, or finishes
 	 * with an exception complaining about timeout.
 	 */
-	static
+	public static
 	void waitForNextMessage(final ZMQ.Socket socket)
 	{
 		int timeWaited = 0;
