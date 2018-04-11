@@ -1,10 +1,13 @@
 #include <iostream>
-#include "SendImage.h"
+
+#include "ReceiveOneImage.h"
 
 int main(void)
 {
 	std::cout << "hi from tester\n";
-	SendMain();
+
+	imgParams_t imgParams;
+	ReceiveOneImage(imgParams, 54545);
 
 	return (0);
 }

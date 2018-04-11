@@ -30,10 +30,13 @@ endif()
 
 #------------------------------------------------------------------------
 set(LIBHEADERS
-  src/SendImage.h)
+  src/ImgParams.h
+  src/ReceiveOneImage.h
+  )
 
 set(LIBSOURCES
-  src/SendImage.cpp)
+  src/ReceiveOneImage.cpp
+  )
 
 add_library(DAIS-wp13 ${LIBSOURCES})
 target_link_libraries(DAIS-wp13 libzmq-static)
