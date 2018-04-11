@@ -38,5 +38,8 @@ add_library(DAIS-wp13 ${LIBSOURCES})
 target_link_libraries(DAIS-wp13 libzmq-static)
 
 #------------------------------------------------------------------------
-add_executable(testLibCalls src/testLibCalls.cpp)
-target_link_libraries(testLibCalls DAIS-wp13)
+option (TEST_BINARY "Build also src/testLibCalls.cpp to have some testing binary?" OFF)
+if (TEST_BINARY)
+	add_executable(testLibCalls src/testLibCalls.cpp)
+	target_link_libraries(testLibCalls DAIS-wp13)
+endif (TEST_BINARY)
