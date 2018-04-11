@@ -1,8 +1,13 @@
-#include <zmq.hpp>
-#include <string>
+#include <stdexcept>
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <zmq.hpp>
 
 #include "ImgParams.h"
+
+//short-cut to throwing runtime_error exceptions
+using std::runtime_error;
 
 /**
  * Waits not longer than timeOut seconds on local port for the first message
@@ -22,19 +27,40 @@ void ReceiveOneImage(imgParams_t& imgParams, const int port, const int timeOut)
 	socket.bind(chrString);
 
 	//attempt to receive the first message, while waiting up to timeOut seconds
-	//TODO
+	//TODO add waitForIncomingData()
 	int recLength = socket.recv((void*)chrString,1024,0);
 
-	//parse it into the imgParams structure or complain
-	if (recLength > 0)
-		std::cout << "Received: " << chrString << "\n";
-	else
-		std::cout << "Nothing came...\n";
+	//check sanity of the recived buffer
+	if (recLength <= 0)
+		throw new runtime_error("Recieved empty initial (handshake) message. Stopping.");
+	if (recLength == 1024)
+		throw new runtime_error("Couldn't read complete initial (handshake) message. Stopping.");
 
+	//parse it into the imgParams structure, or complain
+	std::cout << "Received: " << chrString << "\n";
+	std::istringstream hdrMsg(chrString);
 
-	imgParams.dim = 3;
+	//parse by empty space
+	std::string token;
+	hdrMsg >> token;
+	if (token.find("v1") != 0)
+		throw new runtime_error("Protocol error: Expected 'v1' version.");
 
+	hdrMsg >> token >> imgParams.dim;
+	if (token.find("dimNumber") != 0)
+		throw new runtime_error("Protocol error: Expected 'dimNumber' token.");
 
+	imgParams.sizes = new int[imgParams.dim];
+	for (int i=0; i < imgParams.dim; ++i)
+		hdrMsg >> imgParams.sizes[i];
+
+	hdrMsg >> imgParams.voxelType;
+	if (imgParams.voxelType.find("Type") == std::string::npos)
+		throw new runtime_error("Protocol error: Expected voxel type hint.");
+
+	hdrMsg >> imgParams.backendType;
+	if (imgParams.backendType.find("Img") == std::string::npos)
+		throw new runtime_error("Protocol error: Expected image storage hint.");
 
 
 

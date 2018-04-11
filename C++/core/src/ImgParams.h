@@ -1,6 +1,8 @@
 #ifndef ImgParamsH
 #define ImgParamsH
 
+#include <string>
+
 /**
  * Simple structure to hold parsed content of the initial message.
  * It therefore contains: image geometry, voxel type, backend type.
@@ -18,6 +20,13 @@ typedef struct imgParams
 
 	//the array with sizes along all dimensions
 	int* sizes = NULL;
+
+	//string-ified representation of the voxel type in the format:
+	//UnsignedShortType or alike
+	std::string voxelType;
+
+	//string-ified representation of the image storage backend
+	std::string backendType;
 
 	//-----------
 	//performs clean up inside the structure
