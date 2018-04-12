@@ -25,7 +25,7 @@ typedef struct connectionParams
 		{
 			char chrString[1024];
 			sprintf(chrString,"tcp://*:%d",port);
-			socket->unbind(chrString);
+			//socket->unbind(chrString); -- ZeroMQ complains... hmm
 			port = 0;
 		}
 

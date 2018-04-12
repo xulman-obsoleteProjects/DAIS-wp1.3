@@ -117,7 +117,11 @@ typedef struct imgParams
 	//performs clean up inside the structure
 	void clear()
 	{
-		if (sizes != NULL) delete[] sizes;
+		if (sizes != NULL)
+		{
+			delete[] sizes;
+			sizes = NULL;
+		}
 	}
 
 	//imgParams(const int n): dim(n)
