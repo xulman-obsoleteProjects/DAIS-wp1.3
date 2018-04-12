@@ -3,8 +3,47 @@
 
 #include <list>
 #include <string>
+#include <zmq.hpp>
 
 #include "ImgParams.h"
+
+/**
+ * A helper structure to act as a handle for state-less functions.
+ * The structure holds references on ZeroMQ internals plus clear()
+ * function.
+ */
+typedef struct connectionParams
+{
+	zmq::context_t* context = NULL;
+	zmq::socket_t*  socket  = NULL;
+	int port = 0;
+
+	//returns the attributes to the initial state in a way polite for ZeroMQ
+	void clear()
+	{
+		if (port != 0)
+		{
+			char chrString[1024];
+			sprintf(chrString,"tcp://*:%d",port);
+			socket->unbind(chrString);
+			port = 0;
+		}
+
+		if (socket != NULL)
+		{
+			socket->close();
+			delete socket;
+			socket = NULL;
+		}
+
+		if (context != NULL)
+		{
+			delete context;
+			context = NULL;
+		}
+	}
+} connectionParams_t;
+
 
 /**
  * Waits not longer than timeOut seconds on local port for the first message
@@ -15,13 +54,14 @@
  * Returns handle on the established connection.
  * Use this handle in the following functions.
  */
-void* StartReceivingOneImage(imgParams_t& imgParams, const int port, const int timeOut = 60);
+void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
+                            const int port, const int timeOut = 60);
 
 /**
  * After seeing the initial handshake header, after calling StartReceivingOneImage(),
  * this one fill the list of strings with transmitted metadata.
  */
-void ReceiveMetadata(void* connectionHandle,std::list<std::string>& metaData);
+void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaData);
 
 /**
  * After the metadata has arrived, use this function to fill the output data
@@ -32,7 +72,7 @@ void ReceiveMetadata(void* connectionHandle,std::list<std::string>& metaData);
  * -- the image is transmitted in one shot (from user's perspective).
  */
 template <typename VT>
-void ReceiveOneArrayImage(void* connectionHandle,VT* const data);
+void ReceiveOneArrayImage(connectionParams_t& cnnParams,VT* const data);
 
 /**
  * After the metadata has arrived, use this function to fill the output data
@@ -51,7 +91,7 @@ void ReceiveOneArrayImage(void* connectionHandle,VT* const data);
  * plane is saved.
  */
 template <typename VT>
-void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,VT* const data);
+void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data);
 
 /**
  * After the metadata has arrived, use this function to fill the output data
@@ -59,13 +99,13 @@ void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,V
  * -- see the discussion in ReceiveOnePlanarImage().
  */
 template <typename VT>
-void ReceiveNextPlaneFromOneImage(void* connectionHandle,VT* const data);
+void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,VT* const data);
 
 /**
- * Signals the transmission was received well, closes the socket.
- * It also frees the memory allocated with the connectionHandle pointer,
- * so be aware that this pointer is afterwards not useful anymore.
+ * Signals the transmission was received well, and closes the socket
+ * via cnnParams.clear(). This also frees the memory allocated
+ * inside the cnnParams making its content not useful anymore.
  */
-void FinishReceivingOneImage(void* connectionHandle);
+void FinishReceivingOneImage(connectionParams_t& cnnParams);
 
 #endif

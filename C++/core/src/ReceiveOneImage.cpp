@@ -6,6 +6,7 @@
 #include <zmq.hpp>
 
 #include "ImgParams.h"
+#include "ReceiveOneImage.h"
 
 //short-cut to throwing runtime_error exceptions
 using std::runtime_error;
@@ -16,23 +17,22 @@ using std::runtime_error;
  * data. Throws exceptions if something goes wrong: timeOut, unable to parse,
  * or wrong format/protocol error...
  */
-void* StartReceivingOneImage(imgParams_t& imgParams, const int port, const int timeOut)
+void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
+                            const int port, const int timeOut)
 {
-	//init the context and the get socket
-	zmq::context_t* s_ctx = new zmq::context_t(1);
-	zmq::socket_t* socket = new zmq::socket_t(*s_ctx, ZMQ_PAIR);
-	//zmq::socket_t& socket = *socketPtr;
-	//NB: we need to create the socket object in the global space,
-	//    so that we can return (a functional) pointer on it
+	//init the context and get the socket
+	cnnParams.context = new zmq::context_t(1);
+	cnnParams.socket  = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
+	cnnParams.port    = port;
 
 	//binds the socket to the given port
 	char chrString[1024];
 	sprintf(chrString,"tcp://*:%d",port);
-	socket->bind(chrString);
+	cnnParams.socket->bind(chrString);
 
 	//attempt to receive the first message, while waiting up to timeOut seconds
 	//TODO add waitForIncomingData()
-	int recLength = socket->recv((void*)chrString,1024,0);
+	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
 
 	//check sanity of the received buffer
 	if (recLength <= 0)
@@ -65,13 +65,10 @@ void* StartReceivingOneImage(imgParams_t& imgParams, const int port, const int t
 	hdrMsg >> imgParams.backendType;
 	if (imgParams.backendType.find("Img") == std::string::npos)
 		throw new runtime_error("Protocol error: Expected image storage hint.");
-
-	return reinterpret_cast<void*>(socket);
 }
 
-void ReceiveMetadata(void* connectionHandle,std::list<std::string>& metaData)
+void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaData)
 {
-	zmq::socket_t& socket = *(reinterpret_cast<zmq::socket_t*>(connectionHandle));
 
 	 //wait for socket
 
@@ -95,74 +92,66 @@ void ReceiveMetadata(void* connectionHandle,std::list<std::string>& metaData)
 }
 
 template <typename VT>
-void ReceiveOneArrayImage(void* connectionHandle,VT* const data)
+void ReceiveOneArrayImage(connectionParams_t& cnnParams,VT* const data)
 {
-	zmq::socket_t& socket = *(reinterpret_cast<zmq::socket_t*>(connectionHandle));
 }
 
 template <typename VT>
-void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,VT* const data)
+void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
 {
-	zmq::socket_t& socket = *(reinterpret_cast<zmq::socket_t*>(connectionHandle));
 }
 
 template <typename VT>
-void ReceiveNextPlaneFromOneImage(void* connectionHandle,VT* const data)
+void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,VT* const data)
 {
-	zmq::socket_t& socket = *(reinterpret_cast<zmq::socket_t*>(connectionHandle));
 }
 
-void FinishReceivingOneImage(void* connectionHandle)
+void FinishReceivingOneImage(connectionParams_t& cnnParams)
 {
-	zmq::socket_t& socket = *(reinterpret_cast<zmq::socket_t*>(connectionHandle));
-
 	//flag all is received and we're closing
 	char done[] = "done";
-	socket.send(done,4,0);
-	socket.close();
-
-	//TODO: does not recognize this pointer... maybe...
-	delete reinterpret_cast<zmq::socket_t*>(connectionHandle);
+	cnnParams.socket->send(done,4,0);
+	cnnParams.clear();
 }
 
 
 //-------- explicit instantiations --------
 //char
-template void ReceiveOneArrayImage(void* connectionHandle,char* const data);
-template void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,char* const data);
-template void ReceiveNextPlaneFromOneImage(void* connectionHandle,char* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,char* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,char* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,char* const data);
 
 //unsigned char
-template void ReceiveOneArrayImage(void* connectionHandle,unsigned char* const data);
-template void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,unsigned char* const data);
-template void ReceiveNextPlaneFromOneImage(void* connectionHandle,unsigned char* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,unsigned char* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned char* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned char* const data);
 
 //short
-template void ReceiveOneArrayImage(void* connectionHandle,short* const data);
-template void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,short* const data);
-template void ReceiveNextPlaneFromOneImage(void* connectionHandle,short* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,short* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,short* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,short* const data);
 
 //unsigned short
-template void ReceiveOneArrayImage(void* connectionHandle,unsigned short* const data);
-template void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,unsigned short* const data);
-template void ReceiveNextPlaneFromOneImage(void* connectionHandle,unsigned short* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,unsigned short* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned short* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned short* const data);
 
 //long
-template void ReceiveOneArrayImage(void* connectionHandle,long* const data);
-template void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,long* const data);
-template void ReceiveNextPlaneFromOneImage(void* connectionHandle,long* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,long* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,long* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,long* const data);
 
 //unsigned long
-template void ReceiveOneArrayImage(void* connectionHandle,unsigned long* const data);
-template void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,unsigned long* const data);
-template void ReceiveNextPlaneFromOneImage(void* connectionHandle,unsigned long* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,unsigned long* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned long* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned long* const data);
 
 //float
-template void ReceiveOneArrayImage(void* connectionHandle,float* const data);
-template void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,float* const data);
-template void ReceiveNextPlaneFromOneImage(void* connectionHandle,float* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,float* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,float* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,float* const data);
 
 //double
-template void ReceiveOneArrayImage(void* connectionHandle,double* const data);
-template void ReceiveOnePlanarImage(void* connectionHandle,const imgParams_t& imgParams,double* const data);
-template void ReceiveNextPlaneFromOneImage(void* connectionHandle,double* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,double* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,double* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,double* const data);

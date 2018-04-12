@@ -1,20 +1,21 @@
 #include <iostream>
 
+#include "ImgParams.h"
 #include "ReceiveOneImage.h"
 
 template <typename VT>
-void getData(void* connectionHandle,const imgParams_t& imgParams,VT* data)
+void getData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* data)
 {
 	// see which img receiver we need to call
 	if (imgParams.backendType.find("Array") != std::string::npos)
 	{
 		//ArrayImg
-		ReceiveOneArrayImage<VT>(connectionHandle,(VT*)data);
+		ReceiveOneArrayImage<VT>(cnnParams,(VT*)data);
 	}
 	else
 	{
 		//PlanarImg -- convenient (in fact, converts to ArrayImg)
-		ReceiveOnePlanarImage<VT>(connectionHandle,imgParams,(VT*)data);
+		ReceiveOnePlanarImage<VT>(cnnParams,imgParams,(VT*)data);
 
 		//or:
 		//PlanarImg -- "the hard way"
@@ -29,7 +30,8 @@ int main(void)
 	try {
 		//init the connection and possibly wait for the header information
 		imgParams_t imgParams;
-		void* connectionHandle = StartReceivingOneImage(imgParams, 54545);
+		connectionParams_t cnnParams;
+		StartReceivingOneImage(imgParams,cnnParams,54545);
 
 		//aha, so this is what we will receive -- do what you need to get ready for that
 		std::cout << "Going to receive an image: ";
@@ -44,7 +46,7 @@ int main(void)
 
 		//get metadata
 		std::list<std::string> metaData;
-		ReceiveMetadata(connectionHandle,metaData);
+		ReceiveMetadata(cnnParams,metaData);
 
 		//prepare an array to hold the pixel data... we will cast it later
 		//(or we would need to create here a template function in which
@@ -55,19 +57,19 @@ int main(void)
 		switch (imgParams.enumVoxelType())
 		{
 			case imgParams::voxelTypes::Byte:
-				getData(connectionHandle,imgParams,(char*)data);
+				getData(cnnParams,imgParams,(char*)data);
 				break;
 
 			case imgParams::voxelTypes::UnsignedByte:
-				getData(connectionHandle,imgParams,(unsigned char*)data);
+				getData(cnnParams,imgParams,(unsigned char*)data);
 				break;
 
 			default:
 				std::cout << "ups, not ready yet for some other voxel type...\n";
 		}
 
-		//close the connection
-		FinishReceivingOneImage(connectionHandle);
+		//close the connection, calls also cnnParams.clear()
+		FinishReceivingOneImage(cnnParams);
 
 
 /*
