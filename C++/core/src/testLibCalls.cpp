@@ -48,6 +48,15 @@ int main(void)
 		std::list<std::string> metaData;
 		ReceiveMetadata(cnnParams,metaData);
 
+		std::cout << "--metadata--\n";
+		std::list<std::string>::const_iterator it = metaData.begin();
+		while (it != metaData.end())
+		{
+			std::cout << *it << "\n";
+			it++;
+		}
+		std::cout << "--metadata--\n";
+
 		//prepare an array to hold the pixel data... we will cast it later
 		//(or we would need to create here a template function in which
 		// the correct-type 'data' variable would be created and used)

@@ -69,26 +69,50 @@ void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams
 
 void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaData)
 {
+	//sends flag that we're free to go, first comes the image metadata
+	char readyMsg[] = "ready";
+	cnnParams.socket->send(readyMsg,5,0);
 
-	 //wait for socket
+	//TODO waitForFirstMessage()
+	zmq::message_t msg;
+	if (!cnnParams.socket->recv(&msg))
+		throw new runtime_error("Haven't received metadata at all.");
 
-	 /*
-    std::cout << "Connecting to hello world server..." << std::endl;
-    socket.connect ("tcp://localhost:5555");
+	//"convert" to std::string (likely by making extra copy of it)
+	//NB: haven't find how to discard/dispose the msg :(
+	std::string smsg(msg.data<char>());
+	std::cout << "metadata: XX" << smsg << "XX\n"; //REMOVE DEBUG
 
-    //  Do 10 requests, waiting each time for a response
-    for (int request_nbr = 0; request_nbr != 10; request_nbr++) {
-        zmq::message_t request (5);
-        memcpy (request.data (), "Hello", 5);
-        std::cout << "Sending Hello " << request_nbr << "..." << std::endl;
-        socket.send (request);
+	//first token needs to be "metadata"
+	if (smsg.find("metadata") != 0)
+		throw new runtime_error("Protocol error, expected metadata part from the receiver.");
 
-        //  Get the reply.
-        zmq::message_t reply;
-        socket.recv (&reply);
-        std::cout << "Received World " << request_nbr << std::endl;
-    }
-	 */
+	//meta data Message Separator
+	const char mdMsgSep[] = "__QWE__";
+	const int mdMsgSepLen = 7;
+
+	//parse the string:
+	//pos shows beginning of the current token in the smsg
+	int start_pos=0;
+	int end_pos = smsg.find(mdMsgSep,start_pos);
+
+	//there should always be at least one separator
+	if (end_pos == std::string::npos)
+		throw new runtime_error("Protocol error, received likely corrupted metadata part.");
+
+	while (end_pos < smsg.size())
+	{
+		//update the start pos to be after the Message Separator
+		start_pos = end_pos + mdMsgSepLen;
+
+		//and find the end of the current token
+		end_pos = smsg.find(mdMsgSep,start_pos);
+		if (end_pos == std::string::npos) break;
+		//NB: will skip over the last token because this one is not ended with the separator
+
+		//now, current token/message lives within [start_pos,end_pos-1]
+		metaData.push_back(smsg.substr(start_pos,end_pos-start_pos));
+	}
 }
 
 template <typename VT>
@@ -109,8 +133,8 @@ void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,VT* const data)
 void FinishReceivingOneImage(connectionParams_t& cnnParams)
 {
 	//flag all is received and we're closing
-	char done[] = "done";
-	cnnParams.socket->send(done,4,0);
+	char doneMsg[] = "done";
+	cnnParams.socket->send(doneMsg,4,0);
 	cnnParams.clear();
 }
 
