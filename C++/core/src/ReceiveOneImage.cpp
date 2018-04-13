@@ -159,11 +159,105 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 	}
 }
 
+struct nDimWalker
+{
+	//n axis/dimensions available
+	int n = 0;
+
+	//every i-th axis is [0,sizes[i]] interval
+	int* sizes = NULL;
+	//current position in this space
+	int* pos   = NULL;
+
+	//adjusts pos and returns false there is no next step
+	bool nextStep(void)
+	{
+		pos[0]++; //next step
+
+		//check for "overflows"
+		int i=0;
+		while (i < n && pos[i] == sizes[i])
+		{
+			pos[i]=0;
+			pos[i+1]++;
+			++i;
+		}
+
+		return i < n;
+	}
+
+	nDimWalker(const int* _sizes,const int _n)
+	{
+		n = _n;
+		sizes = new int[n];
+		pos   = new int[n];
+
+		for (int i=0; i < n; ++i)
+		{
+			sizes[i]=_sizes[i];
+			pos[i]=0;
+		}
+	}
+
+	~nDimWalker()
+	{
+		if (sizes != NULL) delete[] sizes;
+		if (pos != NULL)   delete[] pos;
+	}
+
+	void printPos(void)
+	{
+		std::cout << "[";
+		for (int i=0; i < n-1; ++i)
+			std::cout << pos[i] << ",";
+		std::cout << pos[n-1] << "]";
+	}
+};
+
 template <typename VT>
 void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
 {
+	//for "degraded" cases, use directly the "ArrayImg-sibbling-function"
+	if (imgParams.dim < 3)
+	{
+		ReceiveOneArrayImage(cnnParams,imgParams,data);
+		return;
+	}
+	//here: imgParams.dim >= 3
+
 	//essentially iterate over the planes and for each
 	//call ReceiveNextPlaneFromOneImage() with appropriatelly adjusted data pointer
+
+	//the first two dimensions represent one plane in the PlanarImg storage type,
+	//
+	//let's introduce a coordinate in the remaining dimensions and walk through
+	//them, which is increase 2nd dim/axis and if we reach end, we increase 3rd and reset 2nd,
+	//if 3rd reaches end, increases 4th and resets 3rd,.... in this order we will be receiving
+	//the planes
+	struct nDimWalker planeWalker(imgParams.sizes+2,imgParams.dim-2);
+
+	//for creating essentially the ArrayImg in the input data buffer
+	const long planeSize = imgParams.sizes[0] * imgParams.sizes[1];
+	long offset=0;
+
+	//fake 2D image
+	imgParams_t fake2Dimg;
+	fake2Dimg.dim = 2;
+	fake2Dimg.sizes = imgParams.sizes;
+	fake2Dimg.voxelType = imgParams.voxelType;
+
+	//keep walking...
+	do {
+		//std::cout << "doing pos="; planeWalker.printPos(); std::cout << "\n";
+
+		ReceiveOneArrayImage(cnnParams,fake2Dimg,data+offset);
+		offset += planeSize;
+	} while (planeWalker.nextStep());
+
+	//since the fake2Dimg's destructor is called here and we have borrowed
+	//the 'sizes' array from somebody else, we must ensure it will not be
+	//deleted now... so we indicate it was not allocated, see imgParams::clear()
+	fake2Dimg.sizes = NULL;
 }
 
 template <typename VT>

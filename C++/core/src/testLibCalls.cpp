@@ -15,8 +15,7 @@ void getData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* cons
 	else
 	{
 		//PlanarImg -- convenient (in fact, converts to ArrayImg)
-		ReceiveOneArrayImage<VT>(cnnParams,imgParams,data);
-		//ReceiveOnePlanarImage<VT>(cnnParams,imgParams,data);
+		ReceiveOnePlanarImage<VT>(cnnParams,imgParams,data);
 
 		//or:
 		//PlanarImg -- "the hard way"
