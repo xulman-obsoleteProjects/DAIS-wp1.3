@@ -17,6 +17,7 @@ typedef struct connectionParams
 	zmq::context_t* context = NULL;
 	zmq::socket_t*  socket  = NULL;
 	int port = 0;
+	std::string addr;
 	bool isSender = false;
 
 	//returns the attributes to the initial state in a way polite for ZeroMQ
@@ -28,6 +29,12 @@ typedef struct connectionParams
 			sprintf(chrString,"tcp://*:%d",port);
 			//socket->unbind(chrString); -- ZeroMQ complains... hmm
 			port = 0;
+		}
+
+		if (addr.size() > 0)
+		{
+			socket->disconnect(addr);
+			addr.clear();
 		}
 
 		if (socket != NULL)
