@@ -116,13 +116,65 @@ void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaD
 }
 
 template <typename VT>
-void ReceiveOneArrayImage(connectionParams_t& cnnParams,VT* const data)
+void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
 {
+	//the length of the corresponding/input basic type array
+	const size_t arrayLength   = imgParams.howManyVoxels();
+	const size_t arrayElemSize = imgParams.howManyBytesPerVoxel();
+
+	std::cout << "DEBUG: arrayLength=" << arrayLength << "\n";
+	std::cout << "DEBUG: arrayElemSize=" << arrayElemSize << "\n";
+
+	if (arrayLength < 1024 || arrayElemSize == 1)
+	{
+		//array that is short enough to be hosted entirely with byte[] array,
+		//will be sent in one shot
+		//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
+		//    and why to split the short arrays anyways?
+
+		//TODO waitForNextMessage()
+		std::cout << "DEBUG: received " <<
+		cnnParams.socket->recv((void*)data,arrayLength)
+		<< " Bytes\n";
+	}
+	else
+	{
+		//for example: float array, when seen as byte array, may exceed byte array's max length;
+		//we, therefore, split into arrayElemSize-1 blocks of firstBlocksLen items long from
+		//the original basic type array, and into one block of lastBlockLen items long
+		const size_t firstBlocksLen = arrayLength/arrayElemSize + (arrayLength%arrayElemSize != 0? 1 : 0);
+		const size_t lastBlockLen   = arrayLength - (arrayElemSize-1)*firstBlocksLen;
+		//NB: firstBlockLen >= lastBlockLen
+
+		long offset=0;
+
+	std::cout << "DEBUG: firstBlocksLen=" << firstBlocksLen << "\n";
+	std::cout << "DEBUG: lastBlockLen=" << lastBlockLen << "\n";
+
+		for (int p=0; p < (arrayElemSize-1); ++p)
+		{
+			//TODO waitForNextMessage()
+		std::cout << "DEBUG: received " <<
+			cnnParams.socket->recv((void*)(data+offset),firstBlocksLen*arrayElemSize)
+		<< " Bytes\n";
+			offset += firstBlocksLen;
+		}
+
+		if (lastBlockLen > 0)
+		{
+		std::cout << "DEBUG: received " <<
+			//TODO waitForNextMessage()
+			cnnParams.socket->recv((void*)(data+offset),lastBlockLen*arrayElemSize)
+		<< " Bytes\n";
+		}
+	}
 }
 
 template <typename VT>
 void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
 {
+	//essentially iterate over the planes and for each
+	//call ReceiveNextPlaneFromOneImage() with appropriatelly adjusted data pointer
 }
 
 template <typename VT>
@@ -141,41 +193,41 @@ void FinishReceivingOneImage(connectionParams_t& cnnParams)
 
 //-------- explicit instantiations --------
 //char
-template void ReceiveOneArrayImage(connectionParams_t& cnnParams,char* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,char* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,char* const data);
 template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,char* const data);
 
 //unsigned char
-template void ReceiveOneArrayImage(connectionParams_t& cnnParams,unsigned char* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned char* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned char* const data);
 template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned char* const data);
 
 //short
-template void ReceiveOneArrayImage(connectionParams_t& cnnParams,short* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,short* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,short* const data);
 template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,short* const data);
 
 //unsigned short
-template void ReceiveOneArrayImage(connectionParams_t& cnnParams,unsigned short* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned short* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned short* const data);
 template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned short* const data);
 
 //long
-template void ReceiveOneArrayImage(connectionParams_t& cnnParams,long* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,long* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,long* const data);
 template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,long* const data);
 
 //unsigned long
-template void ReceiveOneArrayImage(connectionParams_t& cnnParams,unsigned long* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned long* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned long* const data);
 template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned long* const data);
 
 //float
-template void ReceiveOneArrayImage(connectionParams_t& cnnParams,float* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,float* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,float* const data);
 template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,float* const data);
 
 //double
-template void ReceiveOneArrayImage(connectionParams_t& cnnParams,double* const data);
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,double* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,double* const data);
 template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,double* const data);

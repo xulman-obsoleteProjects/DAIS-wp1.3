@@ -72,7 +72,7 @@ void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaD
  * -- the image is transmitted in one shot (from user's perspective).
  */
 template <typename VT>
-void ReceiveOneArrayImage(connectionParams_t& cnnParams,VT* const data);
+void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data);
 
 /**
  * After the metadata has arrived, use this function to fill the output data
@@ -84,8 +84,8 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,VT* const data);
  * There is always one shot for one plane, and normally one can save every
  * plane independently -- not necessarily in a long consecutive array. This
  * function however assumes that output image is represented as one long
- * consecutive array and saves the planes one after one (for which it needs
- * to know the image geometry via imgParams).
+ * consecutive array and saves the planes one after one (for which it also
+ * needs to know the image geometry via imgParams).
  *
  * Use ReceiveNextPlaneFromOneImage() if you want to have a control where every
  * plane is saved.
