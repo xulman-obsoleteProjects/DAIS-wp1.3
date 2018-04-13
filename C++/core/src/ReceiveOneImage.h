@@ -182,9 +182,14 @@ typedef struct nDimWalker
 	//current position in this space
 	int* pos   = NULL;
 
+	//how many steps before the whole space is swept entirely
+	//NB: right after constructor(), it tells how many iterations+1 there will be
+	long remainingSteps = 0;
+
 	//adjusts pos and returns false there is no next step
 	bool nextStep(void)
 	{
+		--remainingSteps;
 		pos[0]++; //next step
 
 		//check for "overflows"
@@ -206,11 +211,15 @@ typedef struct nDimWalker
 		sizes = new int[n];
 		pos   = new int[n];
 
+		remainingSteps=1;
+
 		for (int i=0; i < n; ++i)
 		{
 			sizes[i]=_sizes[i];
 			pos[i]=0;
+			remainingSteps *= sizes[i];
 		}
+		--remainingSteps;
 	}
 
 	~nDimWalker()
