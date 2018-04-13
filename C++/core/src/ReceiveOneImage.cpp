@@ -67,6 +67,7 @@ void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams
 		throw new runtime_error("Protocol error: Expected image storage hint.");
 }
 
+
 void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaData)
 {
 	//sends flag that we're free to go, first comes the image metadata
@@ -114,6 +115,7 @@ void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaD
 	}
 }
 
+
 template <typename VT>
 void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
 {
@@ -121,6 +123,57 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 	const size_t arrayLength   = imgParams.howManyVoxels();
 	const size_t arrayElemSize = imgParams.howManyBytesPerVoxel();
 
+	ReceiveChunkFromOneImage(cnnParams,data,arrayLength,arrayElemSize);
+}
+
+template <typename VT>
+void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
+{
+	//for "degraded" cases, use directly the "ArrayImg-sibbling-function"
+	if (imgParams.dim < 3)
+	{
+		ReceiveOneArrayImage(cnnParams,imgParams,data);
+		return;
+	}
+	//here: imgParams.dim >= 3
+
+	//the first two dimensions represent one plane in the PlanarImg storage type
+	//
+	//let's introduce a point/position in the remaining dimensions and walk through
+	//them, which is to increase 2nd dim/axis and if we reach end, we increase 3rd and reset 2nd,
+	//if 3rd reaches end, increases 4th and resets 3rd,.... in this order we will be receiving
+	//the planes
+	struct nDimWalker planeWalker(imgParams.sizes+2,imgParams.dim-2);
+
+	//for creating essentially the ArrayImg in the input data buffer by
+	//shifting the data pointer in planeSize steps,
+	//
+	//SEE BELOW FOR GENERAL CASE OF PLACING THE OUTPUT DATA
+	const long planeSize = imgParams.sizes[0] * imgParams.sizes[1];
+	long offset=0;
+
+	//cached....
+	const size_t arrayElemSize = imgParams.howManyBytesPerVoxel();
+
+	//essentially iterate over the planes and for each
+	//call ReceiveChunkFromOneImage() with appropriatelly adjusted data pointer
+	do {
+		//std::cout << "doing pos="; planeWalker.printPos(); std::cout << "\n";
+
+		//NOW JUST PLACING JUST A PLANE ONE AFTER ANOTHER (and we need no planeWalker...)
+		//
+		//ONE MAY WANT TO PLACE THE CURRENT PLANE SOMEWHERE (instead of at data+offset),
+		//THE PLANE WE ARE FETCHING NOW IS AT [0,0, planeWalker.pos[] ] POSITION
+		ReceiveChunkFromOneImage(cnnParams,data+offset,planeSize,arrayElemSize);
+		offset += planeSize;
+	} while (planeWalker.nextStep());
+}
+
+
+template <typename VT>
+void ReceiveChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
+                              const size_t arrayLength, const size_t arrayElemSize)
+{
 	if (arrayLength < 1024 || arrayElemSize == 1)
 	{
 		//array that is short enough to be hosted entirely with byte[] array,
@@ -160,57 +213,6 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 }
 
 
-template <typename VT>
-void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
-{
-	//for "degraded" cases, use directly the "ArrayImg-sibbling-function"
-	if (imgParams.dim < 3)
-	{
-		ReceiveOneArrayImage(cnnParams,imgParams,data);
-		return;
-	}
-	//here: imgParams.dim >= 3
-
-	//essentially iterate over the planes and for each
-	//call ReceiveNextPlaneFromOneImage() with appropriatelly adjusted data pointer
-
-	//the first two dimensions represent one plane in the PlanarImg storage type,
-	//
-	//let's introduce a coordinate in the remaining dimensions and walk through
-	//them, which is increase 2nd dim/axis and if we reach end, we increase 3rd and reset 2nd,
-	//if 3rd reaches end, increases 4th and resets 3rd,.... in this order we will be receiving
-	//the planes
-	struct nDimWalker planeWalker(imgParams.sizes+2,imgParams.dim-2);
-
-	//for creating essentially the ArrayImg in the input data buffer
-	const long planeSize = imgParams.sizes[0] * imgParams.sizes[1];
-	long offset=0;
-
-	//fake 2D image
-	imgParams_t fake2Dimg;
-	fake2Dimg.dim = 2;
-	fake2Dimg.sizes = imgParams.sizes;
-	fake2Dimg.voxelType = imgParams.voxelType;
-
-	//keep walking...
-	do {
-		//std::cout << "doing pos="; planeWalker.printPos(); std::cout << "\n";
-
-		ReceiveOneArrayImage(cnnParams,fake2Dimg,data+offset);
-		offset += planeSize;
-	} while (planeWalker.nextStep());
-
-	//since the fake2Dimg's destructor is called here and we have borrowed
-	//the 'sizes' array from somebody else, we must ensure it will not be
-	//deleted now... so we indicate it was not allocated, see imgParams::clear()
-	fake2Dimg.sizes = NULL;
-}
-
-template <typename VT>
-void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,VT* const data)
-{
-}
-
 void FinishReceivingOneImage(connectionParams_t& cnnParams)
 {
 	//flag all is received and we're closing
@@ -224,49 +226,39 @@ void FinishReceivingOneImage(connectionParams_t& cnnParams)
 //char
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,char* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,char* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,char* const data);
 
 //unsigned char
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned char* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned char* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned char* const data);
 
 //short
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,short* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,short* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,short* const data);
 
 //unsigned short
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned short* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned short* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned short* const data);
 
 //int
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,int* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,int* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,int* const data);
 
 //unsigned int
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned int* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned int* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned int* const data);
 
 //long
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,long* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,long* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,long* const data);
 
 //unsigned long
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned long* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned long* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned long* const data);
 
 //float
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,float* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,float* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,float* const data);
 
 //double
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,double* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,double* const data);
-template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,double* const data);

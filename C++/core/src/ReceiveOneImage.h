@@ -87,19 +87,25 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
  * consecutive array and saves the planes one after one (for which it also
  * needs to know the image geometry via imgParams).
  *
- * Use ReceiveNextPlaneFromOneImage() if you want to have a control where every
- * plane is saved.
+ * Use ReceiveChunkFromOneImage() and nDimWalker struct below if you want
+ * to have a control where every plane is saved. Also, the source code of
+ * this function provides additional hints (in upper case letters).
  */
 template <typename VT>
 void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data);
 
 /**
  * After the metadata has arrived, use this function to fill the output data
- * array; the array has to be allocated already to hold exactly one plane
- * -- see the discussion in ReceiveOnePlanarImage().
+ * array. The function takes care of one 'shot' of the transmission, refer to
+ * ReceiveOneArrayImage() and ReceiveOnePlanarImage() to understand what 'shot'
+ * means.
+ *
+ * The output array has to be allocated already. In particular, it should hold that
+ * the array is arrayLength items long and each item consumes arrayElemSize Bytes.
  */
 template <typename VT>
-void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,VT* const data);
+void ReceiveChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
+                              const size_t arrayLength, const size_t arrayElemSize);
 
 /**
  * Signals the transmission was received well, and closes the socket
