@@ -53,6 +53,10 @@ typedef struct connectionParams
 } connectionParams_t;
 
 
+//TODO
+void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnParams,
+                          const char* addr, const int timeOut = 60);
+
 /**
  * Waits not longer than timeOut seconds on local port for the first message
  * of the new image transfer, and fills the output imgParams image configuration
@@ -64,6 +68,9 @@ typedef struct connectionParams
  */
 void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
                             const int port, const int timeOut = 60);
+
+//TODO
+void SendMetadata(connectionParams_t& cnnParams,const std::list<std::string>& metaData);
 
 /**
  * After seeing the initial handshake header, after calling StartReceivingOneImage(),
@@ -118,6 +125,9 @@ template <typename VT>
 void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
                               const size_t arrayLength, const size_t arrayElemSize,
                               const bool comingMore = false);
+
+//TODO
+void FinishSendingOneImage(connectionParams_t& cnnParams);
 
 /**
  * Signals the transmission was received well, and closes the socket

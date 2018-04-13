@@ -11,12 +11,51 @@
 //short-cut to throwing runtime_error exceptions
 using std::runtime_error;
 
-/**
- * Waits not longer than timeOut seconds on local port for the first message
- * of the new image transfer, and fills the output imgParams image configuration
- * data. Throws exceptions if something goes wrong: timeOut, unable to parse,
- * or wrong format/protocol error...
- */
+
+void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnParams,
+                          const char* addr, const int timeOut)
+{
+	//init the context and get the socket
+	cnnParams.context  = new zmq::context_t(1);
+	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
+	cnnParams.addr = std::string(addr);
+	cnnParams.isSender = true;
+
+	//connects the socket with the given address
+	cnnParams.socket->connect(cnnParams.addr);
+
+	//build the initial handshake header/message...
+	std::ostringstream hdrMsg("v1 dimNumber ");
+	hdrMsg << imgParams.dim;
+	for (int i=0; i < imgParams.dim; ++i)
+		hdrMsg << " " << imgParams.sizes[i];
+
+	hdrMsg << imgParams.voxelType << " PlanarImg ";
+	//...and convert it into a string
+	std::string hdrStr(hdrMsg.str());
+
+	std::cout << "Sending: " << hdrStr << "\n";
+	cnnParams.socket->send(hdrStr.c_str(),hdrStr.size());
+
+	//TODO: waitForFirstMessage()
+
+	//read income message and check if the receiving party is ready to receive our data
+	char chrString[1024];
+	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
+
+	//check sanity of the received buffer
+	if (recLength <= 0)
+		throw new runtime_error("Received empty initial (handshake) message. Stopping.");
+	if (recLength == 1024)
+		throw new runtime_error("Couldn't read complete initial (handshake) message. Stopping.");
+	if (chrString[0] != 'r' ||
+	    chrString[1] != 'e' ||
+	    chrString[2] != 'a' ||
+	    chrString[3] != 'd' ||
+	    chrString[4] != 'y')
+		throw new runtime_error("Protocol error, expected initial confirmation from the receiver.");
+}
+
 void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
                             const int port, const int timeOut)
 {
@@ -245,6 +284,12 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 	}
 }
 
+
+void FinishSendingOneImage(connectionParams_t& cnnParams)
+{
+	//TODO: put waiting for "done" maybe here
+	cnnParams.clear();
+}
 
 void FinishReceivingOneImage(connectionParams_t& cnnParams)
 {

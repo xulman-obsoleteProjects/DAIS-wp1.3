@@ -14,12 +14,8 @@ void getData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* cons
 	}
 	else
 	{
-		//PlanarImg -- convenient (in fact, converts to ArrayImg)
+		//PlanarImg
 		TransmitOnePlanarImage<VT>(cnnParams,imgParams,data);
-
-		//or:
-		//PlanarImg -- "the hard way"
-		//TODO
 	}
 
 	//print first 20 values just to see that something has been transmitted
@@ -28,9 +24,9 @@ void getData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* cons
 	std::cout << std::endl;
 }
 
-int main(void)
+void testReceiver(void)
 {
-	std::cout << "<hi from tester>\n";
+	std::cout << "<hi from receiver>\n";
 
 	try {
 		//init the connection and possibly wait for the header information
@@ -121,6 +117,69 @@ int main(void)
 		std::cout << "Transmission problem: " << e->what() << std::endl;
 	}
 
-	std::cout << "</hi from tester>\n";
+	std::cout << "</hi from receiver>\n";
+}
+
+
+void testSender(void)
+{
+	std::cout << "<hi from sender>\n";
+
+	try {
+		//init the connection and possibly wait for the header information
+		imgParams_t imgParams;
+
+		//setup testing image
+		imgParams.dim = 3;
+		imgParams.sizes = new int[3];
+		imgParams.sizes[0] = 610;
+		imgParams.sizes[1] = 590;
+		imgParams.sizes[2] = 3;
+		imgParams.voxelType = std::string("UnsignedShortType");
+		imgParams.backendType = std::string("PlanarImg");
+
+		//aha, so this is what we will send
+		std::cout << "Going to send an image: ";
+		for (int i=1; i < imgParams.dim; ++i)
+		          std::cout << imgParams.sizes[i-1] << " x ";
+		std::cout << imgParams.sizes[imgParams.dim-1] << "\n";
+		std::cout << "VT     : " << imgParams.voxelType << "\n"
+		          << "backend: " << imgParams.backendType << "\n";
+
+		std::cout << "array length : " << imgParams.howManyVoxels() << " voxels\n";
+		std::cout << "array memSize: " << imgParams.howManyBytes() << " Bytes\n";
+
+		//prepare the "image" to be sent away
+		unsigned short* data = new unsigned short[imgParams.howManyVoxels()];
+		for (int i=0; i < imgParams.howManyVoxels(); ++i) data[i]=0;
+		for (int i=0; i < 30; ++i)
+			data[i + i*610]=data[5 + i + i*610]=20;
+
+		connectionParams_t cnnParams;
+		StartSendingOneImage(imgParams,cnnParams,"localhost:54545");
+
+//........
+
+		//close the connection, calls also cnnParams.clear()
+		FinishSendingOneImage(cnnParams);
+
+		//free the memory! we're not in Java :)
+		imgParams.clear();
+		delete[] data;
+	}
+	catch (std::exception* e)
+	{
+		std::cout << "Transmission problem: " << e->what() << std::endl;
+	}
+
+	std::cout << "</hi from sender>\n";
+}
+
+
+int main(void)
+{
+	//testReceiver();
+	testSender();
+
 	return (0);
 }
