@@ -116,6 +116,7 @@ inline void SwapEndianness(char* const data, const long len)
 inline void SwapEndianness(unsigned char* const data, const long len)
 { //intentionally empty
 }
+
 inline void SwapEndianness(short* const data, const long len)
 {
 	for (long i=0; i < len; ++i)
@@ -126,29 +127,43 @@ inline void SwapEndianness(unsigned short* const data, const long len)
 	for (long i=0; i < len; ++i)
 		data[i] = (data[i] << 8) | (data[i] >> 8);
 }
+
+inline void SwapEndianness(int* const data, const long len)
+{
+	for (long i=0; i < len; ++i)
+		data[i] = (data[i] << 24) | (data[i] << 8 & 0x00FF0000) | (data[i] >> 8 & 0x0000FF00) | (data[i] >> 24);
+}
+inline void SwapEndianness(unsigned int* const data, const long len)
+{
+	for (long i=0; i < len; ++i)
+		data[i] = (data[i] << 24) | (data[i] << 8 & 0x00FF0000) | (data[i] >> 8 & 0x0000FF00) | (data[i] >> 24);
+}
+
 inline void SwapEndianness(long* const data, const long len)
 {
-	for (long i=0; i < len; ++i)
-		data[i] = (data[i] << 24) | (data[i] << 8 & 0x00FF0000) | (data[i] >> 8 & 0x0000FF00) | (data[i] >> 24);
-}
-inline void SwapEndianness(unsigned long* const data, const long len)
-{
-	for (long i=0; i < len; ++i)
-		data[i] = (data[i] << 24) | (data[i] << 8 & 0x00FF0000) | (data[i] >> 8 & 0x0000FF00) | (data[i] >> 24);
-}
-inline void SwapEndianness(float* const dataF, const long len)
-{
-	long* const data = reinterpret_cast<long*>(dataF);
-	for (long i=0; i < len; ++i)
-		data[i] = (data[i] << 24) | (data[i] << 8 & 0x00FF0000) | (data[i] >> 8 & 0x0000FF00) | (data[i] >> 24);
-}
-inline void SwapEndianness(double* const dataD, const long len)
-{
-	long long* const data = reinterpret_cast<long long*>(dataD);
 	for (long i=0; i < len; ++i)
 		data[i] = (data[i] << 56)
 		        | (data[i] << 40 & 0x00FF000000000000) | (data[i] << 24 & 0x0000FF0000000000) | (data[i] <<  8 & 0x000000FF00000000)
 		        | (data[i] >>  8 & 0x00000000FF000000) | (data[i] >> 24 & 0x0000000000FF0000) | (data[i] >> 40 & 0x000000000000FF00)
 		        | (data[i] >> 56);
+}
+inline void SwapEndianness(unsigned long* const data, const long len)
+{
+	for (long i=0; i < len; ++i)
+		data[i] = (data[i] << 56)
+		        | (data[i] << 40 & 0x00FF000000000000) | (data[i] << 24 & 0x0000FF0000000000) | (data[i] <<  8 & 0x000000FF00000000)
+		        | (data[i] >>  8 & 0x00000000FF000000) | (data[i] >> 24 & 0x0000000000FF0000) | (data[i] >> 40 & 0x000000000000FF00)
+		        | (data[i] >> 56);
+}
+
+inline void SwapEndianness(float* const dataF, const long len)
+{
+	int* const data = reinterpret_cast<int*>(dataF);
+	SwapEndianness(data,len);
+}
+inline void SwapEndianness(double* const dataD, const long len)
+{
+	long* const data = reinterpret_cast<long*>(dataD);
+	SwapEndianness(data,len);
 }
 #endif

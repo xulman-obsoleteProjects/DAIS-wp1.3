@@ -79,14 +79,21 @@ int main(void)
 				break;
 
 			case imgParams::voxelTypes::Short:
-				getData(cnnParams,imgParams,(short*)data);
+				getData(cnnParams,imgParams,(signed short*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedShort:
 				getData(cnnParams,imgParams,(unsigned short*)data);
 				break;
 
+			case imgParams::voxelTypes::Int:
+				getData(cnnParams,imgParams,(signed int*)data);
+				break;
+			case imgParams::voxelTypes::UnsignedInt:
+				getData(cnnParams,imgParams,(unsigned int*)data);
+				break;
+
 			case imgParams::voxelTypes::Long:
-				getData(cnnParams,imgParams,(long*)data);
+				getData(cnnParams,imgParams,(signed long*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedLong:
 				getData(cnnParams,imgParams,(unsigned long*)data);

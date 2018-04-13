@@ -37,6 +37,8 @@ typedef struct imgParams
 		UnsignedByte,
 		Short,
 		UnsignedShort,
+		Int,
+		UnsignedInt,
 		Long,
 		UnsignedLong,
 		Float,
@@ -54,6 +56,10 @@ typedef struct imgParams
 		if (voxelType.find("UnsignedShort") != std::string::npos) vt = UnsignedShort;
 		else
 		if (voxelType.find("Short") != std::string::npos) vt = Short;
+		else
+		if (voxelType.find("UnsignedInt") != std::string::npos) vt = UnsignedInt;
+		else
+		if (voxelType.find("Int") != std::string::npos) vt = Int;
 		else
 		if (voxelType.find("UnsignedLong") != std::string::npos) vt = UnsignedLong;
 		else
@@ -98,9 +104,13 @@ typedef struct imgParams
 			case UnsignedShort:
 				voxelSize = 2;
 				break;
+			case Int:
+			case UnsignedInt:
+				voxelSize = 4;
+				break;
 			case Long:
 			case UnsignedLong:
-				voxelSize = 4;
+				voxelSize = 8;
 				break;
 			case Float:
 				voxelSize = 4;
