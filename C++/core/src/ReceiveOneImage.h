@@ -17,6 +17,7 @@ typedef struct connectionParams
 	zmq::context_t* context = NULL;
 	zmq::socket_t*  socket  = NULL;
 	int port = 0;
+	bool isSender = false;
 
 	//returns the attributes to the initial state in a way polite for ZeroMQ
 	void clear()
@@ -87,7 +88,7 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
  * consecutive array and saves the planes one after one (for which it also
  * needs to know the image geometry via imgParams).
  *
- * Use ReceiveChunkFromOneImage() and nDimWalker struct below if you want
+ * Use TransmitChunkFromOneImage() and nDimWalker struct below if you want
  * to have a control where every plane is saved. Also, the source code of
  * this function provides additional hints (in upper case letters).
  */
@@ -104,7 +105,7 @@ void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgP
  * the array is arrayLength items long and each item consumes arrayElemSize Bytes.
  */
 template <typename VT>
-void ReceiveChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
+void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
                               const size_t arrayLength, const size_t arrayElemSize);
 
 /**

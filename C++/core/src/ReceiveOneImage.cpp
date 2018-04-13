@@ -21,9 +21,10 @@ void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams
                             const int port, const int timeOut)
 {
 	//init the context and get the socket
-	cnnParams.context = new zmq::context_t(1);
-	cnnParams.socket  = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
-	cnnParams.port    = port;
+	cnnParams.context  = new zmq::context_t(1);
+	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
+	cnnParams.port     = port;
+	cnnParams.isSender = false;
 
 	//binds the socket to the given port
 	char chrString[1024];
@@ -123,7 +124,7 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 	const size_t arrayLength   = imgParams.howManyVoxels();
 	const size_t arrayElemSize = imgParams.howManyBytesPerVoxel();
 
-	ReceiveChunkFromOneImage(cnnParams,data,arrayLength,arrayElemSize);
+	TransmitChunkFromOneImage(cnnParams,data,arrayLength,arrayElemSize);
 }
 
 template <typename VT>
@@ -156,7 +157,7 @@ void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgP
 	const size_t arrayElemSize = imgParams.howManyBytesPerVoxel();
 
 	//essentially iterate over the planes and for each
-	//call ReceiveChunkFromOneImage() with appropriatelly adjusted data pointer
+	//call TransmitChunkFromOneImage() with appropriatelly adjusted data pointer
 	do {
 		//std::cout << "doing pos="; planeWalker.printPos(); std::cout << "\n";
 
@@ -164,14 +165,14 @@ void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgP
 		//
 		//ONE MAY WANT TO PLACE THE CURRENT PLANE SOMEWHERE (instead of at data+offset),
 		//THE PLANE WE ARE FETCHING NOW IS AT [0,0, planeWalker.pos[] ] POSITION
-		ReceiveChunkFromOneImage(cnnParams,data+offset,planeSize,arrayElemSize);
+		TransmitChunkFromOneImage(cnnParams,data+offset,planeSize,arrayElemSize);
 		offset += planeSize;
 	} while (planeWalker.nextStep());
 }
 
 
 template <typename VT>
-void ReceiveChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
+void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
                               const size_t arrayLength, const size_t arrayElemSize)
 {
 	if (arrayLength < 1024 || arrayElemSize == 1)
@@ -181,8 +182,14 @@ void ReceiveChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 		//NB: the else branch below cannot handle when arrayLength < arrayElemSize,
 		//    and why to split the short arrays anyways?
 
-		//TODO waitForNextMessage()
-		cnnParams.socket->recv((void*)data,arrayLength);
+		if (cnnParams.isSender)
+		{
+		}
+		else
+		{
+			//TODO waitForNextMessage()
+			cnnParams.socket->recv((void*)data,arrayLength);
+		}
 	}
 	else
 	{
@@ -197,17 +204,29 @@ void ReceiveChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 
 		for (int p=0; p < (arrayElemSize-1); ++p)
 		{
-			//TODO waitForNextMessage()
-			cnnParams.socket->recv((void*)(data+offset),firstBlocksLen*arrayElemSize);
-			SwapEndianness(data+offset,firstBlocksLen);
-			offset += firstBlocksLen;
+			if (cnnParams.isSender)
+			{
+			}
+			else
+			{
+				//TODO waitForNextMessage()
+				cnnParams.socket->recv((void*)(data+offset),firstBlocksLen*arrayElemSize);
+				SwapEndianness(data+offset,firstBlocksLen);
+				offset += firstBlocksLen;
+			}
 		}
 
 		if (lastBlockLen > 0)
 		{
-			//TODO waitForNextMessage()
-			cnnParams.socket->recv((void*)(data+offset),lastBlockLen*arrayElemSize);
-			SwapEndianness(data+offset,lastBlockLen);
+			if (cnnParams.isSender)
+			{
+			}
+			else
+			{
+				//TODO waitForNextMessage()
+				cnnParams.socket->recv((void*)(data+offset),lastBlockLen*arrayElemSize);
+				SwapEndianness(data+offset,lastBlockLen);
+			}
 		}
 	}
 }
