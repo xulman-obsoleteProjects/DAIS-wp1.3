@@ -69,6 +69,10 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
                             const int port, const int timeOut = 60);
 
+//meta data Message Separator
+const char mdMsgSep[] = "__QWE__";
+const int mdMsgSepLen = 7;
+
 //TODO
 void SendMetadata(connectionParams_t& cnnParams,const std::list<std::string>& metaData);
 

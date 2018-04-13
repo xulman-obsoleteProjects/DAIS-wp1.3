@@ -108,6 +108,28 @@ void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams
 }
 
 
+void SendMetadata(connectionParams_t& cnnParams,const std::list<std::string>& metaData)
+{
+	std::ostringstream smsg;
+	//init the metadata message
+	smsg << "metadata" << mdMsgSep;
+
+	//populate the metadata message
+	std::list<std::string>::const_iterator it = metaData.begin();
+	while (it != metaData.end())
+	{
+		smsg << *it << mdMsgSep;
+		it++;
+	}
+
+	//finish the metadata message
+	smsg << "endmetadata";
+
+	//convert the metadata into a string and send it
+	std::string msg(smsg.str());
+	cnnParams.socket->send(msg.c_str(),msg.size());
+}
+
 void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaData)
 {
 	//sends flag that we're free to go, first comes the image metadata
@@ -126,10 +148,6 @@ void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaD
 	//first token needs to be "metadata"
 	if (smsg.find("metadata") != 0)
 		throw new runtime_error("Protocol error, expected metadata part from the receiver.");
-
-	//meta data Message Separator
-	const char mdMsgSep[] = "__QWE__";
-	const int mdMsgSepLen = 7;
 
 	//parse the string:
 	//pos shows beginning of the current token in the smsg
