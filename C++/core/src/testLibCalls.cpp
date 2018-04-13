@@ -10,12 +10,12 @@ void getData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* cons
 	if (imgParams.backendType.find("Array") != std::string::npos)
 	{
 		//ArrayImg
-		ReceiveOneArrayImage<VT>(cnnParams,imgParams,data);
+		TransmitOneArrayImage<VT>(cnnParams,imgParams,data);
 	}
 	else
 	{
 		//PlanarImg -- convenient (in fact, converts to ArrayImg)
-		ReceiveOnePlanarImage<VT>(cnnParams,imgParams,data);
+		TransmitOnePlanarImage<VT>(cnnParams,imgParams,data);
 
 		//or:
 		//PlanarImg -- "the hard way"

@@ -73,7 +73,7 @@ void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaD
  * -- the image is transmitted in one shot (from user's perspective).
  */
 template <typename VT>
-void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data);
+void TransmitOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data);
 
 /**
  * After the metadata has arrived, use this function to fill the output data
@@ -93,12 +93,12 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
  * this function provides additional hints (in upper case letters).
  */
 template <typename VT>
-void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data);
+void TransmitOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data);
 
 /**
  * After the metadata has arrived, use this function to fill the output data
  * array. The function takes care of one 'shot' of the transmission, refer to
- * ReceiveOneArrayImage() and ReceiveOnePlanarImage() to understand what 'shot'
+ * TransmitOneArrayImage() and TransmitOnePlanarImage() to understand what 'shot'
  * means.
  *
  * The output array has to be allocated already. In particular, it should hold that
