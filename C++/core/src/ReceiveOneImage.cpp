@@ -18,19 +18,19 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 	//init the context and get the socket
 	cnnParams.context  = new zmq::context_t(1);
 	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
-	cnnParams.addr = std::string(addr);
+	cnnParams.addr = std::string("tcp://")+std::string(addr);
 	cnnParams.isSender = true;
 
 	//connects the socket with the given address
 	cnnParams.socket->connect(cnnParams.addr);
 
 	//build the initial handshake header/message...
-	std::ostringstream hdrMsg("v1 dimNumber ");
-	hdrMsg << imgParams.dim;
+	std::ostringstream hdrMsg;
+	hdrMsg << "v1 dimNumber " << imgParams.dim;
 	for (int i=0; i < imgParams.dim; ++i)
 		hdrMsg << " " << imgParams.sizes[i];
 
-	hdrMsg << imgParams.voxelType << " PlanarImg ";
+	hdrMsg << " " << imgParams.voxelType << " PlanarImg ";
 	//...and convert it into a string
 	std::string hdrStr(hdrMsg.str());
 
@@ -44,8 +44,8 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
 
 	//check sanity of the received buffer
-	if (recLength <= 0)
-		throw new runtime_error("Received empty initial (handshake) message. Stopping.");
+	if (recLength <= 4)
+		throw new runtime_error("Received (near) empty initial (handshake) message. Stopping.");
 	if (recLength == 1024)
 		throw new runtime_error("Couldn't read complete initial (handshake) message. Stopping.");
 	if (chrString[0] != 'r' ||
