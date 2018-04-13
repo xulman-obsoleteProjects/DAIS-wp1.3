@@ -81,7 +81,6 @@ void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaD
 	//"convert" to std::string (likely by making extra copy of it)
 	//NB: haven't find how to discard/dispose the msg :(
 	std::string smsg(msg.data<char>());
-	std::cout << "metadata: XX" << smsg << "XX\n"; //REMOVE DEBUG
 
 	//first token needs to be "metadata"
 	if (smsg.find("metadata") != 0)
@@ -122,9 +121,6 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 	const size_t arrayLength   = imgParams.howManyVoxels();
 	const size_t arrayElemSize = imgParams.howManyBytesPerVoxel();
 
-	std::cout << "DEBUG: arrayLength=" << arrayLength << "\n";
-	std::cout << "DEBUG: arrayElemSize=" << arrayElemSize << "\n";
-
 	if (arrayLength < 1024 || arrayElemSize == 1)
 	{
 		//array that is short enough to be hosted entirely with byte[] array,
@@ -133,9 +129,7 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 		//    and why to split the short arrays anyways?
 
 		//TODO waitForNextMessage()
-		std::cout << "DEBUG: received " <<
-		cnnParams.socket->recv((void*)data,arrayLength)
-		<< " Bytes\n";
+		cnnParams.socket->recv((void*)data,arrayLength);
 	}
 	else
 	{
@@ -148,25 +142,18 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 
 		long offset=0;
 
-	std::cout << "DEBUG: firstBlocksLen=" << firstBlocksLen << "\n";
-	std::cout << "DEBUG: lastBlockLen=" << lastBlockLen << "\n";
-
 		for (int p=0; p < (arrayElemSize-1); ++p)
 		{
 			//TODO waitForNextMessage()
-		std::cout << "DEBUG: received " <<
-			cnnParams.socket->recv((void*)(data+offset),firstBlocksLen*arrayElemSize)
-		<< " Bytes\n";
+			cnnParams.socket->recv((void*)(data+offset),firstBlocksLen*arrayElemSize);
 			SwapEndianness(data+offset,firstBlocksLen);
 			offset += firstBlocksLen;
 		}
 
 		if (lastBlockLen > 0)
 		{
-		std::cout << "DEBUG: received " <<
 			//TODO waitForNextMessage()
-			cnnParams.socket->recv((void*)(data+offset),lastBlockLen*arrayElemSize)
-		<< " Bytes\n";
+			cnnParams.socket->recv((void*)(data+offset),lastBlockLen*arrayElemSize);
 			SwapEndianness(data+offset,lastBlockLen);
 		}
 	}
@@ -213,6 +200,16 @@ template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,short* 
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned short* const data);
 template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned short* const data);
 template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned short* const data);
+
+//int
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,int* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,int* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,int* const data);
+
+//unsigned int
+template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned int* const data);
+template void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned int* const data);
+template void ReceiveNextPlaneFromOneImage(connectionParams_t& cnnParams,unsigned int* const data);
 
 //long
 template void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,long* const data);
