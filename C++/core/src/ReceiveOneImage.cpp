@@ -143,7 +143,7 @@ void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgP
 	//them, which is to increase 2nd dim/axis and if we reach end, we increase 3rd and reset 2nd,
 	//if 3rd reaches end, increases 4th and resets 3rd,.... in this order we will be receiving
 	//the planes
-	struct nDimWalker planeWalker(imgParams.sizes+2,imgParams.dim-2);
+	nDimWalker_t planeWalker(imgParams.sizes+2,imgParams.dim-2);
 
 	//for creating essentially the ArrayImg in the input data buffer by
 	//shifting the data pointer in planeSize steps,

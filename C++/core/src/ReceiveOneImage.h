@@ -167,7 +167,7 @@ inline void SwapEndianness(double* const data, const long len)
 
 
 //helper struct to aid iterating full n-dimensional space
-struct nDimWalker
+typedef struct nDimWalker
 {
 	//n axis/dimensions available
 	int n = 0;
@@ -222,5 +222,5 @@ struct nDimWalker
 			std::cout << pos[i] << ",";
 		std::cout << pos[n-1] << "]";
 	}
-};
+} nDimWalker_t;
 #endif
