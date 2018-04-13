@@ -157,6 +157,7 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 		std::cout << "DEBUG: received " <<
 			cnnParams.socket->recv((void*)(data+offset),firstBlocksLen*arrayElemSize)
 		<< " Bytes\n";
+			SwapEndianness(data+offset,firstBlocksLen);
 			offset += firstBlocksLen;
 		}
 
@@ -166,6 +167,7 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 			//TODO waitForNextMessage()
 			cnnParams.socket->recv((void*)(data+offset),lastBlockLen*arrayElemSize)
 		<< " Bytes\n";
+			SwapEndianness(data+offset,lastBlockLen);
 		}
 	}
 }
