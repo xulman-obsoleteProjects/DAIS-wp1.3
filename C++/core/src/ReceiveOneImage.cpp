@@ -173,7 +173,8 @@ void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgP
 
 template <typename VT>
 void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
-                              const size_t arrayLength, const size_t arrayElemSize)
+                              const size_t arrayLength, const size_t arrayElemSize,
+                              const bool comingMore)
 {
 	if (arrayLength < 1024 || arrayElemSize == 1)
 	{
@@ -184,11 +185,15 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 
 		if (cnnParams.isSender)
 		{
+			SwapEndianness(data,arrayLength);
+			cnnParams.socket->send((void*)data,arrayLength*arrayElemSize,(comingMore? ZMQ_SNDMORE : 0));
+			SwapEndianness(data,arrayLength);
 		}
 		else
 		{
 			//TODO waitForNextMessage()
-			cnnParams.socket->recv((void*)data,arrayLength);
+			cnnParams.socket->recv((void*)data,arrayLength*arrayElemSize);
+			SwapEndianness(data,arrayLength);
 		}
 	}
 	else
@@ -206,6 +211,10 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 		{
 			if (cnnParams.isSender)
 			{
+				SwapEndianness(data+offset,firstBlocksLen);
+				cnnParams.socket->send((void*)(data+offset),firstBlocksLen*arrayElemSize,
+				  (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ_SNDMORE : 0));
+				SwapEndianness(data+offset,firstBlocksLen);
 			}
 			else
 			{
@@ -220,6 +229,10 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 		{
 			if (cnnParams.isSender)
 			{
+				SwapEndianness(data+offset,lastBlockLen);
+				cnnParams.socket->send((void*)(data+offset),lastBlockLen*arrayElemSize,
+				  (comingMore? ZMQ_SNDMORE : 0));
+				SwapEndianness(data+offset,lastBlockLen);
 			}
 			else
 			{

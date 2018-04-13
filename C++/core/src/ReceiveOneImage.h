@@ -103,10 +103,14 @@ void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgP
  *
  * The output array has to be allocated already. In particular, it should hold that
  * the array is arrayLength items long and each item consumes arrayElemSize Bytes.
+ *
+ * The last comingMore flag signals if a multi-part ZeroMQ message should be sent,
+ * that is, if this call will be followed with another call of this function.
  */
 template <typename VT>
 void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
-                              const size_t arrayLength, const size_t arrayElemSize);
+                              const size_t arrayLength, const size_t arrayElemSize,
+                              const bool comingMore = false);
 
 /**
  * Signals the transmission was received well, and closes the socket
