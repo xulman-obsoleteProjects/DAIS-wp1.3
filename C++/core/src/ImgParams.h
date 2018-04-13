@@ -83,8 +83,8 @@ typedef struct imgParams
 		return cnt;
 	}
 
-	//convenience calculator function: how many Bytes is this image?
-	long howManyBytes() const
+	//convenience calculator function: how many Bytes occupies one Voxel
+	long howManyBytesPerVoxel() const
 	{
 		long voxelSize;
 		switch (enumVoxelType())
@@ -110,7 +110,13 @@ typedef struct imgParams
 				break;
 		}
 
-		return (voxelSize * howManyVoxels());
+		return voxelSize;
+	}
+
+	//convenience calculator function: how many Bytes is this image?
+	long howManyBytes() const
+	{
+		return (howManyBytesPerVoxel() * howManyVoxels());
 	}
 
 	//-----------
