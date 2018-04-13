@@ -159,60 +159,6 @@ void ReceiveOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgPa
 	}
 }
 
-struct nDimWalker
-{
-	//n axis/dimensions available
-	int n = 0;
-
-	//every i-th axis is [0,sizes[i]] interval
-	int* sizes = NULL;
-	//current position in this space
-	int* pos   = NULL;
-
-	//adjusts pos and returns false there is no next step
-	bool nextStep(void)
-	{
-		pos[0]++; //next step
-
-		//check for "overflows"
-		int i=0;
-		while (i < n && pos[i] == sizes[i])
-		{
-			pos[i]=0;
-			pos[i+1]++;
-			++i;
-		}
-
-		return i < n;
-	}
-
-	nDimWalker(const int* _sizes,const int _n)
-	{
-		n = _n;
-		sizes = new int[n];
-		pos   = new int[n];
-
-		for (int i=0; i < n; ++i)
-		{
-			sizes[i]=_sizes[i];
-			pos[i]=0;
-		}
-	}
-
-	~nDimWalker()
-	{
-		if (sizes != NULL) delete[] sizes;
-		if (pos != NULL)   delete[] pos;
-	}
-
-	void printPos(void)
-	{
-		std::cout << "[";
-		for (int i=0; i < n-1; ++i)
-			std::cout << pos[i] << ",";
-		std::cout << pos[n-1] << "]";
-	}
-};
 
 template <typename VT>
 void ReceiveOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
