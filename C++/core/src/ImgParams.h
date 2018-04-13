@@ -47,17 +47,17 @@ typedef struct imgParams
 	voxelTypes enumVoxelType() const
 	{
 		voxelTypes vt;
-		if (voxelType.find("Byte") != std::string::npos) vt = Byte;
-		else
 		if (voxelType.find("UnsignedByte") != std::string::npos) vt = UnsignedByte;
 		else
-		if (voxelType.find("Short") != std::string::npos) vt = Short;
+		if (voxelType.find("Byte") != std::string::npos) vt = Byte;
 		else
 		if (voxelType.find("UnsignedShort") != std::string::npos) vt = UnsignedShort;
 		else
-		if (voxelType.find("Long") != std::string::npos) vt = Long;
+		if (voxelType.find("Short") != std::string::npos) vt = Short;
 		else
 		if (voxelType.find("UnsignedLong") != std::string::npos) vt = UnsignedLong;
+		else
+		if (voxelType.find("Long") != std::string::npos) vt = Long;
 		else
 		if (voxelType.find("Float") != std::string::npos) vt = Float;
 		else
