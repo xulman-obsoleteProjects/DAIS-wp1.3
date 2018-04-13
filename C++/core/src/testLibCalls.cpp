@@ -4,23 +4,29 @@
 #include "ReceiveOneImage.h"
 
 template <typename VT>
-void getData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* data)
+void getData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
 {
 	// see which img receiver we need to call
 	if (imgParams.backendType.find("Array") != std::string::npos)
 	{
 		//ArrayImg
-		ReceiveOneArrayImage<VT>(cnnParams,(VT*)data);
+		ReceiveOneArrayImage<VT>(cnnParams,imgParams,data);
 	}
 	else
 	{
 		//PlanarImg -- convenient (in fact, converts to ArrayImg)
-		ReceiveOnePlanarImage<VT>(cnnParams,imgParams,(VT*)data);
+		ReceiveOneArrayImage<VT>(cnnParams,imgParams,data);
+		//ReceiveOnePlanarImage<VT>(cnnParams,imgParams,data);
 
 		//or:
 		//PlanarImg -- "the hard way"
 		//TODO
 	}
+
+	//print first 20 values just to see that something has been transmitted
+	for (long i=0; i < 20; ++i)
+		std::cout << (int)data[i] << ",";
+	std::cout << std::endl;
 }
 
 int main(void)
@@ -68,24 +74,37 @@ int main(void)
 			case imgParams::voxelTypes::Byte:
 				getData(cnnParams,imgParams,(char*)data);
 				break;
-
 			case imgParams::voxelTypes::UnsignedByte:
 				getData(cnnParams,imgParams,(unsigned char*)data);
 				break;
 
+			case imgParams::voxelTypes::Short:
+				getData(cnnParams,imgParams,(short*)data);
+				break;
+			case imgParams::voxelTypes::UnsignedShort:
+				getData(cnnParams,imgParams,(unsigned short*)data);
+				break;
+
+			case imgParams::voxelTypes::Long:
+				getData(cnnParams,imgParams,(long*)data);
+				break;
+			case imgParams::voxelTypes::UnsignedLong:
+				getData(cnnParams,imgParams,(unsigned long*)data);
+				break;
+
+			case imgParams::voxelTypes::Float:
+				getData(cnnParams,imgParams,(float*)data);
+				break;
+			case imgParams::voxelTypes::Double:
+				getData(cnnParams,imgParams,(double*)data);
+				break;
+
 			default:
-				std::cout << "ups, not ready yet for some other voxel type...\n";
+				std::cout << "ups, not ready yet for voxel type: " << imgParams.voxelType << "\n";
 		}
 
 		//close the connection, calls also cnnParams.clear()
 		FinishReceivingOneImage(cnnParams);
-
-
-/*
-		//write first 20 pixels just for the fun of the test...
-		for (int i=0; i < 20; ++i)
-			std::cout << (int)data[i] << ",";
-*/
 
 		//free the memory! we're not in Java :)
 		imgParams.clear();
