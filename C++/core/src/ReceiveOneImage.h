@@ -129,6 +129,16 @@ void TransmitOneArrayImage(connectionParams_t& cnnParams,const imgParams_t& imgP
 template <typename VT>
 void TransmitOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data);
 
+// convenience wrapper to call the appropriate one image's raw data transmitter
+template <typename VT>
+void TransmitOneImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
+{
+	if (imgParams.backendType.find("Array") != std::string::npos)
+		TransmitOneArrayImage<VT>(cnnParams,imgParams,data);
+	else
+		TransmitOnePlanarImage<VT>(cnnParams,imgParams,data);
+}
+
 /**
  * After the metadata has arrived, use this function to fill the output data
  * array. The function takes care of one 'shot' of the transmission, refer to

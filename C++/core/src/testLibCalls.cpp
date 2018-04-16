@@ -6,17 +6,7 @@
 template <typename VT>
 void transmitData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
 {
-	// see which img receiver we need to call
-	if (imgParams.backendType.find("Array") != std::string::npos)
-	{
-		//ArrayImg
-		TransmitOneArrayImage<VT>(cnnParams,imgParams,data);
-	}
-	else
-	{
-		//PlanarImg
-		TransmitOnePlanarImage<VT>(cnnParams,imgParams,data);
-	}
+	TransmitOneImage(cnnParams,imgParams,data);
 
 	if (cnnParams.isSender == false)
 	{
