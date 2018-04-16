@@ -127,7 +127,7 @@ void SendMetadata(connectionParams_t& cnnParams,const std::list<std::string>& me
 
 	//convert the metadata into a string and send it
 	std::string msg(smsg.str());
-	cnnParams.socket->send(msg.c_str(),msg.size());
+	cnnParams.socket->send(msg.c_str(),msg.size(),ZMQ_SNDMORE);
 }
 
 void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaData)
@@ -216,7 +216,8 @@ void TransmitOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& img
 	//essentially iterate over the planes and for each
 	//call TransmitChunkFromOneImage() with appropriately adjusted data pointer
 	do {
-		//std::cout << "doing pos="; planeWalker.printPos(); std::cout << "\n";
+		//std::cout << "doing pos="; planeWalker.printPos();
+		//std::cout << ", SND_MORE=" << (planeWalker.remainingSteps>0) << "\n";
 
 		//NOW JUST PLACING JUST A PLANE ONE AFTER ANOTHER (and we need no planeWalker...)
 		//
@@ -279,8 +280,8 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 				//TODO waitForNextMessage()
 				cnnParams.socket->recv((void*)(data+offset),firstBlocksLen*arrayElemSize);
 				SwapEndianness(data+offset,firstBlocksLen);
-				offset += firstBlocksLen;
 			}
+			offset += firstBlocksLen;
 		}
 
 		if (lastBlockLen > 0)
