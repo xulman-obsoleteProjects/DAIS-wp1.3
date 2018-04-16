@@ -31,7 +31,8 @@ void testReceiver(void)
 		//init the connection and possibly wait for the header information
 		imgParams_t imgParams;
 		connectionParams_t cnnParams;
-		StartReceivingOneImage(imgParams,cnnParams,54545,10);
+		//StartReceivingOneImage(imgParams,cnnParams,54545,10);
+		StartRequestingOneImage(imgParams,cnnParams,"localhost:54545",10);
 
 		//aha, so this is what we will receive -- do what you need to get ready for that
 		std::cout << "Going to receive an image: ";
@@ -155,7 +156,8 @@ void testSender(void)
 			data[i + i*610]=data[5 + i + i*610]=20;
 
 		connectionParams_t cnnParams;
-		StartSendingOneImage(imgParams,cnnParams,"localhost:54546",10);
+		//StartSendingOneImage(imgParams,cnnParams,"localhost:54546",10);
+		StartServingOneImage(imgParams,cnnParams,54545,10);
 
 		//set and send metadata
 		std::list<std::string> metaData;
@@ -185,8 +187,8 @@ void testSender(void)
 
 int main(void)
 {
-	testReceiver();
-	//testSender();
+	//testReceiver();
+	testSender();
 
 	return (0);
 }

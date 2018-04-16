@@ -13,6 +13,9 @@
 //short-cut to throwing runtime_error exceptions
 using std::runtime_error;
 
+//aux internal functions to send/receive initial handshake message
+void Handshake_GiveImage(const imgParams_t& imgParams,connectionParams_t& cnnParams);
+void Handshake_GetImage(imgParams_t& imgParams,connectionParams_t& cnnParams);
 
 void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnParams,
                           const char* addr, const int timeOut)
@@ -20,20 +23,108 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 	//init the context and get the socket
 	cnnParams.context  = new zmq::context_t(1);
 	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
-	cnnParams.addr = std::string("tcp://")+std::string(addr);
+	cnnParams.addr     = std::string("tcp://")+std::string(addr);
 	cnnParams.timeOut  = timeOut;
 	cnnParams.isSender = true;
 
 	//connects the socket with the given address
 	cnnParams.socket->connect(cnnParams.addr);
 
+	//the common routine to implement the initial handshake
+	Handshake_GiveImage(imgParams,cnnParams);
+}
+
+void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
+                            const int port, const int timeOut)
+{
+	//init the context and get the socket
+	cnnParams.context  = new zmq::context_t(1);
+	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
+	cnnParams.port     = port;
+	cnnParams.timeOut  = timeOut;
+	cnnParams.isSender = false;
+
+	//binds the socket to the given port
+	char chrString[1024];
+	sprintf(chrString,"tcp://*:%d",port);
+	cnnParams.socket->bind(chrString);
+
+	//the common routine to implement the initial handshake
+	Handshake_GetImage(imgParams,cnnParams);
+}
+
+
+void StartServingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnParams,
+                          const int port, const int timeOut)
+{
+	//init the context and get the socket
+	cnnParams.context  = new zmq::context_t(1);
+	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
+	cnnParams.port     = port;
+	cnnParams.timeOut  = timeOut;
+	cnnParams.isSender = true;
+
+	//binds the socket to the given port
+	char chrString[1024];
+	sprintf(chrString,"tcp://*:%d",port);
+	cnnParams.socket->bind(chrString);
+
+	//wait for the connection-requesting message
+	waitForFirstMessage(cnnParams,"No connection requested yet.");
+
+	//analyse incoming message
+	//read income message and check if this is really an "invitation packet"
+	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
+
+	//check sanity of the received buffer
+	if (recLength < 7)
+		throw new runtime_error("Received (near) empty connection request message. Stopping.");
+	if (recLength == 1024)
+		throw new runtime_error("Couldn't read complete connection request message. Stopping.");
+	if (chrString[0] != 'c' ||
+	    chrString[1] != 'a' ||
+	    chrString[2] != 'n' ||
+	    chrString[3] != ' ' ||
+	    chrString[4] != 'g' ||
+	    chrString[5] != 'e' ||
+	    chrString[6] != 't')
+		throw new runtime_error("Protocol error, expected connection request.");
+
+	//the common routine to implement the initial handshake
+	Handshake_GiveImage(imgParams,cnnParams);
+}
+
+void StartRequestingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
+                             const char* addr, const int timeOut)
+{
+	//init the context and get the socket
+	cnnParams.context  = new zmq::context_t(1);
+	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
+	cnnParams.addr     = std::string("tcp://")+std::string(addr);
+	cnnParams.timeOut  = timeOut;
+	cnnParams.isSender = false;
+
+	//connects the socket with the given address
+	cnnParams.socket->connect(cnnParams.addr);
+
+	//sends the connection-requesting message
+	char canGetMsg[] = "can get";
+	cnnParams.socket->send(canGetMsg,7);
+
+	//the common routine to implement the initial handshake
+	Handshake_GetImage(imgParams,cnnParams);
+}
+
+
+void Handshake_GiveImage(const imgParams_t& imgParams,connectionParams_t& cnnParams)
+{
 	//build the initial handshake header/message...
 	std::ostringstream hdrMsg;
 	hdrMsg << "v1 dimNumber " << imgParams.dim;
 	for (int i=0; i < imgParams.dim; ++i)
 		hdrMsg << " " << imgParams.sizes[i];
 
-	hdrMsg << " " << imgParams.voxelType << " PlanarImg ";
+	hdrMsg << " " << imgParams.voxelType << " " << imgParams.backendType << " ";
 	//...and convert it into a string
 	std::string hdrStr(hdrMsg.str());
 
@@ -59,28 +150,15 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 		throw new runtime_error("Protocol error, expected initial confirmation from the receiver.");
 }
 
-void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
-                            const int port, const int timeOut)
+void Handshake_GetImage(imgParams_t& imgParams,connectionParams_t& cnnParams)
 {
-	//init the context and get the socket
-	cnnParams.context  = new zmq::context_t(1);
-	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
-	cnnParams.port     = port;
-	cnnParams.timeOut  = timeOut;
-	cnnParams.isSender = false;
-
-	//binds the socket to the given port
-	char chrString[1024];
-	sprintf(chrString,"tcp://*:%d",port);
-	cnnParams.socket->bind(chrString);
-
 	//attempt to receive the first message, while waiting up to timeOut seconds
 	waitForFirstMessage(cnnParams,"No connection established yet.");
 	/*
 	//replace the previous waitForFirstMessage() with this block if you
 	//want to have verbose reporting, etc.
 	int timeWaited = 0;
-	while (timeWaited < timeOut
+	while (timeWaited < cnnParams.timeOut
 	  && (cnnParams.socket->getsockopt<int>(ZMQ_EVENTS) & ZMQ_EVENT_CONNECTED) != ZMQ_EVENT_CONNECTED)
 	{
 		std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -94,6 +172,7 @@ void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams
 	*/
 
 	//ok, there is a connection; receive first message
+	char chrString[1024];
 	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
 
 	//check sanity of the received buffer

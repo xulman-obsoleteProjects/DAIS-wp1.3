@@ -16,6 +16,8 @@
  * Populates the handle cnnParams on the established connection.
  * Use this handle in the following functions.
  *
+ * The function works in conjuction with StartReceivingOneImage().
+ *
  * Expected sequence of calls is as follows:
 
 imgParams_t imgParams;
@@ -43,6 +45,15 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
                           const char* addr, const int timeOut = 60);
 
 /**
+ * The same as StartSendingOneImage() except that the connection has to come
+ * from the other peer. This function thus listens on given port.
+ *
+ * The function works in conjuction with StartRequestingOneImage().
+ */
+void StartServingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnParams,
+                          const int port, const int timeOut = 60);
+
+/**
  * Waits not longer than timeOut seconds on local port for the initial handshake
  * message of the new image transfer, and fills the output imgParams image geometry
  * data. Throws exceptions if something goes wrong: timeOut, unable to parse,
@@ -50,6 +61,8 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
  *
  * Populates the handle cnnParams on the established connection.
  * Use this handle in the following functions.
+ *
+ * The function works in conjuction with StartSendingOneImage().
  *
  * Expected sequence of calls is as follows:
 
@@ -72,6 +85,15 @@ delete[] data;
  */
 void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
                             const int port, const int timeOut = 60);
+
+/**
+ * The same as StartReceivingOneImage() except that this one initiates the
+ * connection to the other peer. This function thus requires addr(ess).
+ *
+ * The function works in conjuction with StartRequestingOneImage().
+ */
+void StartRequestingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams,
+                             const char* addr, const int timeOut = 60);
 
 //meta data Message Separator
 const char mdMsgSep[] = "__QWE__";
