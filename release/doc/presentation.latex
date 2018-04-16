@@ -253,7 +253,7 @@ A: imgP = ImgPacker.requestImage("tcp://"+remoteURL, timeoutTime[, logger]);
 \begin{frame}
 	\frametitle{The Control Flow of API of DAIS wp 1.3}
 	Technical details, A sends image to B:
-	\scriptsize
+	\tiny
 	\begin{itemize}
 \item A calls ImgPacker.sendImage()
 \item A$\rightarrow$ sends "v1 dimNumber 2 256 256 Float PlanarImg" (example):
