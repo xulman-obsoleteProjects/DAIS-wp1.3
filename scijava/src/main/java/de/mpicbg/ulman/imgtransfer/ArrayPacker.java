@@ -48,9 +48,8 @@ public class ArrayPacker
 	void waitForFirstMessage(final ZMQ.Socket socket, final int _timeOut)
 	{
 		int timeWaited = 0;
-		while (timeWaited < _timeOut && (socket.getEvents() & 1) != 1)
-		//TODO: determine proper constant for getEvents()
-		//TODO: expected return value is 1. bit set according to tests
+		while (timeWaited < _timeOut
+		  && (socket.getEvents() & ZMQ.EVENT_CONNECTED) != ZMQ.EVENT_CONNECTED)
 		{
 			//if nothing found, wait a while before another checking attempt
 			try {
@@ -62,7 +61,7 @@ public class ArrayPacker
 			++timeWaited;
 		}
 
-		if ((socket.getEvents() & 1) != 1)
+		if ((socket.getEvents() & ZMQ.EVENT_CONNECTED) != ZMQ.EVENT_CONNECTED)
 			throw new RuntimeException("Reached timeout for the first incoming data.");
 	}
 
