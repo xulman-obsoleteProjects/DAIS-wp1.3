@@ -3,6 +3,8 @@
 #include <sstream>
 #include <list>
 #include <string>
+#include <chrono>
+#include <thread>
 #include <zmq.hpp>
 
 #include "ImgParams.h"
@@ -19,6 +21,7 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 	cnnParams.context  = new zmq::context_t(1);
 	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
 	cnnParams.addr = std::string("tcp://")+std::string(addr);
+	cnnParams.timeOut  = timeOut;
 	cnnParams.isSender = true;
 
 	//connects the socket with the given address
@@ -37,7 +40,7 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 	std::cout << "Sending: " << hdrStr << "\n";
 	cnnParams.socket->send(hdrStr.c_str(),hdrStr.size());
 
-	//TODO: waitForFirstMessage()
+	waitForFirstMessage(cnnParams,"Timeout when waiting for \"start sending green light\".");
 
 	//read income message and check if the receiving party is ready to receive our data
 	char chrString[1024];
@@ -63,6 +66,7 @@ void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams
 	cnnParams.context  = new zmq::context_t(1);
 	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
 	cnnParams.port     = port;
+	cnnParams.timeOut  = timeOut;
 	cnnParams.isSender = false;
 
 	//binds the socket to the given port
@@ -71,7 +75,25 @@ void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams
 	cnnParams.socket->bind(chrString);
 
 	//attempt to receive the first message, while waiting up to timeOut seconds
-	//TODO add waitForIncomingData()
+	waitForFirstMessage(cnnParams,"No connection established yet.");
+	/*
+	//replace the previous waitForFirstMessage() with this block if you
+	//want to have verbose reporting, etc.
+	int timeWaited = 0;
+	while (timeWaited < timeOut
+	  && (cnnParams.socket->getsockopt<int>(ZMQ_EVENTS) & ZMQ_EVENT_CONNECTED) != ZMQ_EVENT_CONNECTED)
+	{
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (timeWaited % 10)
+			std::cout << "Waiting already " << timeWaited << " seconds.\n";
+		++timeWaited;
+	}
+	//still no connection?
+	if ((cnnParams.socket->getsockopt<int>(ZMQ_EVENTS) & ZMQ_EVENT_CONNECTED) != ZMQ_EVENT_CONNECTED)
+		throw new runtime_error("No connection established yet.");
+	*/
+
+	//ok, there is a connection; receive first message
 	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
 
 	//check sanity of the received buffer
@@ -136,10 +158,10 @@ void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaD
 	char readyMsg[] = "ready";
 	cnnParams.socket->send(readyMsg,5,0);
 
-	//TODO waitForFirstMessage()
+	waitForFirstMessage(cnnParams,"Timeout when waiting for metadata.");
 	zmq::message_t msg;
 	if (!cnnParams.socket->recv(&msg))
-		throw new runtime_error("Haven't received metadata at all.");
+		throw new runtime_error("Empty metadata received.");
 
 	//"convert" to std::string (likely by making extra copy of it)
 	//NB: haven't find how to discard/dispose the msg :(
@@ -250,7 +272,7 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 		}
 		else
 		{
-			//TODO waitForNextMessage()
+			waitForNextMessage(cnnParams);
 			cnnParams.socket->recv((void*)data,arrayLength*arrayElemSize);
 			SwapEndianness(data,arrayLength);
 		}
@@ -277,7 +299,7 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 			}
 			else
 			{
-				//TODO waitForNextMessage()
+				waitForNextMessage(cnnParams);
 				cnnParams.socket->recv((void*)(data+offset),firstBlocksLen*arrayElemSize);
 				SwapEndianness(data+offset,firstBlocksLen);
 			}
@@ -295,7 +317,7 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 			}
 			else
 			{
-				//TODO waitForNextMessage()
+				waitForNextMessage(cnnParams);
 				cnnParams.socket->recv((void*)(data+offset),lastBlockLen*arrayElemSize);
 				SwapEndianness(data+offset,lastBlockLen);
 			}
@@ -307,7 +329,7 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 void FinishSendingOneImage(connectionParams_t& cnnParams)
 {
 	//wait for confirmation from the receiver
-	//TODO: waitForFirstMessage
+	waitForFirstMessage(cnnParams,"Timeout when waiting for the confirmation of a complete transfer.");
 
 	//read income message and check if the receiving party is ready to receive our data
 	char doneMsg[1024];
@@ -333,6 +355,47 @@ void FinishReceivingOneImage(connectionParams_t& cnnParams)
 	char doneMsg[] = "done";
 	cnnParams.socket->send(doneMsg,4,0);
 	cnnParams.clear();
+}
+
+//-----------
+void waitForFirstMessage(connectionParams_t& cnnParams, const char* errMsg, const int _timeOut)
+{
+	int timeWaited = 0;
+	while (timeWaited < _timeOut
+	  && (cnnParams.socket->getsockopt<int>(ZMQ_EVENTS) & ZMQ_EVENT_CONNECTED) != ZMQ_EVENT_CONNECTED)
+	{
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		++timeWaited;
+	}
+
+	//still no connection?
+	if ((cnnParams.socket->getsockopt<int>(ZMQ_EVENTS) & ZMQ_EVENT_CONNECTED) != ZMQ_EVENT_CONNECTED)
+	{
+		if (errMsg == NULL)
+			throw new runtime_error("Reached timeout for the first incoming data.");
+		else
+			throw new runtime_error(errMsg);
+	}
+}
+
+inline void waitForFirstMessage(connectionParams_t& cnnParams, const char* errMsg)
+{
+	waitForFirstMessage(cnnParams,errMsg,cnnParams.timeOut);
+}
+
+void waitForNextMessage(connectionParams_t& cnnParams)
+{
+	int timeWaited = 0;
+	while (timeWaited < cnnParams.timeOut
+	  && cnnParams.socket->getsockopt<int>(ZMQ_RCVMORE) != 1) //&& !socket.hasReceiveMore()
+	{
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		++timeWaited;
+	}
+
+	//still no connection?
+	if (cnnParams.socket->getsockopt<int>(ZMQ_RCVMORE) != 1)
+		throw new runtime_error("Reached timeout for the next incoming data.");
 }
 
 

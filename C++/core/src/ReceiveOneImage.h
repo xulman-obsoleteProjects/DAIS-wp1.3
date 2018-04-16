@@ -14,10 +14,26 @@
  */
 typedef struct connectionParams
 {
+	//ZeroMQ internals/handles relevant for this connection
 	zmq::context_t* context = NULL;
 	zmq::socket_t*  socket  = NULL;
+
+	//connection details: tcp://localhost:this.port if isSender==false
 	int port = 0;
+	//connection details: tcp://this.addr           if isSender==true
 	std::string addr;
+
+	/**
+	 * A timeout interval used while waiting for next (not the first one)
+	 * "packet/message/chunk of data". That is, a waiting time applied only once
+	 * connection got established. Can be considered as a timeout before
+	 * connection is declared to be broken.
+	 *
+	 * Shouldn't be negative. Default is 30 seconds.
+	 */
+	int timeOut = 60;
+
+	//direction of this connection: from array to socket is when isSender==true
 	bool isSender = false;
 
 	//returns the attributes to the initial state in a way polite for ZeroMQ
@@ -258,4 +274,27 @@ typedef struct nDimWalker
 		std::cout << pos[n-1] << "]";
 	}
 } nDimWalker_t;
+
+
+/**
+ * Waits given _timeOut seconds on the current connection cnnParams for a message.
+ * If not message appears in time, the function throws runtime_error with the errMsg
+ * string. One can use this function everytime one wants to know whether successive
+ * cnnParams.socket->recv() will block (no message arriving) or not (something has
+ * arrived already).
+ */
+void waitForFirstMessage(connectionParams_t& cnnParams, const char* errMsg, const int _timeOut);
+
+// calls the above function with timeOut taken from inside cnnParams
+void waitForFirstMessage(connectionParams_t& cnnParams, const char* errMsg);
+
+/**
+ * ZeroMQ allows to send "multi-part" messages, that is, when SND_MORE flag is used
+ * with socket->send(). Use this function to wait for any subsequent part of
+ * such message -- not for the first part (for which the waitForFirstMessage() should
+ * be used). However, sometimes the sending party will not start sending anything
+ * until all sending material is cumulated and ready to be sent away in full -- in
+ * this case, the waitForFirstMessage() will complain before this one.
+ */
+void waitForNextMessage(connectionParams_t& cnnParams);
 #endif
