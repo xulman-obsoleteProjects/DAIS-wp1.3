@@ -1,4 +1,8 @@
-# Compiled class file
+# Compiled object files (C++)
+*.o
+BUILD
+
+# Compiled class file (Java)
 *.class
 KNIME/bin
 
@@ -24,11 +28,15 @@ hs_err_pid*
 
 # Maven #
 /target/
+*/target/
 
 # Eclipse #
 /.classpath
 /.project
 /.settings/
+*/.classpath
+*/.project
+*/.settings/
 
 # IntelliJ #
 /.idea/
