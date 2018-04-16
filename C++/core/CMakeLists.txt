@@ -30,12 +30,12 @@ endif()
 
 #------------------------------------------------------------------------
 set(LIBHEADERS
-  src/ImgParams.h
-  src/ReceiveOneImage.h
+  src/TransferImage_Utils.h
+  src/TransferImage.h
   )
 
 set(LIBSOURCES
-  src/ReceiveOneImage.cpp
+  src/TransferImage.cpp
   )
 
 add_library(DAIS-wp13 ${LIBSOURCES})

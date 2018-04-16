@@ -7,8 +7,8 @@
 #include <thread>
 #include <zmq.hpp>
 
-#include "ImgParams.h"
-#include "ReceiveOneImage.h"
+#include "TransferImage_Utils.h"
+#include "TransferImage.h"
 
 //short-cut to throwing runtime_error exceptions
 using std::runtime_error;

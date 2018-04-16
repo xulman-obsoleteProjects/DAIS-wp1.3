@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "ImgParams.h"
-#include "ReceiveOneImage.h"
+#include "TransferImage_Utils.h"
+#include "TransferImage.h"
 
 template <typename VT>
 void transmitData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
@@ -14,11 +14,12 @@ void transmitData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT*
 		for (long i=0; i < 20; ++i)
 			std::cout << (int)data[i] << ",";
 		std::cout << std::endl;
-
+/*
 		//next slice
 		for (long i=0; i < 20; ++i)
 			std::cout << (int)data[imgParams.sizes[0]*imgParams.sizes[1]+i] << ",";
 		std::cout << std::endl;
+*/
 	}
 }
 
@@ -30,7 +31,7 @@ void testReceiver(void)
 		//init the connection and possibly wait for the header information
 		imgParams_t imgParams;
 		connectionParams_t cnnParams;
-		StartReceivingOneImage(imgParams,cnnParams,54545);
+		StartReceivingOneImage(imgParams,cnnParams,54545,10);
 
 		//aha, so this is what we will receive -- do what you need to get ready for that
 		std::cout << "Going to receive an image: ";
@@ -154,7 +155,7 @@ void testSender(void)
 			data[i + i*610]=data[5 + i + i*610]=20;
 
 		connectionParams_t cnnParams;
-		StartSendingOneImage(imgParams,cnnParams,"localhost:54545");
+		StartSendingOneImage(imgParams,cnnParams,"localhost:54546",10);
 
 		//set and send metadata
 		std::list<std::string> metaData;
@@ -184,8 +185,8 @@ void testSender(void)
 
 int main(void)
 {
-	//testReceiver();
-	testSender();
+	testReceiver();
+	//testSender();
 
 	return (0);
 }
