@@ -44,7 +44,7 @@ void StartSendingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
 
 	//check sanity of the received buffer
-	if (recLength <= 4)
+	if (recLength < 5)
 		throw new runtime_error("Received (near) empty initial (handshake) message. Stopping.");
 	if (recLength == 1024)
 		throw new runtime_error("Couldn't read complete initial (handshake) message. Stopping.");
@@ -305,7 +305,24 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 
 void FinishSendingOneImage(connectionParams_t& cnnParams)
 {
-	//TODO: put waiting for "done" maybe here
+	//wait for confirmation from the receiver
+	//TODO: waitForFirstMessage
+
+	//read income message and check if the receiving party is ready to receive our data
+	char doneMsg[1024];
+	int recLength = cnnParams.socket->recv((void*)doneMsg,1024,0);
+
+	//check sanity of the received buffer
+	if (recLength < 4)
+		throw new runtime_error("Received (near) empty final (handshake) message. Stopping.");
+	if (recLength == 1024)
+		throw new runtime_error("Couldn't read complete final (handshake) message. Stopping.");
+	if (doneMsg[0] != 'd' ||
+	    doneMsg[1] != 'o' ||
+	    doneMsg[2] != 'n' ||
+	    doneMsg[3] != 'e')
+		throw new runtime_error("Protocol error, expected final confirmation from the receiver.");
+
 	cnnParams.clear();
 }
 

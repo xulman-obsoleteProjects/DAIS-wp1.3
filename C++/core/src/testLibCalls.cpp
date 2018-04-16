@@ -4,7 +4,7 @@
 #include "ReceiveOneImage.h"
 
 template <typename VT>
-void getData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
+void transmitData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
 {
 	// see which img receiver we need to call
 	if (imgParams.backendType.find("Array") != std::string::npos)
@@ -18,10 +18,18 @@ void getData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* cons
 		TransmitOnePlanarImage<VT>(cnnParams,imgParams,data);
 	}
 
-	//print first 20 values just to see that something has been transmitted
-	for (long i=0; i < 20; ++i)
-		std::cout << (int)data[i] << ",";
-	std::cout << std::endl;
+	if (cnnParams.isSender == false)
+	{
+		//print first 20 values just to see that something has been transmitted
+		for (long i=0; i < 20; ++i)
+			std::cout << (int)data[i] << ",";
+		std::cout << std::endl;
+
+		//next slice
+		for (long i=0; i < 20; ++i)
+			std::cout << (int)data[imgParams.sizes[0]*imgParams.sizes[1]+i] << ",";
+		std::cout << std::endl;
+	}
 }
 
 void testReceiver(void)
@@ -67,38 +75,38 @@ void testReceiver(void)
 		switch (imgParams.enumVoxelType())
 		{
 			case imgParams::voxelTypes::Byte:
-				getData(cnnParams,imgParams,(char*)data);
+				transmitData(cnnParams,imgParams,(char*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedByte:
-				getData(cnnParams,imgParams,(unsigned char*)data);
+				transmitData(cnnParams,imgParams,(unsigned char*)data);
 				break;
 
 			case imgParams::voxelTypes::Short:
-				getData(cnnParams,imgParams,(signed short*)data);
+				transmitData(cnnParams,imgParams,(signed short*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedShort:
-				getData(cnnParams,imgParams,(unsigned short*)data);
+				transmitData(cnnParams,imgParams,(unsigned short*)data);
 				break;
 
 			case imgParams::voxelTypes::Int:
-				getData(cnnParams,imgParams,(signed int*)data);
+				transmitData(cnnParams,imgParams,(signed int*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedInt:
-				getData(cnnParams,imgParams,(unsigned int*)data);
+				transmitData(cnnParams,imgParams,(unsigned int*)data);
 				break;
 
 			case imgParams::voxelTypes::Long:
-				getData(cnnParams,imgParams,(signed long*)data);
+				transmitData(cnnParams,imgParams,(signed long*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedLong:
-				getData(cnnParams,imgParams,(unsigned long*)data);
+				transmitData(cnnParams,imgParams,(unsigned long*)data);
 				break;
 
 			case imgParams::voxelTypes::Float:
-				getData(cnnParams,imgParams,(float*)data);
+				transmitData(cnnParams,imgParams,(float*)data);
 				break;
 			case imgParams::voxelTypes::Double:
-				getData(cnnParams,imgParams,(double*)data);
+				transmitData(cnnParams,imgParams,(double*)data);
 				break;
 
 			default:
@@ -136,7 +144,7 @@ void testSender(void)
 		imgParams.sizes[1] = 590;
 		imgParams.sizes[2] = 3;
 		imgParams.voxelType = std::string("UnsignedShortType");
-		imgParams.backendType = std::string("PlanarImg");
+		imgParams.backendType = std::string("PlanarImg"); //IMPORTANT
 
 		//aha, so this is what we will send
 		std::cout << "Going to send an image: ";
@@ -158,7 +166,15 @@ void testSender(void)
 		connectionParams_t cnnParams;
 		StartSendingOneImage(imgParams,cnnParams,"localhost:54545");
 
-//........
+		//set and send metadata
+		std::list<std::string> metaData;
+		//IMPORTANT two lines: 'imagename' and 'some name with allowed whitespaces'
+		metaData.push_back(std::string("imagename"));
+		metaData.push_back(std::string("sent from C++ world"));
+		SendMetadata(cnnParams,metaData);
+
+		//send the raw pixel image data
+		transmitData(cnnParams,imgParams,data);
 
 		//close the connection, calls also cnnParams.clear()
 		FinishSendingOneImage(cnnParams);
