@@ -3,25 +3,6 @@
 #include "TransferImage_Utils.h"
 #include "TransferImage.h"
 
-template <typename VT>
-void transmitData(connectionParams_t& cnnParams,const imgParams_t& imgParams,VT* const data)
-{
-	TransmitOneImage(cnnParams,imgParams,data);
-
-	if (cnnParams.isSender == false)
-	{
-		//print first 20 values just to see that something has been transmitted
-		for (long i=0; i < 20; ++i)
-			std::cout << (int)data[i] << ",";
-		std::cout << std::endl;
-/*
-		//next slice
-		for (long i=0; i < 20; ++i)
-			std::cout << (int)data[imgParams.sizes[0]*imgParams.sizes[1]+i] << ",";
-		std::cout << std::endl;
-*/
-	}
-}
 
 void testReceiver(void)
 {
@@ -67,38 +48,38 @@ void testReceiver(void)
 		switch (imgParams.enumVoxelType())
 		{
 			case imgParams::voxelTypes::Byte:
-				transmitData(cnnParams,imgParams,(char*)data);
+				TransmitOneImage(cnnParams,imgParams,(char*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedByte:
-				transmitData(cnnParams,imgParams,(unsigned char*)data);
+				TransmitOneImage(cnnParams,imgParams,(unsigned char*)data);
 				break;
 
 			case imgParams::voxelTypes::Short:
-				transmitData(cnnParams,imgParams,(signed short*)data);
+				TransmitOneImage(cnnParams,imgParams,(signed short*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedShort:
-				transmitData(cnnParams,imgParams,(unsigned short*)data);
+				TransmitOneImage(cnnParams,imgParams,(unsigned short*)data);
 				break;
 
 			case imgParams::voxelTypes::Int:
-				transmitData(cnnParams,imgParams,(signed int*)data);
+				TransmitOneImage(cnnParams,imgParams,(signed int*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedInt:
-				transmitData(cnnParams,imgParams,(unsigned int*)data);
+				TransmitOneImage(cnnParams,imgParams,(unsigned int*)data);
 				break;
 
 			case imgParams::voxelTypes::Long:
-				transmitData(cnnParams,imgParams,(signed long*)data);
+				TransmitOneImage(cnnParams,imgParams,(signed long*)data);
 				break;
 			case imgParams::voxelTypes::UnsignedLong:
-				transmitData(cnnParams,imgParams,(unsigned long*)data);
+				TransmitOneImage(cnnParams,imgParams,(unsigned long*)data);
 				break;
 
 			case imgParams::voxelTypes::Float:
-				transmitData(cnnParams,imgParams,(float*)data);
+				TransmitOneImage(cnnParams,imgParams,(float*)data);
 				break;
 			case imgParams::voxelTypes::Double:
-				transmitData(cnnParams,imgParams,(double*)data);
+				TransmitOneImage(cnnParams,imgParams,(double*)data);
 				break;
 
 			default:
@@ -107,6 +88,17 @@ void testReceiver(void)
 
 		//close the connection, calls also cnnParams.clear()
 		FinishReceivingOneImage(cnnParams);
+
+		//print first 20 values just to see that something has been transmitted
+		for (long i=0; i < 20; ++i)
+			std::cout << (int)data[i] << ",";
+		std::cout << std::endl;
+/*
+		//next slice
+		for (long i=0; i < 20; ++i)
+			std::cout << (int)data[imgParams.sizes[0]*imgParams.sizes[1]+i] << ",";
+		std::cout << std::endl;
+*/
 
 		//free the memory! we're not in Java :)
 		imgParams.clear();
@@ -167,7 +159,7 @@ void testSender(void)
 		SendMetadata(cnnParams,metaData);
 
 		//send the raw pixel image data
-		transmitData(cnnParams,imgParams,data);
+		TransmitOneImage(cnnParams,imgParams,data);
 
 		//close the connection, calls also cnnParams.clear()
 		FinishSendingOneImage(cnnParams);
