@@ -39,11 +39,23 @@ set(LIBSOURCES
   )
 
 add_library(DAIS-wp13 ${LIBSOURCES})
+#target_link_libraries(DAIS-wp13 STATIC libzmq-static) -- STATIC does not work on Apple
 target_link_libraries(DAIS-wp13 libzmq-static)
+set_target_properties(DAIS-wp13 PROPERTIES PUBLIC_HEADER "${LIBHEADERS}")
 
 #------------------------------------------------------------------------
-option (TEST_BINARY "Build also src/testLibCalls.cpp to have some testing binary?" OFF)
-if (TEST_BINARY)
+option (BUILD_TEST_BINARY "Build also src/testLibCalls.cpp to have some testing binary?" OFF)
+if (BUILD_TEST_BINARY)
 	add_executable(testLibCalls src/testLibCalls.cpp)
 	target_link_libraries(testLibCalls DAIS-wp13)
-endif (TEST_BINARY)
+endif (BUILD_TEST_BINARY)
+
+#------------------------------------------------------------------------
+install (TARGETS DAIS-wp13 DESTINATION lib PUBLIC_HEADER DESTINATION include)
+
+option (INSTALL_COPYOF_ZEROMQ "Install also ZeroMQ header and library along with this library?" OFF)
+# should also install from  variables: ZeroMQ_INCLUDE_DIR and ZeroMQ_STATIC_LIBRARY
+if (INSTALL_COPYOF_ZEROMQ)
+	install (FILES      ${ZeroMQ_STATIC_LIBRARY} DESTINATION lib)
+	install (DIRECTORY "${ZeroMQ_INCLUDE_DIR}/"  DESTINATION include FILES_MATCHING PATTERN zmq*)
+endif (INSTALL_COPYOF_ZEROMQ)
