@@ -17,6 +17,8 @@ set (CMAKE_CXX_STANDARD 11)
 #------------------------------------------------------------------------
 find_path(INC_DAISwp13 "i3d/TransferImage.h")
 find_library(LIB_DAISwp13 "DAIS-wp13")
+
+find_path(INC_ZMQ "zmq.hpp")
 find_library(LIB_ZMQ "zmq")
 
 find_path(INC_I3D "i3d/image3d.h")
@@ -27,7 +29,7 @@ if (UNIX AND CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker -defsym -Xlinker MAIN__=main")
 endif (UNIX AND CMAKE_COMPILER_IS_GNUCXX)
 
-include_directories(${INC_DAISwp13} ${INC_I3D} ${INC_I3D}/i3d)
+include_directories(${INC_DAISwp13} ${INC_ZMQ} ${INC_I3D} ${INC_I3D}/i3d)
 set(LIBS ${LIBS} ${LIB_DAISwp13} ${LIB_ZMQ} ${LIB_I3DALGO} ${LIB_I3DCORE})
 
 #------------------------------------------------------------------------
