@@ -1,5 +1,8 @@
 package de.mpicbg.ulman.imgtransfer;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import org.zeromq.ZMQ;
 
 import de.mpicbg.ulman.imgtransfer.buffers.*;
@@ -175,6 +178,74 @@ public class ArrayPacker
 		default:
 			throw new RuntimeException("Does not recognize the job.");
 		}
+	}
+
+	/**
+	 * Pushes an array-of-basic-type into OutputStream.
+	 */
+	ArrayPacker(final Object sampleArray, final OutputStream os)
+	{
+		if (sampleArray instanceof byte[])
+		{
+			arrayVsBuffer = new ByteBuffer();
+			arrayElemSize = arrayVsBuffer.getElemSize();
+		}
+		else
+		if (sampleArray instanceof short[])
+		{
+			arrayVsBuffer = new ShortBuffer();
+			arrayElemSize = arrayVsBuffer.getElemSize();
+		}
+		else
+		if (sampleArray instanceof float[])
+		{
+			arrayVsBuffer = new FloatBuffer();
+			arrayElemSize = arrayVsBuffer.getElemSize();
+		}
+		else
+		if (sampleArray instanceof double[])
+		{
+			arrayVsBuffer = new DoubleBuffer();
+			arrayElemSize = arrayVsBuffer.getElemSize();
+		}
+		else
+			throw new RuntimeException("Does not recognize this array type.");
+
+		arrayVsSocket = new SendToOutputStream(os, arrayVsBuffer);
+	}
+
+	/**
+	 * Pushes InputStream into an array-of-basic-type.
+	 */
+	ArrayPacker(final Object sampleArray, final InputStream is)
+	{
+		if (sampleArray instanceof byte[])
+		{
+			arrayVsBuffer = new ByteBuffer();
+			arrayElemSize = arrayVsBuffer.getElemSize();
+		}
+		else
+		if (sampleArray instanceof short[])
+		{
+			arrayVsBuffer = new ShortBuffer();
+			arrayElemSize = arrayVsBuffer.getElemSize();
+		}
+		else
+		if (sampleArray instanceof float[])
+		{
+			arrayVsBuffer = new FloatBuffer();
+			arrayElemSize = arrayVsBuffer.getElemSize();
+		}
+		else
+		if (sampleArray instanceof double[])
+		{
+			arrayVsBuffer = new DoubleBuffer();
+			arrayElemSize = arrayVsBuffer.getElemSize();
+		}
+		else
+			throw new RuntimeException("Does not recognize this array type.");
+
+		arrayVsSocket = new RecvFromInputStream(is, arrayVsBuffer);
 	}
 
 	void transmitArray(final Object array, boolean comingMore)
