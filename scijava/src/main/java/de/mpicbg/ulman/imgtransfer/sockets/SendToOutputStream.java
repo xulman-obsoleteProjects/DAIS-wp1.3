@@ -39,7 +39,8 @@ public class SendToOutputStream implements Socket
 			sender.send(buf, arrayRead, offset, length);
 			buf.rewind();
 			//VERY QUICK AND VERY DIRTY! (and inefficient)
-			os.write(buf.array());
+			while (buf.hasRemaining())
+				os.write(buf.get());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

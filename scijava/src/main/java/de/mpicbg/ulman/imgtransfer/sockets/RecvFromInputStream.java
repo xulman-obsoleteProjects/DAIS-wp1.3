@@ -51,7 +51,8 @@ public class RecvFromInputStream implements Socket
 
 		try {
 			//VERY QUICK AND VERY DIRTY! (and inefficient)
-			is.read(buf.array());
+			while (buf.hasRemaining())
+				buf.put((byte)is.read());
 			buf.rewind();
 			sender.recv(buf, arrayWrite, offset, length);
 		} catch (IOException e) {
