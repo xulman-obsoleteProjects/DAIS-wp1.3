@@ -1,7 +1,6 @@
 package de.mpicbg.ulman.imgtransfer;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 import org.zeromq.ZMQ;
 
@@ -246,6 +245,20 @@ public class ArrayPacker
 			throw new RuntimeException("Does not recognize this array type.");
 
 		arrayVsSocket = new RecvFromInputStream(is, arrayVsBuffer);
+	}
+
+	public static
+	void serialize(final Object sampleArray, final ObjectOutputStream os)
+			throws IOException
+	{
+		os.writeObject(sampleArray);
+	}
+
+	public static
+	Object unserialize(final ObjectInputStream is)
+	throws IOException, ClassNotFoundException
+	{
+		return is.readObject();
 	}
 
 	void transmitArray(final Object array, boolean comingMore)
