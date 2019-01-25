@@ -7,14 +7,19 @@
  */
 package de.mpicbg.ulman;
 
+import de.mpicbg.ulman.imgtransfer.ImgStreamer;
 import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ItemVisibility;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
+
+import net.imagej.ImageJ;
 import net.imagej.ImgPlus;
 
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.IOException;
@@ -90,8 +95,9 @@ public class SendImage implements Command
 		try {
 			if (transferMode == 'A')
 			{
-				log.info("SendImage plugin: sending "+imgP.getName());
-				ImgTransfer.sendImage((ImgPlus) imgP, "tcp://"+remoteURL, timeoutTime, flog);
+				final ObjectOutputStream os = new ObjectOutputStream( new FileOutputStream("/tmp/out.dat") );
+				ImgStreamer.packAndSend((ImgPlus)imgP, os, flog);
+				os.close();
 			}
 			else
 			{
@@ -102,5 +108,13 @@ public class SendImage implements Command
 		catch (IOException e) {
 			log.error(e.getMessage());
 		}
+	}
+
+	public
+	static void main(final String... args)
+	{
+		final ImageJ ij = new net.imagej.ImageJ();
+		ij.ui().showUI();
+		//ij.command().run(machineGTViaMarkers.class, true);
 	}
 }

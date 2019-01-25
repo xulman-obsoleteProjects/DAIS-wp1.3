@@ -7,6 +7,7 @@
  */
 package de.mpicbg.ulman;
 
+import de.mpicbg.ulman.imgtransfer.ImgStreamer;
 import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -16,6 +17,8 @@ import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 import net.imagej.ImgPlus;
 
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.IOException;
@@ -89,13 +92,17 @@ public class ReceiveImage implements Command
 		final FijiLogger flog = new FijiLogger(log, status);
 		try {
 			if (transferMode == 'A')
-				imgP = ImgTransfer.receiveImage(portNo, timeoutTime, flog);
+			{
+				final ObjectInputStream is = new ObjectInputStream( new FileInputStream("/tmp/out.dat") );
+				imgP = ImgStreamer.receiveAndUnpack(is, flog);
+				is.close();
+			}
 			else
 				imgP = ImgTransfer.requestImage("tcp://"+remoteURL, timeoutTime, flog);
 
 			log.info("ReceiveImage plugin: received "+imgP.getName());
 		}
-		catch (IOException e) {
+		catch (IOException | ClassNotFoundException e) {
 			log.error(e.getMessage());
 		}
 	}
