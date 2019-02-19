@@ -10,7 +10,7 @@ package de.mpicbg.ulman;
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 
-import de.mpicbg.ulman.imgtransfer.ProgressCallback;
+import de.mpicbg.ulman.imgstreamer.ProgressCallback;
 
 public class FijiLogger implements ProgressCallback
 {

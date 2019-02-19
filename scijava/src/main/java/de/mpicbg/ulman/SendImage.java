@@ -19,7 +19,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.IOException;
 
-import de.mpicbg.ulman.imgtransfer.ImgTransfer;
+import de.mpicbg.ulman.imgstreamer.ImgTransfer;
 
 @Plugin(type = Command.class, menuPath = "File>Export>Send Current Image")
 public class SendImage implements Command
@@ -91,7 +91,7 @@ public class SendImage implements Command
 			if (transferMode == 'A')
 			{
 				log.info("SendImage plugin: sending "+imgP.getName());
-				ImgTransfer.sendImage((ImgPlus) imgP, "tcp://"+remoteURL, timeoutTime, flog);
+				ImgTransfer.sendImage((ImgPlus) imgP, remoteURL, timeoutTime, flog);
 			}
 			else
 			{

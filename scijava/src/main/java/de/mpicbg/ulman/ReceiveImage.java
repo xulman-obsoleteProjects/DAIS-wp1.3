@@ -20,7 +20,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.IOException;
 
-import de.mpicbg.ulman.imgtransfer.ImgTransfer;
+import de.mpicbg.ulman.imgstreamer.ImgTransfer;
 
 @Plugin(type = Command.class, menuPath = "File>Import>Receive One Image")
 public class ReceiveImage implements Command
@@ -91,7 +91,7 @@ public class ReceiveImage implements Command
 			if (transferMode == 'A')
 				imgP = ImgTransfer.receiveImage(portNo, timeoutTime, flog);
 			else
-				imgP = ImgTransfer.requestImage("tcp://"+remoteURL, timeoutTime, flog);
+				imgP = ImgTransfer.requestImage(remoteURL, timeoutTime, flog);
 
 			log.info("ReceiveImage plugin: received "+imgP.getName());
 		}

@@ -86,13 +86,9 @@
   <dependencies>
   <!-- FOR THE IMG TRANSFER PROTOCOL ITSELF -->
     <dependency>
-      <groupId>org.scijava</groupId>
-      <artifactId>scijava-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.zeromq</groupId>
-      <artifactId>jeromq</artifactId>
-      <version>0.4.2</version>
+      <groupId>de.mpicbg.ulman</groupId>
+      <artifactId>imglib2ZMQ</artifactId>
+      <version>1.0-SNAPSHOT</version>
     </dependency>
 
   <!-- ONLY FOR THE ASSOCIATED FIJI PLUGINS -->
