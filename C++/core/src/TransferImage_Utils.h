@@ -5,6 +5,8 @@
 #include <string>
 #include <zmq.hpp>
 
+#include <iostream>
+
 /**
  * Simple structure to hold parsed content of the initial message.
  * It therefore contains: image geometry, voxel type, backend type.
