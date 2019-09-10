@@ -5,6 +5,8 @@
 #include <string>
 #include <zmq.hpp>
 
+#include <iostream>
+
 /**
  * Simple structure to hold parsed content of the initial message.
  * It therefore contains: image geometry, voxel type, backend type.
@@ -213,17 +215,17 @@ typedef struct connectionParams
 
 
 //flip incoming data between big-endian (network standard) and little-endian (Intel native/CPU standard)
-inline void SwapEndianness(char* const data, const long len)
+inline void SwapEndianness(char* const, const long)
 { //intentionally empty
 }
-inline void SwapEndianness(unsigned char* const data, const long len)
+inline void SwapEndianness(unsigned char* const, const long)
 { //intentionally empty
 }
 
 inline void SwapEndianness(unsigned short* const data, const long len)
 {
 	for (long i=0; i < len; ++i)
-		data[i] = (data[i] << 8) | (data[i] >> 8);
+		data[i] = (unsigned short)((data[i] << 8) | (data[i] >> 8));
 }
 inline void SwapEndianness(short* const data, const long len)
 {

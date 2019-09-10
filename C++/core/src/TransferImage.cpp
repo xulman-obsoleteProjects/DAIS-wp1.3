@@ -13,6 +13,11 @@
 //short-cut to throwing runtime_error exceptions
 using std::runtime_error;
 
+//some communication constants (to prevent from re-allocating them repeatedly)
+const std::string strCanGet("can get");
+const std::string strReady("ready");
+const std::string strDone("done");
+
 //aux internal functions to send/receive initial handshake message
 void Handshake_GiveImage(const imgParams_t& imgParams,connectionParams_t& cnnParams);
 void Handshake_GetImage(imgParams_t& imgParams,connectionParams_t& cnnParams);
@@ -45,7 +50,7 @@ void StartReceivingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParams
 	cnnParams.isSender = false;
 
 	//binds the socket to the given port
-	char chrString[1024];
+	char chrString[128];
 	sprintf(chrString,"tcp://*:%d",port);
 	cnnParams.socket->bind(chrString);
 
@@ -65,7 +70,7 @@ void StartServingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 	cnnParams.isSender = true;
 
 	//binds the socket to the given port
-	char chrString[1024];
+	char chrString[128];
 	sprintf(chrString,"tcp://*:%d",port);
 	cnnParams.socket->bind(chrString);
 
@@ -74,20 +79,22 @@ void StartServingOneImage(const imgParams_t& imgParams,connectionParams_t& cnnPa
 
 	//analyse incoming message
 	//read income message and check if this is really an "invitation packet"
-	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
+	zmq::message_t msg(1024);
+	int recLength = cnnParams.socket->recv(msg).value();
+	char* msgString = msg.data<char>();
 
 	//check sanity of the received buffer
 	if (recLength < 7)
 		throw new runtime_error("Received (near) empty connection request message. Stopping.");
 	if (recLength == 1024)
 		throw new runtime_error("Couldn't read complete connection request message. Stopping.");
-	if (chrString[0] != 'c' ||
-	    chrString[1] != 'a' ||
-	    chrString[2] != 'n' ||
-	    chrString[3] != ' ' ||
-	    chrString[4] != 'g' ||
-	    chrString[5] != 'e' ||
-	    chrString[6] != 't')
+	if (msgString[0] != 'c' ||
+	    msgString[1] != 'a' ||
+	    msgString[2] != 'n' ||
+	    msgString[3] != ' ' ||
+	    msgString[4] != 'g' ||
+	    msgString[5] != 'e' ||
+	    msgString[6] != 't')
 		throw new runtime_error("Protocol error, expected connection request.");
 
 	//the common routine to implement the initial handshake
@@ -108,8 +115,8 @@ void StartRequestingOneImage(imgParams_t& imgParams,connectionParams_t& cnnParam
 	cnnParams.socket->connect(cnnParams.addr);
 
 	//sends the connection-requesting message
-	char canGetMsg[] = "can get";
-	cnnParams.socket->send(canGetMsg,7);
+	zmq::message_t msgCanGet(strCanGet.c_str(),strCanGet.size());
+	cnnParams.socket->send(msgCanGet,zmq::send_flags::none);
 
 	//the common routine to implement the initial handshake
 	Handshake_GetImage(imgParams,cnnParams);
@@ -129,24 +136,26 @@ void Handshake_GiveImage(const imgParams_t& imgParams,connectionParams_t& cnnPar
 	std::string hdrStr(hdrMsg.str());
 
 	std::cout << "Sending: " << hdrStr << "\n";
-	cnnParams.socket->send(hdrStr.c_str(),hdrStr.size());
+	zmq::message_t msgHeader(hdrStr.c_str(),hdrStr.size());
+	cnnParams.socket->send(msgHeader,zmq::send_flags::none);
 
 	waitForFirstMessage(cnnParams,"Timeout when waiting for \"start sending green light\".");
 
 	//read income message and check if the receiving party is ready to receive our data
-	char chrString[1024];
-	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
+	zmq::message_t msg(1024);
+	int recLength = cnnParams.socket->recv(msg).value();
+	char* msgString = msg.data<char>();
 
 	//check sanity of the received buffer
 	if (recLength < 5)
 		throw new runtime_error("Received (near) empty initial (handshake) message. Stopping.");
 	if (recLength == 1024)
 		throw new runtime_error("Couldn't read complete initial (handshake) message. Stopping.");
-	if (chrString[0] != 'r' ||
-	    chrString[1] != 'e' ||
-	    chrString[2] != 'a' ||
-	    chrString[3] != 'd' ||
-	    chrString[4] != 'y')
+	if (msgString[0] != 'r' ||
+	    msgString[1] != 'e' ||
+	    msgString[2] != 'a' ||
+	    msgString[3] != 'd' ||
+	    msgString[4] != 'y')
 		throw new runtime_error("Protocol error, expected initial confirmation from the receiver.");
 }
 
@@ -172,8 +181,9 @@ void Handshake_GetImage(imgParams_t& imgParams,connectionParams_t& cnnParams)
 	*/
 
 	//ok, there is a connection; receive first message
-	char chrString[1024];
-	int recLength = cnnParams.socket->recv((void*)chrString,1024,0);
+	zmq::message_t msg(1024);
+	int recLength = cnnParams.socket->recv(msg).value();
+	char* msgString = msg.data<char>();
 
 	//check sanity of the received buffer
 	if (recLength <= 0)
@@ -182,8 +192,8 @@ void Handshake_GetImage(imgParams_t& imgParams,connectionParams_t& cnnParams)
 		throw new runtime_error("Couldn't read complete initial (handshake) message. Stopping.");
 
 	//parse it into the imgParams structure, or complain
-	std::cout << "Received: " << chrString << "\n";
-	std::istringstream hdrMsg(chrString);
+	std::cout << "Received: " << msgString << "\n";
+	std::istringstream hdrMsg(msgString);
 
 	//parse by empty space
 	std::string token;
@@ -228,18 +238,19 @@ void SendMetadata(connectionParams_t& cnnParams,const std::list<std::string>& me
 
 	//convert the metadata into a string and send it
 	std::string msg(smsg.str());
-	cnnParams.socket->send(msg.c_str(),msg.size(),ZMQ_SNDMORE);
+	zmq::message_t msgMetaData(msg.c_str(),msg.size());
+	cnnParams.socket->send(msgMetaData,zmq::send_flags::sndmore);
 }
 
 void ReceiveMetadata(connectionParams_t& cnnParams,std::list<std::string>& metaData)
 {
 	//sends flag that we're free to go, first comes the image metadata
-	char readyMsg[] = "ready";
-	cnnParams.socket->send(readyMsg,5,0);
+	zmq::message_t msgReady(strReady.c_str(),strReady.size());
+	cnnParams.socket->send(msgReady,zmq::send_flags::none);
 
 	waitForFirstMessage(cnnParams,"Timeout when waiting for metadata.");
 	zmq::message_t msg;
-	if (!cnnParams.socket->recv(&msg))
+	if (!cnnParams.socket->recv(msg).has_value())
 		throw new runtime_error("Empty metadata received.");
 
 	//"convert" to std::string (likely by making extra copy of it)
@@ -346,13 +357,14 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 		if (cnnParams.isSender)
 		{
 			SwapEndianness(data,arrayLength);
-			cnnParams.socket->send((void*)data,arrayLength*arrayElemSize,(comingMore? ZMQ_SNDMORE : 0));
+			cnnParams.socket->send(zmq::const_buffer((void*)data,arrayLength*arrayElemSize),
+			  (comingMore? zmq::send_flags::sndmore : zmq::send_flags::none));
 			SwapEndianness(data,arrayLength);
 		}
 		else
 		{
 			waitForNextMessage(cnnParams);
-			cnnParams.socket->recv((void*)data,arrayLength*arrayElemSize);
+			cnnParams.socket->recv(zmq::mutable_buffer((void*)data,arrayLength*arrayElemSize));
 			SwapEndianness(data,arrayLength);
 		}
 	}
@@ -372,14 +384,14 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 			if (cnnParams.isSender)
 			{
 				SwapEndianness(data+offset,firstBlocksLen);
-				cnnParams.socket->send((void*)(data+offset),firstBlocksLen*arrayElemSize,
-				  (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? ZMQ_SNDMORE : 0));
+				cnnParams.socket->send(zmq::const_buffer((void*)(data+offset),firstBlocksLen*arrayElemSize),
+				  (comingMore || lastBlockLen > 0 || p < arrayElemSize-2 ? zmq::send_flags::sndmore : zmq::send_flags::none));
 				SwapEndianness(data+offset,firstBlocksLen);
 			}
 			else
 			{
 				waitForNextMessage(cnnParams);
-				cnnParams.socket->recv((void*)(data+offset),firstBlocksLen*arrayElemSize);
+				cnnParams.socket->recv(zmq::mutable_buffer((void*)(data+offset),firstBlocksLen*arrayElemSize));
 				SwapEndianness(data+offset,firstBlocksLen);
 			}
 			offset += firstBlocksLen;
@@ -390,14 +402,14 @@ void TransmitChunkFromOneImage(connectionParams_t& cnnParams,VT* const data,
 			if (cnnParams.isSender)
 			{
 				SwapEndianness(data+offset,lastBlockLen);
-				cnnParams.socket->send((void*)(data+offset),lastBlockLen*arrayElemSize,
-				  (comingMore? ZMQ_SNDMORE : 0));
+				cnnParams.socket->send(zmq::const_buffer((void*)(data+offset),lastBlockLen*arrayElemSize),
+				  (comingMore? zmq::send_flags::sndmore : zmq::send_flags::none));
 				SwapEndianness(data+offset,lastBlockLen);
 			}
 			else
 			{
 				waitForNextMessage(cnnParams);
-				cnnParams.socket->recv((void*)(data+offset),lastBlockLen*arrayElemSize);
+				cnnParams.socket->recv(zmq::mutable_buffer((void*)(data+offset),lastBlockLen*arrayElemSize));
 				SwapEndianness(data+offset,lastBlockLen);
 			}
 		}
@@ -411,18 +423,19 @@ void FinishSendingOneImage(connectionParams_t& cnnParams)
 	waitForFirstMessage(cnnParams,"Timeout when waiting for the confirmation of a complete transfer.");
 
 	//read income message and check if the receiving party is ready to receive our data
-	char doneMsg[1024];
-	int recLength = cnnParams.socket->recv((void*)doneMsg,1024,0);
+	zmq::message_t msg(1024);
+	int recLength = cnnParams.socket->recv(msg).value();
+	char* msgString = msg.data<char>();
 
 	//check sanity of the received buffer
 	if (recLength < 4)
 		throw new runtime_error("Received (near) empty final (handshake) message. Stopping.");
 	if (recLength == 1024)
 		throw new runtime_error("Couldn't read complete final (handshake) message. Stopping.");
-	if (doneMsg[0] != 'd' ||
-	    doneMsg[1] != 'o' ||
-	    doneMsg[2] != 'n' ||
-	    doneMsg[3] != 'e')
+	if (msgString[0] != 'd' ||
+	    msgString[1] != 'o' ||
+	    msgString[2] != 'n' ||
+	    msgString[3] != 'e')
 		throw new runtime_error("Protocol error, expected final confirmation from the receiver.");
 
 	cnnParams.clear();
@@ -431,8 +444,8 @@ void FinishSendingOneImage(connectionParams_t& cnnParams)
 void FinishReceivingOneImage(connectionParams_t& cnnParams)
 {
 	//flag all is received and we're closing
-	char doneMsg[] = "done";
-	cnnParams.socket->send(doneMsg,4,0);
+	zmq::message_t msgDone(strDone.c_str(),strDone.size());
+	cnnParams.socket->send(msgDone,zmq::send_flags::none);
 	cnnParams.clear();
 }
 
