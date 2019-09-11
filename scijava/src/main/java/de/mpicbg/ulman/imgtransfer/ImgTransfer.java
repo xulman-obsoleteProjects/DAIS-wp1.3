@@ -13,6 +13,7 @@ import net.imglib2.type.NativeType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.util.StringTokenizer;
 
 /**
@@ -86,6 +87,9 @@ public class ImgTransfer
 		catch (ZMQException e) {
 			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
 		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("sender protocol error: " + e.getMessage());
+		}
 		catch (Exception e) {
 			throw new IOException("sender error: " + e.getMessage());
 		}
@@ -153,6 +157,9 @@ public class ImgTransfer
 		}
 		catch (ZMQException e) {
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("receiver protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			throw new IOException("receiver error: " + e.getMessage());
@@ -228,6 +235,9 @@ public class ImgTransfer
 		catch (ZMQException e) {
 			throw new IOException("server crashed, ZeroMQ error: " + e.getMessage());
 		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("server protocol error: " + e.getMessage());
+		}
 		catch (Exception e) {
 			throw new IOException("server error: " + e.getMessage());
 		}
@@ -302,6 +312,9 @@ public class ImgTransfer
 		}
 		catch (ZMQException e) {
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("receiver protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			throw new IOException("receiver error: " + e.getMessage());
@@ -529,6 +542,10 @@ public class ImgTransfer
 			cleanUp();
 			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
 		}
+		catch (RuntimeException e) {
+			cleanUp();
+			throw new ProtocolException("sender protocol error: " + e.getMessage());
+		}
 		catch (Exception e) {
 			cleanUp();
 			throw new IOException("sender error: " + e.getMessage());
@@ -560,6 +577,9 @@ public class ImgTransfer
 		}
 		catch (ZMQException e) {
 			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("sender protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			throw new IOException("sender error: " + e.getMessage());
@@ -661,6 +681,10 @@ public class ImgTransfer
 			cleanUp();
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
 		}
+		catch (RuntimeException e) {
+			cleanUp();
+			throw new ProtocolException("receiver protocol error: " + e.getMessage());
+		}
 		catch (Exception e) {
 			cleanUp();
 			throw new IOException("receiver error: " + e.getMessage());
@@ -720,6 +744,10 @@ public class ImgTransfer
 		catch (ZMQException e) {
 			cleanUp();
 			throw new IOException("server crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			cleanUp();
+			throw new ProtocolException("server protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			cleanUp();
@@ -822,6 +850,10 @@ public class ImgTransfer
 		catch (ZMQException e) {
 			cleanUp();
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			cleanUp();
+			throw new ProtocolException("receiver protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			cleanUp();

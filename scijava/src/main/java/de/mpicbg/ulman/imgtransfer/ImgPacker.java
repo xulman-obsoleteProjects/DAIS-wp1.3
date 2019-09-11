@@ -48,7 +48,7 @@ public class ImgPacker
 	{
 		Class<?> voxelClass = imgP.firstElement().getClass();
 		if(!SUPPORTED_VOXEL_CLASSES.contains(voxelClass))
-			throw new IllegalArgumentException("Unsupported voxel type, sorry.");
+			throw new RuntimeException("Unsupported voxel type, sorry.");
 
 		//"buffer" for the first and human-readable payload:
 		//protocol version
@@ -341,7 +341,7 @@ public class ImgPacker
 				} catch (InstantiationException | IllegalAccessException e) {
 					throw new RuntimeException(e);
 				}
-		throw new IllegalArgumentException("Unsupported voxel type, sorry.");
+		throw new RuntimeException("Unsupported voxel type, sorry.");
 	}
 
 	private static <T extends NativeType<T>>
