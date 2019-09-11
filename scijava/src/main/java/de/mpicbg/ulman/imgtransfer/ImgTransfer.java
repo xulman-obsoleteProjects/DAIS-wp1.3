@@ -61,7 +61,6 @@ public class ImgTransfer
 	 *
 	 * Logging/reporting IS supported here whenever \e log != null.
 	 */
-	@SuppressWarnings({"unchecked","rawtypes"})
 	public static <T extends NativeType<T>>
 	void sendImage(final ImgPlus<T> imgP, final String addr,
 	               final int timeOut, final ProgressCallback log)
@@ -81,7 +80,7 @@ public class ImgTransfer
 			writerSocket.connect(addr);
 
 			//send the image
-			ImgPacker.packAndSend((ImgPlus) imgP, writerSocket, timeOut, log);
+			ImgPacker.packAndSend(imgP, writerSocket, timeOut, log);
 
 			if (log != null) log.info("sender finished");
 		}
@@ -123,7 +122,7 @@ public class ImgTransfer
 	 *
 	 * Logging/reporting IS supported here whenever \e log != null.
 	 */
-	public static <T extends NativeType<T>>
+	public static
 	ImgPlus<?> receiveImage(final int portNo,
 	                        final int timeOut, final ProgressCallback log)
 	throws IOException
@@ -184,7 +183,7 @@ public class ImgTransfer
 	 *
 	 * No logging/reporting is supported here.
 	 */
-	public static <T extends NativeType<T>>
+	public static
 	ImgPlus<?> receiveImage(final int portNo,
 	                        final int timeOut)
 	throws IOException
@@ -198,7 +197,6 @@ public class ImgTransfer
 	 *
 	 * Logging/reporting IS supported here whenever \e log != null.
 	 */
-	@SuppressWarnings({"unchecked","rawtypes"})
 	public static <T extends NativeType<T>>
 	void serveImage(final ImgPlus<T> imgP, final int portNo,
 	                final int timeOut, final ProgressCallback log)
@@ -229,7 +227,7 @@ public class ImgTransfer
 			if (! new String(incomingData).startsWith("can get"))
 				throw new RuntimeException("Protocol error, expected initial ping from the receiver.");
 
-			ImgPacker.packAndSend((ImgPlus) imgP, listenerSocket, timeOut, log);
+			ImgPacker.packAndSend(imgP, listenerSocket, timeOut, log);
 
 			if (log != null) log.info("server finished");
 		}
@@ -275,7 +273,7 @@ public class ImgTransfer
 	 *
 	 * Logging/reporting IS supported here whenever \e log != null.
 	 */
-	public static <T extends NativeType<T>>
+	public static
 	ImgPlus<?> requestImage(final String addr,
 	                        final int timeOut, final ProgressCallback log)
 	throws IOException
@@ -341,7 +339,7 @@ public class ImgTransfer
 	 *
 	 * No logging/reporting is supported here.
 	 */
-	public static <T extends NativeType<T>>
+	public static
 	ImgPlus<?> requestImage(final String addr,
 	                        final int timeOut)
 	throws IOException
@@ -507,7 +505,6 @@ public class ImgTransfer
 	/**
 	 * Sends/pushes an image over network to someone who is receiving it.
 	 */
-	@SuppressWarnings({"unchecked","rawtypes"})
 	public <T extends NativeType<T>>
 	void sendImage(final ImgPlus<T> imgP)
 	throws IOException
@@ -535,7 +532,7 @@ public class ImgTransfer
 			zmqSocket.send("v0 expect "+expectedNumberOfImages+" images");
 
 			//send the image
-			ImgPacker.packAndSend((ImgPlus) imgP, zmqSocket, timeOut, log);
+			ImgPacker.packAndSend(imgP, zmqSocket, timeOut, log);
 
 			if (log != null) log.info("sender finished");
 		}
@@ -594,7 +591,7 @@ public class ImgTransfer
 	/**
 	 * Receives an image over network from someone who is sending/pushing it.
 	 */
-	public <T extends NativeType<T>>
+	public
 	ImgPlus<?> receiveImage()
 	throws IOException
 	{
@@ -698,7 +695,6 @@ public class ImgTransfer
 	 * Serves an image over network to someone who is receiving/pulling it.
 	 * Similar in principle to its static buddy this.serveImage(...).
 	 */
-	@SuppressWarnings({"unchecked","rawtypes"})
 	public <T extends NativeType<T>>
 	void serveImage(final ImgPlus<T> imgP)
 	throws IOException
@@ -738,7 +734,7 @@ public class ImgTransfer
 			zmqSocket.send("v0 expect "+expectedNumberOfImages+" images");
 
 			//send the image
-			ImgPacker.packAndSend((ImgPlus) imgP, zmqSocket, timeOut, log);
+			ImgPacker.packAndSend(imgP, zmqSocket, timeOut, log);
 
 			if (log != null) log.info("server finished");
 		}
@@ -760,7 +756,7 @@ public class ImgTransfer
 	 * Receives/pulls an image over network from someone who is serving it.
 	 * Similar in principle to its static buddy this.requestImage(...).
 	 */
-	public <T extends NativeType<T>>
+	public
 	ImgPlus<?> requestImage()
 	throws IOException
 	{

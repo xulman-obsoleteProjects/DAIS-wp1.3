@@ -36,12 +36,10 @@ public class ImgPacker
 {
 	// -------- transmission of the image, sockets --------
 	///list of supported voxel types: so far only scalar images are supported
-	@SuppressWarnings("rawtypes")
 	static List<Class<? extends NativeType>> SUPPORTED_VOXEL_CLASSES =
 			Arrays.asList(ByteType.class, UnsignedByteType.class, ShortType.class,
 					UnsignedShortType.class, FloatType.class, DoubleType.class);
 
-	@SuppressWarnings("unchecked")
 	static <T extends NativeType<T>>
 	void packAndSend(final ImgPlus<T> imgP, final ZMQ.Socket socket,
 	                 final int timeOut, final ProgressCallback log)
@@ -52,7 +50,7 @@ public class ImgPacker
 
 		//"buffer" for the first and human-readable payload:
 		//protocol version
-		String msg = new String("v1");
+		String msg = "v1";
 
 		//dimensionality data
 		msg += " dimNumber " + imgP.numDimensions();
@@ -119,7 +117,7 @@ public class ImgPacker
 		if (log != null) log.info("sending finished...");
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("unchecked")
 	static
 	ImgPlus<?> receiveAndUnpack(final String header, final ZMQ.Socket socket,
 	                            final ProgressCallback log)
@@ -138,8 +136,8 @@ public class ImgPacker
 		for (int i=0; i < n; ++i)
 			dims[i] = Integer.valueOf(headerST.nextToken());
 
-		final String typeStr = new String(headerST.nextToken());
-		final String backendStr = new String(headerST.nextToken());
+		final String typeStr = headerST.nextToken();
+		final String backendStr = headerST.nextToken();
 
 		//envelope/header message is (mostly) parsed,
 		//start creating the output image of the appropriate type
@@ -212,14 +210,14 @@ public class ImgPacker
 
 	///meta data Message Separator
 	private static
-	final String mdMsgSep = new String("__QWE__");
+	final String mdMsgSep = "__QWE__";
 
 	private static <T>
 	void packAndSendPlusData(final ImgPlus<T> imgP, final ZMQ.Socket socket)
 	{
 		//TODO: use JSON because metadata are of various types (including Strings)
 
-		String msg = new String("metadata");
+		String msg = "metadata";
 		msg += mdMsgSep+"imagename"+mdMsgSep+imgP.getName();
 		msg += mdMsgSep+"endmetadata";
 		socket.send(msg, ZMQ.SNDMORE);
@@ -348,11 +346,11 @@ public class ImgPacker
 	Img<T> createImg(int[] dims, String backendStr, T type)
 	{
 		if (backendStr.startsWith("ArrayImg"))
-			return new ArrayImgFactory<T>().create(dims, type);
+			return new ArrayImgFactory<>(type).create(dims);
 		if (backendStr.startsWith("PlanarImg"))
-			return new PlanarImgFactory<T>().create(dims, type);
+			return new PlanarImgFactory<>(type).create(dims);
 		if (backendStr.startsWith("CellImg"))
-			return new CellImgFactory<T>().create(dims, type);
+			return new CellImgFactory<>(type).create(dims);
 		throw new RuntimeException("Unsupported image backend type, sorry.");
 	}
 }
