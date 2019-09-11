@@ -5,14 +5,14 @@
   <parent>
     <groupId>org.scijava</groupId>
     <artifactId>pom-scijava</artifactId>
-    <version>20.2.0</version>
+    <version>27.0.1</version>
     <relativePath />
   </parent>
 
 
   <groupId>de.mpicbg.ulman</groupId>
   <artifactId>DAIS-wp13</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.1</version>
 
 	<organization>
 		<name>MPI-CBG</name>
@@ -57,7 +57,7 @@
 
 	<scm>
 		<connection>scm:git:git://github.com/xulman/DAIS-wp1.3</connection>
-		<developerConnection>scm:git:localhost:9999</developerConnection>
+		<developerConnection>scm:git:git://github.com/xulman/DAIS-wp1.3</developerConnection>
 		<tag>HEAD</tag>
 		<url>https://github.com/xulman/DAIS-wp1.3</url>
 	</scm>
@@ -73,13 +73,14 @@
 		<license.licenseName>cc0</license.licenseName>
 		<license.copyrightOwners>N/A</license.copyrightOwners>
 		<license.projectName>DAIS-wp1.3</license.projectName>
+		<package-name>de.mpicbg.ulman.imgtransfer</package-name>
 	</properties>
 
 
   <repositories>
     <repository>
       <id>imagej.public</id>
-      <url>http://maven.imagej.net/content/groups/public</url>
+      <url>http://maven.scijava.org/content/groups/public</url>
     </repository>
   </repositories>
 
@@ -92,7 +93,7 @@
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.4.2</version>
+      <version>0.5.1</version>
     </dependency>
 
   <!-- ONLY FOR THE ASSOCIATED FIJI PLUGINS -->

@@ -10,6 +10,7 @@ package de.mpicbg.ulman.imgtransfer;
 import net.imagej.ImgPlus;
 import net.imglib2.type.NativeType;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 import java.io.IOException;
@@ -72,7 +73,7 @@ public class ImgTransfer
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket writerSocket = null;
 		try {
-			writerSocket = zmqContext.socket(ZMQ.PAIR);
+			writerSocket = zmqContext.socket(SocketType.PAIR);
 			if (writerSocket == null)
 				throw new Exception("cannot obtain local socket");
 
@@ -134,7 +135,7 @@ public class ImgTransfer
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket listenerSocket = null;
 		try {
-			listenerSocket = zmqContext.socket(ZMQ.PAIR);
+			listenerSocket = zmqContext.socket(SocketType.PAIR);
 			if (listenerSocket == null)
 				throw new Exception("cannot obtain local socket");
 
@@ -209,7 +210,7 @@ public class ImgTransfer
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket listenerSocket = null;
 		try {
-			listenerSocket = zmqContext.socket(ZMQ.PAIR);
+			listenerSocket = zmqContext.socket(SocketType.PAIR);
 			if (listenerSocket == null)
 				throw new Exception("cannot obtain local socket");
 
@@ -286,7 +287,7 @@ public class ImgTransfer
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket writerSocket = null;
 		try {
-			writerSocket = zmqContext.socket(ZMQ.PAIR);
+			writerSocket = zmqContext.socket(SocketType.PAIR);
 			if (writerSocket == null)
 				throw new Exception("cannot obtain local socket");
 
@@ -521,7 +522,7 @@ public class ImgTransfer
 			if (zmqSocket == null)
 			{
 				//first run
-				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				zmqSocket = zmqContext.socket(SocketType.PAIR);
 				if (zmqSocket == null)
 					throw new Exception("cannot obtain local socket");
 
@@ -612,7 +613,7 @@ public class ImgTransfer
 			if (zmqSocket == null)
 			{
 				//first run
-				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				zmqSocket = zmqContext.socket(SocketType.PAIR);
 				if (zmqSocket == null)
 					throw new Exception("cannot obtain local socket");
 
@@ -712,7 +713,7 @@ public class ImgTransfer
 			if (zmqSocket == null)
 			{
 				//first run
-				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				zmqSocket = zmqContext.socket(SocketType.PAIR);
 				if (zmqSocket == null)
 					throw new Exception("cannot obtain local socket");
 
@@ -778,7 +779,7 @@ public class ImgTransfer
 			if (zmqSocket == null)
 			{
 				//first run
-				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				zmqSocket = zmqContext.socket(SocketType.PAIR);
 				if (zmqSocket == null)
 					throw new Exception("cannot obtain local socket");
 
