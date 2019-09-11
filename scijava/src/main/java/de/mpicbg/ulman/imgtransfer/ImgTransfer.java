@@ -10,9 +10,11 @@ package de.mpicbg.ulman.imgtransfer;
 import net.imagej.ImgPlus;
 import net.imglib2.type.NativeType;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.util.StringTokenizer;
 
 /**
@@ -59,7 +61,6 @@ public class ImgTransfer
 	 *
 	 * Logging/reporting IS supported here whenever \e log != null.
 	 */
-	@SuppressWarnings({"unchecked","rawtypes"})
 	public static <T extends NativeType<T>>
 	void sendImage(final ImgPlus<T> imgP, final String addr,
 	               final int timeOut, final ProgressCallback log)
@@ -71,7 +72,7 @@ public class ImgTransfer
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket writerSocket = null;
 		try {
-			writerSocket = zmqContext.socket(ZMQ.PAIR);
+			writerSocket = zmqContext.socket(SocketType.PAIR);
 			if (writerSocket == null)
 				throw new Exception("cannot obtain local socket");
 
@@ -79,12 +80,15 @@ public class ImgTransfer
 			writerSocket.connect(addr);
 
 			//send the image
-			ImgPacker.packAndSend((ImgPlus) imgP, writerSocket, timeOut, log);
+			ImgPacker.packAndSend(imgP, writerSocket, timeOut, log);
 
 			if (log != null) log.info("sender finished");
 		}
 		catch (ZMQException e) {
 			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("sender protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			throw new IOException("sender error: " + e.getMessage());
@@ -118,7 +122,7 @@ public class ImgTransfer
 	 *
 	 * Logging/reporting IS supported here whenever \e log != null.
 	 */
-	public static <T extends NativeType<T>>
+	public static
 	ImgPlus<?> receiveImage(final int portNo,
 	                        final int timeOut, final ProgressCallback log)
 	throws IOException
@@ -130,7 +134,7 @@ public class ImgTransfer
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket listenerSocket = null;
 		try {
-			listenerSocket = zmqContext.socket(ZMQ.PAIR);
+			listenerSocket = zmqContext.socket(SocketType.PAIR);
 			if (listenerSocket == null)
 				throw new Exception("cannot obtain local socket");
 
@@ -154,6 +158,9 @@ public class ImgTransfer
 		catch (ZMQException e) {
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
 		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("receiver protocol error: " + e.getMessage());
+		}
 		catch (Exception e) {
 			throw new IOException("receiver error: " + e.getMessage());
 		}
@@ -176,7 +183,7 @@ public class ImgTransfer
 	 *
 	 * No logging/reporting is supported here.
 	 */
-	public static <T extends NativeType<T>>
+	public static
 	ImgPlus<?> receiveImage(final int portNo,
 	                        final int timeOut)
 	throws IOException
@@ -190,7 +197,6 @@ public class ImgTransfer
 	 *
 	 * Logging/reporting IS supported here whenever \e log != null.
 	 */
-	@SuppressWarnings({"unchecked","rawtypes"})
 	public static <T extends NativeType<T>>
 	void serveImage(final ImgPlus<T> imgP, final int portNo,
 	                final int timeOut, final ProgressCallback log)
@@ -202,7 +208,7 @@ public class ImgTransfer
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket listenerSocket = null;
 		try {
-			listenerSocket = zmqContext.socket(ZMQ.PAIR);
+			listenerSocket = zmqContext.socket(SocketType.PAIR);
 			if (listenerSocket == null)
 				throw new Exception("cannot obtain local socket");
 
@@ -221,12 +227,15 @@ public class ImgTransfer
 			if (! new String(incomingData).startsWith("can get"))
 				throw new RuntimeException("Protocol error, expected initial ping from the receiver.");
 
-			ImgPacker.packAndSend((ImgPlus) imgP, listenerSocket, timeOut, log);
+			ImgPacker.packAndSend(imgP, listenerSocket, timeOut, log);
 
 			if (log != null) log.info("server finished");
 		}
 		catch (ZMQException e) {
 			throw new IOException("server crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("server protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			throw new IOException("server error: " + e.getMessage());
@@ -264,7 +273,7 @@ public class ImgTransfer
 	 *
 	 * Logging/reporting IS supported here whenever \e log != null.
 	 */
-	public static <T extends NativeType<T>>
+	public static
 	ImgPlus<?> requestImage(final String addr,
 	                        final int timeOut, final ProgressCallback log)
 	throws IOException
@@ -276,7 +285,7 @@ public class ImgTransfer
 		ZMQ.Context zmqContext = ZMQ.context(1);
 		ZMQ.Socket writerSocket = null;
 		try {
-			writerSocket = zmqContext.socket(ZMQ.PAIR);
+			writerSocket = zmqContext.socket(SocketType.PAIR);
 			if (writerSocket == null)
 				throw new Exception("cannot obtain local socket");
 
@@ -303,6 +312,9 @@ public class ImgTransfer
 		catch (ZMQException e) {
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
 		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("receiver protocol error: " + e.getMessage());
+		}
 		catch (Exception e) {
 			throw new IOException("receiver error: " + e.getMessage());
 		}
@@ -327,7 +339,7 @@ public class ImgTransfer
 	 *
 	 * No logging/reporting is supported here.
 	 */
-	public static <T extends NativeType<T>>
+	public static
 	ImgPlus<?> requestImage(final String addr,
 	                        final int timeOut)
 	throws IOException
@@ -493,7 +505,6 @@ public class ImgTransfer
 	/**
 	 * Sends/pushes an image over network to someone who is receiving it.
 	 */
-	@SuppressWarnings({"unchecked","rawtypes"})
 	public <T extends NativeType<T>>
 	void sendImage(final ImgPlus<T> imgP)
 	throws IOException
@@ -508,7 +519,7 @@ public class ImgTransfer
 			if (zmqSocket == null)
 			{
 				//first run
-				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				zmqSocket = zmqContext.socket(SocketType.PAIR);
 				if (zmqSocket == null)
 					throw new Exception("cannot obtain local socket");
 
@@ -521,13 +532,17 @@ public class ImgTransfer
 			zmqSocket.send("v0 expect "+expectedNumberOfImages+" images");
 
 			//send the image
-			ImgPacker.packAndSend((ImgPlus) imgP, zmqSocket, timeOut, log);
+			ImgPacker.packAndSend(imgP, zmqSocket, timeOut, log);
 
 			if (log != null) log.info("sender finished");
 		}
 		catch (ZMQException e) {
 			cleanUp();
 			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			cleanUp();
+			throw new ProtocolException("sender protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			cleanUp();
@@ -561,6 +576,9 @@ public class ImgTransfer
 		catch (ZMQException e) {
 			throw new IOException("sender crashed, ZeroMQ error: " + e.getMessage());
 		}
+		catch (RuntimeException e) {
+			throw new ProtocolException("sender protocol error: " + e.getMessage());
+		}
 		catch (Exception e) {
 			throw new IOException("sender error: " + e.getMessage());
 		}
@@ -573,7 +591,7 @@ public class ImgTransfer
 	/**
 	 * Receives an image over network from someone who is sending/pushing it.
 	 */
-	public <T extends NativeType<T>>
+	public
 	ImgPlus<?> receiveImage()
 	throws IOException
 	{
@@ -592,7 +610,7 @@ public class ImgTransfer
 			if (zmqSocket == null)
 			{
 				//first run
-				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				zmqSocket = zmqContext.socket(SocketType.PAIR);
 				if (zmqSocket == null)
 					throw new Exception("cannot obtain local socket");
 
@@ -661,6 +679,10 @@ public class ImgTransfer
 			cleanUp();
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
 		}
+		catch (RuntimeException e) {
+			cleanUp();
+			throw new ProtocolException("receiver protocol error: " + e.getMessage());
+		}
 		catch (Exception e) {
 			cleanUp();
 			throw new IOException("receiver error: " + e.getMessage());
@@ -673,7 +695,6 @@ public class ImgTransfer
 	 * Serves an image over network to someone who is receiving/pulling it.
 	 * Similar in principle to its static buddy this.serveImage(...).
 	 */
-	@SuppressWarnings({"unchecked","rawtypes"})
 	public <T extends NativeType<T>>
 	void serveImage(final ImgPlus<T> imgP)
 	throws IOException
@@ -688,7 +709,7 @@ public class ImgTransfer
 			if (zmqSocket == null)
 			{
 				//first run
-				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				zmqSocket = zmqContext.socket(SocketType.PAIR);
 				if (zmqSocket == null)
 					throw new Exception("cannot obtain local socket");
 
@@ -713,13 +734,17 @@ public class ImgTransfer
 			zmqSocket.send("v0 expect "+expectedNumberOfImages+" images");
 
 			//send the image
-			ImgPacker.packAndSend((ImgPlus) imgP, zmqSocket, timeOut, log);
+			ImgPacker.packAndSend(imgP, zmqSocket, timeOut, log);
 
 			if (log != null) log.info("server finished");
 		}
 		catch (ZMQException e) {
 			cleanUp();
 			throw new IOException("server crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			cleanUp();
+			throw new ProtocolException("server protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			cleanUp();
@@ -731,7 +756,7 @@ public class ImgTransfer
 	 * Receives/pulls an image over network from someone who is serving it.
 	 * Similar in principle to its static buddy this.requestImage(...).
 	 */
-	public <T extends NativeType<T>>
+	public
 	ImgPlus<?> requestImage()
 	throws IOException
 	{
@@ -750,7 +775,7 @@ public class ImgTransfer
 			if (zmqSocket == null)
 			{
 				//first run
-				zmqSocket = zmqContext.socket(ZMQ.PAIR);
+				zmqSocket = zmqContext.socket(SocketType.PAIR);
 				if (zmqSocket == null)
 					throw new Exception("cannot obtain local socket");
 
@@ -822,6 +847,10 @@ public class ImgTransfer
 		catch (ZMQException e) {
 			cleanUp();
 			throw new IOException("receiver crashed, ZeroMQ error: " + e.getMessage());
+		}
+		catch (RuntimeException e) {
+			cleanUp();
+			throw new ProtocolException("receiver protocol error: " + e.getMessage());
 		}
 		catch (Exception e) {
 			cleanUp();

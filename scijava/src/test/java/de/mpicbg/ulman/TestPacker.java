@@ -17,6 +17,7 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 
 public class TestPacker
@@ -42,7 +43,7 @@ public class TestPacker
 */
 
 			Img<UnsignedShortType> img =
-					new ArrayImgFactory<UnsignedShortType>().create(new int[] {50, 50}, new UnsignedShortType());
+					new ArrayImgFactory(new UnsignedShortType()).create(new int[] {50, 50});
 			Cursor<UnsignedShortType> c = img.cursor();
 			while (c.hasNext()) c.next().set(97);
 			RandomAccess<UnsignedShortType> r = img.randomAccess();
@@ -78,7 +79,7 @@ public class TestPacker
 
 			//init the writing socket (but not bind it)
 			ZMQ.Context zmqContext = ZMQ.context(1);
-			ZMQ.Socket writerSocket = zmqContext.socket(ZMQ.PUSH);
+			ZMQ.Socket writerSocket = zmqContext.socket(SocketType.PUSH);
 			writerSocket.connect("tcp://localhost:54545");
 
 			//start up the packer class
