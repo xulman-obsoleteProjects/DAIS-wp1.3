@@ -502,3 +502,82 @@ template void TransmitOnePlanarImage(connectionParams_t& cnnParams,const imgPara
 template void TransmitOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,unsigned long*  const data);
 template void TransmitOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,float*          const data);
 template void TransmitOnePlanarImage(connectionParams_t& cnnParams,const imgParams_t& imgParams,double*         const data);
+
+
+//-------- class ImagesAsEventsSender --------
+void ImagesAsEventsSender::connect()
+{
+	if (isConnected) return;
+
+	//init the context and get the socket
+	cnnParams.context  = new zmq::context_t(1);
+	cnnParams.socket   = new zmq::socket_t(*(cnnParams.context), ZMQ_PAIR);
+	cnnParams.addr     = this->addr;
+	cnnParams.timeOut  = this->timeOut;
+	cnnParams.isSender = true;
+
+	//connects the socket with the given address
+	cnnParams.socket->connect(cnnParams.addr);
+
+	//send the "v0" initiator-header
+	zmq::message_t initMsg("v0 expect 99999999",18);
+	cnnParams.socket->send(initMsg,zmq::send_flags::none);
+
+	isConnected = true;
+}
+
+void ImagesAsEventsSender::disconnect()
+{
+	if (!isConnected) return;
+
+	cnnParams.clear();
+	isConnected = false;
+}
+
+
+template <typename VT>
+void ImagesAsEventsSender::sendImage(const imgParams_t& imgParams, VT* const data,
+                                     const bool lastImg)
+{
+	connect();
+	//NB: makes sure internally it does not connect over connected link
+
+	Handshake_GiveImage(imgParams,cnnParams);
+
+	SendMetadata(cnnParams,metaData);
+	TransmitOneImage(cnnParams,imgParams,data);
+
+	//wait for confirmation from the receiver
+	waitForFirstMessage(cnnParams,"Timeout when waiting for the confirmation of a complete transfer.");
+
+	//read income message and check if the receiving party is ready to receive our data
+	zmq::message_t msg(1024);
+	int recLength = cnnParams.socket->recv(msg).value();
+	char* msgString = msg.data<char>();
+
+	//check sanity of the received buffer
+	if (recLength < 4)
+		throw new runtime_error("Received (near) empty final (handshake) message. Stopping.");
+	if (recLength == 1024)
+		throw new runtime_error("Couldn't read complete final (handshake) message. Stopping.");
+	if (msgString[0] != 'd' ||
+		 msgString[1] != 'o' ||
+		 msgString[2] != 'n' ||
+		 msgString[3] != 'e')
+		throw new runtime_error("Protocol error, expected final confirmation from the receiver.");
+
+	//send the "v0" separator-header
+	if (lastImg)
+	{
+		zmq::message_t sepMsg("v0 hangup",9);
+		cnnParams.socket->send(sepMsg,zmq::send_flags::none);
+		disconnect();
+	}
+	else
+	{
+		zmq::message_t sepMsg("v0 don't hangup!",16);
+		cnnParams.socket->send(sepMsg,zmq::send_flags::none);
+	}
+}
+template void ImagesAsEventsSender::sendImage(const imgParams_t& imgParams, float* const data, const bool lastImg);
+template void ImagesAsEventsSender::sendImage(const imgParams_t& imgParams, unsigned short* const data, const bool lastImg);

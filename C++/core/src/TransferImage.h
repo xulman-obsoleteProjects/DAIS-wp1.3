@@ -197,4 +197,81 @@ void FinishSendingOneImage(connectionParams_t& cnnParams);
  * See StartSendingOneImage() for an overview of necessary calls.
  */
 void FinishReceivingOneImage(connectionParams_t& cnnParams);
+
+
+/**
+ * Utility class to facilitate repetitive transmission of (possibly
+ * different in content, in size, in voxel types) images. When an
+ * object is created, no connection is made -- the connection is
+ * established not sooner before the first transmission attempt,
+ * unless some one opens it explicitly via connect(). One then
+ * keeps sending images via sendImage().
+ *
+ * The class is using the sequential multiple-images transfer protocol
+ * of DAIS wp1.3, that is, the "v0" headers are used. This class
+ * is sending the "next image" avizo header message right after
+ * the current image was transferred, while the Java implementation
+ * is sending the avizo only right before the next image is transferred.
+ * The latter, however, prevents the receiving side from obtaining the
+ * current image until some next image transmission occurs. To prevent
+ * from this, here the avizo is sent right away, even if the very last
+ * image is transferred...
+ */
+class ImagesAsEventsSender
+{
+public:
+	ImagesAsEventsSender(const char* addr, const int timeOut,
+	                     const char* imgsName = NULL)
+	{
+		//backup all transfer metadata
+		this->addr = std::string("tcp://")+std::string(addr);
+		this->timeOut = timeOut;
+		isConnected = false;
+
+		//backup all image metadata
+		metaData.push_back(std::string("imagename"));
+		if (imgsName != NULL)
+			metaData.push_back(std::string(imgsName));
+		else
+			metaData.push_back(std::string("sent from C++ world"));
+	}
+
+	~ImagesAsEventsSender()
+	{
+		disconnect();
+		//NB: does also clean up
+	}
+
+	/** Just connects to the peer, does not wait for any connection
+	    confirmation. It can be called repetitively -- it will not connect
+	    existing/established connection */
+	void connect();
+
+	/** Disconnects and clears() the connection params this->cnnParams.
+	    Will not disconnect/clear if already disconnected/cleared,
+	    safe to be called repetitively. */
+	void disconnect();
+
+	template <typename VT>
+	void sendImage(const imgParams_t& imgParams, VT* const data,
+	               const bool lastImg = false);
+
+	const std::string& getURL()
+	{ return addr; }
+
+	int getTimeOutInSeconds()
+	{ return timeOut; }
+
+	int getIsConnected()
+	{ return isConnected; }
+
+private:
+	std::string addr;
+	int timeOut; //in seconds
+
+	bool isConnected = false;
+
+	connectionParams_t cnnParams;
+	std::list<std::string> metaData;
+};
 #endif
