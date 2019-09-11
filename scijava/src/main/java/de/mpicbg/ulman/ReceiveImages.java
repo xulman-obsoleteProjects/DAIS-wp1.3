@@ -103,15 +103,20 @@ public class ReceiveImages implements Command
 					final ImgPlus<?> i = Receiver.receiveImage();
 					ui.getDisplayService().createDisplay(i);
 
+					//show the special banner after the very first transfer
 					if (cnt == 0)
 					{
 						cntE = Receiver.getExpectedNumberOfImages();
 						log.info("ReceiveImages plugin: going to receive "+cntE+" images");
 					}
 
-					++cnt;
-					status.showProgress(cnt,cntE);
-					log.info("ReceiveImages plugin: received "+cnt+"/"+cntE+": "+i.getName());
+					//have we actually got something?
+					if (i != null)
+					{
+						++cnt;
+						status.showProgress(cnt,cntE);
+						log.info("ReceiveImages plugin: received "+cnt+"/"+cntE+": "+i.getName());
+					}
 				}
 			}
 			else
@@ -124,15 +129,20 @@ public class ReceiveImages implements Command
 					final ImgPlus<?> i = Receiver.requestImage();
 					ui.getDisplayService().createDisplay(i);
 
+					//show the special banner after the very first transfer
 					if (cnt == 0)
 					{
 						cntE = Receiver.getExpectedNumberOfImages();
 						log.info("ReceiveImages plugin: going to receive "+cntE+" images");
 					}
 
-					++cnt;
-					status.showProgress(cnt,cntE);
-					log.info("ReceiveImages plugin: received "+cnt+"/"+cntE+": "+i.getName());
+					//have we actually got something?
+					if (i != null)
+					{
+						++cnt;
+						status.showProgress(cnt,cntE);
+						log.info("ReceiveImages plugin: received "+cnt+"/"+cntE+": "+i.getName());
+					}
 				}
 			}
 		}
