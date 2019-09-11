@@ -7,6 +7,9 @@
 
 #include <iostream>
 
+namespace DAIS
+{
+
 /**
  * Simple structure to hold parsed content of the initial message.
  * It therefore contains: image geometry, voxel type, backend type.
@@ -359,4 +362,6 @@ void waitForFirstMessage(connectionParams_t& cnnParams, const char* errMsg);
  * this case, the waitForFirstMessage() will complain before this one.
  */
 void waitForNextMessage(connectionParams_t& cnnParams);
+
+}
 #endif

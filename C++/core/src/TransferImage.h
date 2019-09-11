@@ -6,6 +6,9 @@
 
 #include "TransferImage_Utils.h"
 
+namespace DAIS
+{
+
 /**
  * Given the input image, here represented just with its geometry in imgParams,
  * the function attempt to establish connection with addr and sends the initial
@@ -197,4 +200,138 @@ void FinishSendingOneImage(connectionParams_t& cnnParams);
  * See StartSendingOneImage() for an overview of necessary calls.
  */
 void FinishReceivingOneImage(connectionParams_t& cnnParams);
+
+
+/**
+ * Utility class to facilitate repetitive transmission of (possibly
+ * different in content, in size, in voxel types) images. When an
+ * object is created, no connection is made -- the connection is
+ * established not sooner before the first transmission attempt,
+ * unless some one opens it explicitly via connect(). One then
+ * keeps sending images via sendImage().
+ *
+ * The class is using the sequential multiple-images transfer protocol
+ * of DAIS wp1.3, that is, the "v0" headers are used. This class
+ * is sending the "next image" avizo header message right after
+ * the current image was transferred, while the Java implementation
+ * is sending the avizo only right before the next image is transferred.
+ * The latter, however, prevents the receiving side from obtaining the
+ * current image until some next image transmission occurs. To prevent
+ * from this, here the avizo is sent right away, even if the very last
+ * image is transferred... (in any case violating the original protocol).
+ *
+ *
+ * Consider a sequence of images is expected to be transfered -- the multiImage
+ * scenario of the protocol. After receiving an image, the receiving side
+ * needs to make a decision whether this was the last image or whether it
+ * shall start waiting for another image (risking that waiting will end up
+ * with complaining exception if nothing arrives within the timeout period).
+ * This class is designed to announce transmission of a next image right
+ * after the end of the transmission of the current image(*), even when no
+ * such image is provided to this class (unless user flags differently
+ * via the 'lastImg' parameter of the sendImage() method). This is more
+ * like a possibly infinite sequence of events that will appear, hence the
+ * name of the class.
+ *
+ * (*) The receiving side will therefore make the just received image avail-
+ * able to its user together with the information about availability of some
+ * next image, and it may immediately start waiting for that image.
+ *
+ * In contrast, the multiImage protocol assumes that the receiver blocks after
+ * an image is obtained while waiting for a "v0" header that would tell it if
+ * another image is available or not. This way, receiver will update
+ * its user with correct/reliable information to make decision whether to
+ * wait for another image or not. This is more like a predetermined
+ * sequence of known and fixed length, hence the name of the sibling class.
+ */
+class ImagesAsEventsSender
+{
+public:
+	ImagesAsEventsSender(const char* addr, const int timeOut,
+	                     const char* imgsName = NULL)
+	{
+		//backup all transfer metadata
+		this->addr = std::string("tcp://")+std::string(addr);
+		this->timeOut = timeOut;
+		isConnected = false;
+
+		//backup all image metadata
+		metaData.push_back(std::string("imagename"));
+		if (imgsName != NULL)
+			metaData.push_back(std::string(imgsName));
+		else
+			metaData.push_back(std::string("sent from C++ world"));
+	}
+
+	~ImagesAsEventsSender()
+	{
+		disconnect();
+		//NB: does also clean up
+	}
+
+	/** Just connects to the peer, does not wait for any connection
+	    confirmation. It can be called repetitively -- it will not connect
+	    existing/established connection */
+	void connect();
+
+	/** Disconnects and clears() the connection params this->cnnParams.
+	    Will not disconnect/clear if already disconnected/cleared,
+	    safe to be called repetitively. */
+	void disconnect();
+
+	/** own version of the sendImage that does send "v0" header before
+	    transfers the image and immediately sends "v0" header that
+	    announces next image (or announces end of the sequence if
+	    the param 'lastImg' is true) */
+	template <typename VT>
+	void sendImage(const imgParams_t& imgParams, VT* const data,
+	               const bool lastImg = false);
+
+	const std::string& getURL()
+	{ return addr; }
+
+	int getTimeOutInSeconds()
+	{ return timeOut; }
+
+	int getIsConnected()
+	{ return isConnected; }
+
+protected:
+	std::string addr;
+	int timeOut; //in seconds
+
+	bool isConnected = false;
+
+	connectionParams_t cnnParams;
+	std::list<std::string> metaData;
+
+	template <typename VT>
+	void sendOneImage(const imgParams_t& imgParams, VT* const data);
+	void sendV0header(const std::string msg);
+};
+
+
+/** the sibling class toe ImagesAsEventsSender, see its docs */
+class ImagesAsFixedSequenceSender : public ImagesAsEventsSender
+{
+public:
+	ImagesAsFixedSequenceSender(const char* addr, const int timeOut,
+	                            const char* imgsName = NULL)
+	  : ImagesAsEventsSender(addr,timeOut,imgsName)
+	{}
+
+	~ImagesAsFixedSequenceSender()
+	{}
+
+	/** connect that does not send v0 header immediately */
+	void connect();
+
+	/** own version of the sendImage that does send "v0" header before
+	    the image transfer occurs */
+	template <typename VT>
+	void sendImage(const imgParams_t& imgParams, VT* const data,
+	               const bool lastImg = false);
+};
+
+}
 #endif

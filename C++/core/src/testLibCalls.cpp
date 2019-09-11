@@ -10,10 +10,10 @@ void testReceiver(void)
 
 	try {
 		//init the connection and possibly wait for the header information
-		imgParams_t imgParams;
-		connectionParams_t cnnParams;
-		//StartReceivingOneImage(imgParams,cnnParams,54545,10);
-		StartRequestingOneImage(imgParams,cnnParams,"localhost:54545",10);
+		DAIS::imgParams_t imgParams;
+		DAIS::connectionParams_t cnnParams;
+		//DAIS::StartReceivingOneImage(imgParams,cnnParams,54545,10);
+		DAIS::StartRequestingOneImage(imgParams,cnnParams,"localhost:54545",10);
 
 		//aha, so this is what we will receive -- do what you need to get ready for that
 		std::cout << "Going to receive an image: ";
@@ -28,7 +28,7 @@ void testReceiver(void)
 
 		//get metadata
 		std::list<std::string> metaData;
-		ReceiveMetadata(cnnParams,metaData);
+		DAIS::ReceiveMetadata(cnnParams,metaData);
 
 		std::cout << "--metadata--\n";
 		std::list<std::string>::const_iterator it = metaData.begin();
@@ -47,39 +47,39 @@ void testReceiver(void)
 		//now, fill the image data array
 		switch (imgParams.enumVoxelType())
 		{
-			case imgParams::voxelTypes::Byte:
-				TransmitOneImage(cnnParams,imgParams,(char*)data);
+			case DAIS::imgParams::voxelTypes::Byte:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(char*)data);
 				break;
-			case imgParams::voxelTypes::UnsignedByte:
-				TransmitOneImage(cnnParams,imgParams,(unsigned char*)data);
-				break;
-
-			case imgParams::voxelTypes::Short:
-				TransmitOneImage(cnnParams,imgParams,(signed short*)data);
-				break;
-			case imgParams::voxelTypes::UnsignedShort:
-				TransmitOneImage(cnnParams,imgParams,(unsigned short*)data);
+			case DAIS::imgParams::voxelTypes::UnsignedByte:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(unsigned char*)data);
 				break;
 
-			case imgParams::voxelTypes::Int:
-				TransmitOneImage(cnnParams,imgParams,(signed int*)data);
+			case DAIS::imgParams::voxelTypes::Short:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(signed short*)data);
 				break;
-			case imgParams::voxelTypes::UnsignedInt:
-				TransmitOneImage(cnnParams,imgParams,(unsigned int*)data);
-				break;
-
-			case imgParams::voxelTypes::Long:
-				TransmitOneImage(cnnParams,imgParams,(signed long*)data);
-				break;
-			case imgParams::voxelTypes::UnsignedLong:
-				TransmitOneImage(cnnParams,imgParams,(unsigned long*)data);
+			case DAIS::imgParams::voxelTypes::UnsignedShort:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(unsigned short*)data);
 				break;
 
-			case imgParams::voxelTypes::Float:
-				TransmitOneImage(cnnParams,imgParams,(float*)data);
+			case DAIS::imgParams::voxelTypes::Int:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(signed int*)data);
 				break;
-			case imgParams::voxelTypes::Double:
-				TransmitOneImage(cnnParams,imgParams,(double*)data);
+			case DAIS::imgParams::voxelTypes::UnsignedInt:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(unsigned int*)data);
+				break;
+
+			case DAIS::imgParams::voxelTypes::Long:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(signed long*)data);
+				break;
+			case DAIS::imgParams::voxelTypes::UnsignedLong:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(unsigned long*)data);
+				break;
+
+			case DAIS::imgParams::voxelTypes::Float:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(float*)data);
+				break;
+			case DAIS::imgParams::voxelTypes::Double:
+				DAIS::TransmitOneImage(cnnParams,imgParams,(double*)data);
 				break;
 
 			default:
@@ -87,7 +87,7 @@ void testReceiver(void)
 		}
 
 		//close the connection, calls also cnnParams.clear()
-		FinishReceivingOneImage(cnnParams);
+		DAIS::FinishReceivingOneImage(cnnParams);
 
 		//print first 20 values just to see that something has been transmitted
 		for (long i=0; i < 20; ++i)
@@ -119,7 +119,7 @@ void testSender(void)
 
 	try {
 		//init the connection and possibly wait for the header information
-		imgParams_t imgParams;
+		DAIS::imgParams_t imgParams;
 
 		//setup testing image
 		imgParams.dim = 3;
@@ -147,22 +147,22 @@ void testSender(void)
 		for (int i=0; i < 30; ++i)
 			data[i + i*610]=data[5 + i + i*610]=20;
 
-		connectionParams_t cnnParams;
-		//StartSendingOneImage(imgParams,cnnParams,"localhost:54546",10);
-		StartServingOneImage(imgParams,cnnParams,54545,10);
+		DAIS::connectionParams_t cnnParams;
+		//DAIS::StartSendingOneImage(imgParams,cnnParams,"localhost:54546",10);
+		DAIS::StartServingOneImage(imgParams,cnnParams,54545,10);
 
 		//set and send metadata
 		std::list<std::string> metaData;
 		//IMPORTANT two lines: 'imagename' and 'some name with allowed whitespaces'
 		metaData.push_back(std::string("imagename"));
 		metaData.push_back(std::string("sent from C++ world"));
-		SendMetadata(cnnParams,metaData);
+		DAIS::SendMetadata(cnnParams,metaData);
 
 		//send the raw pixel image data
-		TransmitOneImage(cnnParams,imgParams,data);
+		DAIS::TransmitOneImage(cnnParams,imgParams,data);
 
 		//close the connection, calls also cnnParams.clear()
-		FinishSendingOneImage(cnnParams);
+		DAIS::FinishSendingOneImage(cnnParams);
 
 		//free the memory! we're not in Java :)
 		imgParams.clear();
