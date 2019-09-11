@@ -16,10 +16,10 @@ Usage:
 The plugin installs 4 commands, each with its own GUI dialog.
 The commands are available from the menu:
 
-File->Import->Receive One Image
-File->Import->Receive Multiple Images
-File->Export->Send Current Image
-File->Export->Send All Opened Images
+- File->Import->Receive One Image
+- File->Import->Receive Multiple Images
+- File->Export->Send Current Image
+- File->Export->Send All Opened Images
 
 Sometimes the 'Class not found' exception is fired always after running the
 command (after hitting OK button in the dialogs). This has been observed
