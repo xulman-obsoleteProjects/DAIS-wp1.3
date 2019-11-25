@@ -76,7 +76,7 @@ typedef struct imgParams
 		if (voxelType.find("Double") != std::string::npos) vt = Double;
 		else
 			//undetermined type, complain!
-			throw new std::runtime_error::runtime_error(
+			throw new std::runtime_error(
 			  (std::string("Couldn't recognize voxel type: ")+voxelType).c_str() );
 
 		return vt;
