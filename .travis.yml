@@ -1,0 +1,2 @@
+import:
+  source scijava/.travis.yml
