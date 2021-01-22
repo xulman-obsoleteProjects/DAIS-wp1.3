@@ -11,8 +11,8 @@
 
 
   <groupId>de.mpicbg.ulman</groupId>
-  <artifactId>DAIS-wp13</artifactId>
-  <version>1.0.1</version>
+  <artifactId>imglib2-network-transfer</artifactId>
+  <version>1.0.2-SNAPSHOT</version>
 
 	<organization>
 		<name>MPI-CBG</name>
@@ -20,15 +20,15 @@
 	</organization>
 
   <name>DAIS plugin suite</name>
-  <description>Scijava/imglib2 images are pinged back and forth over a network...</description>
+  <description>Scijava/imglib2 images are pinged back and forth over a network using ZeroMQ...</description>
   <url>https://github.com/xulman/DAIS-wp1.3</url>
   <inceptionYear>2017</inceptionYear>
 
   <packaging>jar</packaging>
 	<licenses>
 		<license>
-			<name>CC0 1.0 Universal License</name>
-			<url>http://creativecommons.org/publicdomain/zero/1.0/</url>
+			<name>Simplified BSD</name>
+			<url>https://choosealicense.com/licenses/bsd-2-clause/</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -70,10 +70,10 @@
 	</ciManagement>
 
 	<properties>
-		<license.licenseName>cc0</license.licenseName>
-		<license.copyrightOwners>N/A</license.copyrightOwners>
-		<license.projectName>DAIS-wp1.3</license.projectName>
 		<package-name>de.mpicbg.ulman.imgtransfer</package-name>
+		<license.licenseName>BSD 2-Clause</license.licenseName>
+		<license.copyrightOwners>xulman</license.copyrightOwners>
+		<license.projectName>imglib2-network-transfer</license.projectName>
 	</properties>
 
 
