@@ -5,14 +5,14 @@
   <parent>
     <groupId>org.scijava</groupId>
     <artifactId>pom-scijava</artifactId>
-    <version>27.0.1</version>
+    <version>30.0.0</version>
     <relativePath />
   </parent>
 
 
   <groupId>de.mpicbg.ulman</groupId>
   <artifactId>imglib2-network-transfer</artifactId>
-  <version>1.0.2-SNAPSHOT</version>
+  <version>1.0.2</version>
 
 	<organization>
 		<name>MPI-CBG</name>
@@ -102,4 +102,12 @@
       <artifactId>imagej</artifactId>
     </dependency>
   </dependencies>
+
+
+  <distributionManagement>
+    <repository>
+      <id>it4i</id>
+      <url>https://artifactory.cs.vsb.cz/it4i/</url>
+    </repository>
+  </distributionManagement>
 </project>
